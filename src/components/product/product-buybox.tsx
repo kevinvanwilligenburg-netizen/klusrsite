@@ -230,6 +230,16 @@ export function ProductBuybox({
     if (found) setColor(withBase(found));
   }, [product.colorMatchable]);
 
+  // Voorkeuze van variant via ?v=<variantId> (vanuit de Google-feed, zodat de
+  // getoonde prijs overeenkomt met de feed-prijs van díe maat). Client-side
+  // gelezen zodat de PDP statisch/ISR blijft.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("v");
+    if (!id) return;
+    const found = product.variants.find((x) => x.id === id);
+    if (found) setVariant(found);
+  }, [product]);
+
   // Apple Pay-detectie: toon de "Betaal met Apple Pay"-knop op élk toestel dat
   // Apple Pay ondersteunt (Safari op iOS/macOS). Werkt alleen écht op het in
   // Mollie geverifieerde domein (www.klus-r.nl). Client-only zodat de PDP

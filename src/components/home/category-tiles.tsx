@@ -14,7 +14,8 @@ import { navCategories } from "@/lib/data/categories";
 import { TopicImage } from "@/components/shared/topic-image";
 import { categoryKeywords } from "@/lib/topic-images";
 import { SectionHeading } from "@/components/shared/section-heading";
-import { t } from "@/lib/i18n/server";
+import { t, getLocale } from "@/lib/i18n/server";
+import { localizeCategories } from "@/lib/data/categories-i18n";
 
 /** Lucide-icoon per categorie — vult de tegel ook als de foto (nog) niet laadt. */
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -29,7 +30,10 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 export function CategoryTiles() {
-  const tiles = navCategories.filter((c) => c.slug !== "acties");
+  const tiles = localizeCategories(
+    navCategories.filter((c) => c.slug !== "acties"),
+    getLocale(),
+  );
 
   return (
     <section className="container-klusr">

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createTicket } from "@/lib/store/tickets";
-import { sendSupportConfirmation } from "@/lib/email";
+import { sendSupportConfirmation, sendSupportTeamNotification } from "@/lib/email";
 import { logEvent } from "@/lib/store/analytics";
 
 export const runtime = "nodejs";
@@ -42,8 +42,15 @@ export async function POST(req: Request) {
     channel: "form",
   });
 
-  // Best-effort: bevestiging naar de klant + registratie in analytics.
+  // Best-effort: bevestiging naar de klant + melding naar de klantenservice-inbox.
   void sendSupportConfirmation({
+    email,
+    name,
+    reference: ticket.reference,
+    subject: ticket.subject,
+    body: message,
+  });
+  void sendSupportTeamNotification({
     email,
     name,
     reference: ticket.reference,

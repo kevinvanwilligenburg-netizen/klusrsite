@@ -2,7 +2,8 @@ import Link from "next/link";
 import { getCategory } from "@/lib/data/categories";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { CategoryIcon } from "@/components/shared/category-icon";
-import { t } from "@/lib/i18n/server";
+import { t, getLocale } from "@/lib/i18n/server";
+import { localizeCategory } from "@/lib/data/categories-i18n";
 
 const groupIcons: Record<string, string> = {
   lakken: "PaintbrushVertical",
@@ -15,7 +16,8 @@ const groupIcons: Record<string, string> = {
 };
 
 export function VerfCategories() {
-  const groups = getCategory("verf")?.subGroups ?? [];
+  const verf = getCategory("verf");
+  const groups = (verf ? localizeCategory(verf, getLocale()).subGroups : undefined) ?? [];
   if (groups.length === 0) return null;
 
   return (

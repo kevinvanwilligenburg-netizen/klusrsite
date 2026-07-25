@@ -34,10 +34,15 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Vertaal UI-teksten
-        run: npx tsx scripts/translate-ui.ts
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           I18N_UI_LOCALES: ${{ github.event.inputs.locales || 'pl' }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ℹ ANTHROPIC_API_KEY niet gezet — UI-vertaling overgeslagen (geen CI-fout)."
+            exit 0
+          fi
+          npx tsx scripts/translate-ui.ts
       - name: Commit vertalingen
         run: |
           git config user.name "klusr-bot"

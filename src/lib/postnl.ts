@@ -29,6 +29,26 @@ const SENDER_CITY = process.env.POSTNL_SENDER_CITY || "";
 const SENDER_COUNTRY = process.env.POSTNL_SENDER_COUNTRY || "NL";
 const API_BASE = (process.env.POSTNL_API_BASE || "https://api.postnl.nl").replace(/\/$/, "");
 
+// Productcodes verschillen per PostNL-contract → overschrijfbaar via env. Een
+// binnenlandse code naar het buitenland geeft PostNL-fout 1900501 ("Countries in
+// receiver and sender address not allowed together for this product").
+const PRODUCT_NL = process.env.POSTNL_PRODUCT_CODE_NL || "3085"; // Pakket binnenland
+const PRODUCT_NL_BRIEVENBUS = process.env.POSTNL_PRODUCT_CODE_BRIEVENBUS || "2928"; // Brievenbuspakje (NL)
+const PRODUCT_EU = process.env.POSTNL_PRODUCT_CODE_EU || "4945"; // Pakket EU (incl. België)
+
+// Barcodetype per bestemming. Binnenland/EU gebruiken "3S"; voor GlobalPack
+// (buiten de EU, of contracten die het buitenland als GlobalPack behandelen) een
+// S10-type zoals "CD" — overschrijfbaar via env. PostNL-fout 10701 ("not a valid
+// S10 barcode") duidt op een bestemming die een S10-barcode vereist. GlobalPack
+// gebruikt vaak een aparte klantcode als barcode-Range.
+const BARCODE_TYPE_NL = process.env.POSTNL_BARCODE_TYPE || "3S";
+// Buitenland/GlobalPack: S10-barcodetype ("CD"), overschrijfbaar via env.
+const BARCODE_TYPE_INTL = process.env.POSTNL_BARCODE_TYPE_INTL || "CD";
+// Serie (barcode-bereik) per type. POSTNL_BARCODE_NON_EU (bv. "0000-9999") is de
+// GlobalPack-serie; binnenland gebruikt POSTNL_BARCODE_SERIE.
+const BARCODE_SERIE_INTL = process.env.POSTNL_BARCODE_NON_EU || BARCODE_SERIE;
+const GLOBALPACK_RANGE = process.env.POSTNL_GLOBALPACK_RANGE;
+
 export function isPostNLConfigured(): boolean {
   return Boolean(API_KEY && CUSTOMER_CODE && CUSTOMER_NUMBER);
 }
@@ -47,14 +67,26 @@ export interface LabelResult {
 }
 
 function splitStreet(street = ""): { street: string; houseNr: string; houseNrExt?: string } {
-  const m = street.trim().match(/^(.*?)\s+(\d+)\s*([a-zA-Z][\w-]*)?$/);
-  if (!m) return { street: street.trim(), houseNr: "" };
-  return { street: m[1].trim(), houseNr: m[2], houseNrExt: m[3]?.trim() || undefined };
+  const s = (street || "").trim();
+  // Voorkeur: "Straatnaam 12" of "Straatnaam 12a" / "Straatnaam 12 bis".
+  let m = s.match(/^(.*?)\s+(\d+)\s*([a-zA-Z][\w-]*)?$/);
+  if (m) return { street: m[1].trim(), houseNr: m[2], houseNrExt: m[3]?.trim() || undefined };
+  // Terugval: pak het laatste getal in de string (bv. "Dwarsweg9", "Straat12-3").
+  m = s.match(/^(.*?)(\d+)\s*([a-zA-Z][\w-]*)?\s*$/);
+  if (m && m[2]) {
+    return {
+      street: (m[1] || "").replace(/[\s,.-]+$/, "").trim(),
+      houseNr: m[2],
+      houseNrExt: m[3]?.trim() || undefined,
+    };
+  }
+  return { street: s, houseNr: "" };
 }
 
-function trackTraceUrl(barcode: string, postalCode: string): string {
+function trackTraceUrl(barcode: string, postalCode: string, country = "NL"): string {
   const zip = postalCode.replace(/\s/g, "").toUpperCase();
-  return `https://postnl.nl/tracktrace/?B=${encodeURIComponent(barcode)}&P=${encodeURIComponent(zip)}&D=NL&T=C`;
+  const dest = (country || "NL").toUpperCase().slice(0, 2);
+  return `https://postnl.nl/tracktrace/?B=${encodeURIComponent(barcode)}&P=${encodeURIComponent(zip)}&D=${encodeURIComponent(dest)}&T=C`;
 }
 
 function nowStamp(): string {
@@ -63,15 +95,20 @@ function nowStamp(): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-async function generateBarcode(): Promise<string | null> {
+async function generateBarcode(
+  type: string,
+  range: string,
+  serie?: string,
+  customerCode: string = CUSTOMER_CODE!,
+): Promise<string | null> {
   try {
     const params = new URLSearchParams({
-      CustomerCode: CUSTOMER_CODE!,
+      CustomerCode: customerCode,
       CustomerNumber: CUSTOMER_NUMBER!,
-      Type: "3S",
-      Range: CUSTOMER_CODE!,
+      Type: type,
+      Range: range,
     });
-    if (BARCODE_SERIE) params.set("Serie", BARCODE_SERIE);
+    if (serie) params.set("Serie", serie);
     const res = await fetch(`${API_BASE}/shipment/v1_1/barcode?${params.toString()}`, {
       headers: { apikey: API_KEY!, Accept: "application/json" },
       signal: AbortSignal.timeout(15000),
@@ -98,14 +135,37 @@ export async function createLabel(
       demo: true,
       status: 0,
       barcode: demoBarcode,
-      trackTrace: trackTraceUrl(demoBarcode, c.postalCode),
+      trackTrace: trackTraceUrl(demoBarcode, c.postalCode, c.country),
       message: "PostNL niet geconfigureerd — demo-label aangemaakt (geen echte verzending).",
     };
   }
 
   try {
-    const barcode = (await generateBarcode()) || `3S${CUSTOMER_CODE}${Date.now()}`;
     const { street, houseNr, houseNrExt } = splitStreet(c.street);
+    if (!houseNr) {
+      return {
+        ok: false,
+        configured: true,
+        status: 422,
+        message: `Adres mist een herkenbaar huisnummer ("${c.street || "—"}"). Controleer het bezorgadres en maak het label opnieuw aan.`,
+      };
+    }
+    const receiverCountry = (c.country || "NL").toUpperCase().slice(0, 2);
+    const isDomestic = receiverCountry === "NL";
+    // Binnenland (NL) → pakket/brievenbus; buitenland (België e.d.) → EU-pakket.
+    const productCode = isDomestic
+      ? opts?.brievenbus
+        ? PRODUCT_NL_BRIEVENBUS
+        : PRODUCT_NL
+      : PRODUCT_EU;
+    // Barcodetype/-range volgt de bestemming (zie env-uitleg bovenaan).
+    const barcodeType = isDomestic ? BARCODE_TYPE_NL : BARCODE_TYPE_INTL;
+    const barcodeSerie = isDomestic ? BARCODE_SERIE : BARCODE_SERIE_INTL;
+    // GlobalPack gebruikt vaak een aparte klantcode (als Range én CustomerCode).
+    const barcodeCustomer = (isDomestic ? CUSTOMER_CODE : GLOBALPACK_RANGE || CUSTOMER_CODE)!;
+    const barcode =
+      (await generateBarcode(barcodeType, barcodeCustomer, barcodeSerie, barcodeCustomer)) ||
+      `${barcodeType}${barcodeCustomer}${Date.now()}`;
 
     const body = {
       Customer: {
@@ -132,7 +192,7 @@ export async function createLabel(
               ...(houseNrExt ? { HouseNrExt: houseNrExt } : {}),
               Zipcode: c.postalCode.replace(/\s/g, "").toUpperCase(),
               City: c.city,
-              Countrycode: (c.country || "NL").toUpperCase().slice(0, 2),
+              Countrycode: receiverCountry,
             },
             {
               AddressType: "02",
@@ -148,7 +208,7 @@ export async function createLabel(
           ],
           Barcode: barcode,
           Dimension: { Weight: "2000" },
-          ProductCodeDelivery: opts?.brievenbus ? "2928" : "3085",
+          ProductCodeDelivery: productCode,
           Reference: order.reference,
         },
       ],
@@ -181,7 +241,7 @@ export async function createLabel(
       configured: true,
       status: res.status,
       barcode: finalBarcode,
-      trackTrace: trackTraceUrl(finalBarcode, c.postalCode),
+      trackTrace: trackTraceUrl(finalBarcode, c.postalCode, receiverCountry),
       labelBase64: shp?.Labels?.[0]?.Content,
       message: `Verzendlabel aangemaakt (barcode ${finalBarcode}).`,
     };

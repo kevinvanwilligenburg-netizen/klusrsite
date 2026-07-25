@@ -19,6 +19,22 @@ function clientIp(req: Request): string {
   return req.headers.get("x-real-ip")?.trim() || "";
 }
 
+/** Land (ISO-2) + stad uit de Vercel geo-headers (best-effort). */
+function geoOf(req: Request): { country?: string; city?: string } {
+  const country = req.headers.get("x-vercel-ip-country")?.trim().toUpperCase() || "";
+  const cityRaw = req.headers.get("x-vercel-ip-city")?.trim() || "";
+  let city = "";
+  try {
+    city = cityRaw ? decodeURIComponent(cityRaw) : "";
+  } catch {
+    city = cityRaw;
+  }
+  return {
+    country: /^[A-Z]{2}$/.test(country) ? country : undefined,
+    city: city ? city.slice(0, 80) : undefined,
+  };
+}
+
 export async function POST(req: Request) {
   // Eigen/uitgesloten verkeer niet meetellen (env INTERNAL_IPS + admin-lijst in KV).
   const ip = clientIp(req);
@@ -49,7 +65,7 @@ export async function POST(req: Request) {
       : undefined;
 
   if (type === "pageview" || type === "view") {
-    await recordVisit({ visitorId, path, ip, source, cart, logType: "pageview" });
+    await recordVisit({ visitorId, path, ip, source, cart, ...geoOf(req), logType: "pageview" });
   } else if (type === "heartbeat") {
     await recordVisit({ visitorId, path, ip, cart, logType: null });
   } else if (type === "view_item") {
@@ -57,6 +73,7 @@ export async function POST(req: Request) {
       visitorId,
       path,
       ip,
+      ...geoOf(req),
       productId: body.productId ? String(body.productId).slice(0, 64) : undefined,
       title: body.title ? String(body.title).slice(0, 160) : undefined,
       logType: "view_item",

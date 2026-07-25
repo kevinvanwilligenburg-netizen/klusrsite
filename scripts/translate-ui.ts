@@ -135,7 +135,13 @@ async function run(locale) {
   }
 }
 
-for (const locale of LOCALES) {
-  await run(locale).catch((e) => console.warn(`⚠ ${locale} overgeslagen:`, e?.message ?? e));
+async function main() {
+  for (const locale of LOCALES) {
+    await run(locale).catch((e) => console.warn(`⚠ ${locale} overgeslagen:`, e?.message ?? e));
+  }
+  console.log("Klaar. Commit de overlay-bestanden (messages.*.json).");
 }
-console.log("Klaar. Commit de overlay-bestanden (messages.*.json).");
+
+// Geen top-level await: esbuild/tsx transformeert dit script naar CJS, en dat
+// ondersteunt geen top-level await. Daarom in een main()-functie.
+main();

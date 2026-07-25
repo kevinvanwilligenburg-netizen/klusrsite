@@ -10,8 +10,12 @@ import {
   passwordResetEmail,
   abandonedCartEmail,
   supportConfirmationEmail,
+  supportTeamNotificationEmail,
   supportReplyEmail,
 } from "./templates";
+
+/** Inbox van de klantenservice (waar contactformulier-meldingen heen gaan). */
+const TEAM_EMAIL = process.env.EMAIL_REPLY_TO || "klantenservice@klus-r.nl";
 
 /** Verstuur een "winkelwagen-vergeten" herinnering. */
 export async function sendAbandonedCart(input: {
@@ -103,6 +107,28 @@ export async function sendSupportConfirmation(input: {
     input.body,
   );
   return sendEmail({ to: input.email, subject, html, text });
+}
+
+/**
+ * Meld een nieuw contactformulier-ticket aan de klantenservice-inbox. De reply-to
+ * is de klant, zodat het team rechtstreeks vanuit de mail kan antwoorden. Zonder
+ * deze melding belandde een vraag alléén in /admin en niet in de mailbox.
+ */
+export async function sendSupportTeamNotification(input: {
+  email: string;
+  name?: string;
+  reference: string;
+  subject: string;
+  body: string;
+}): Promise<SendEmailResult> {
+  const { subject, html, text } = supportTeamNotificationEmail(
+    input.name ?? "",
+    input.email,
+    input.reference,
+    input.subject,
+    input.body,
+  );
+  return sendEmail({ to: TEAM_EMAIL, subject, html, text, replyTo: input.email });
 }
 
 /** Verstuur het antwoord van de klantenservice op een ticket. */

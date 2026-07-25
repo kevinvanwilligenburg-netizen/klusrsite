@@ -196,7 +196,7 @@ function buildItems(locale: Locale, country: string): string {
         multi ? `<g:item_group_id>${xml(p.id)}</g:item_group_id>` : "",
         `<g:title>${xml(title)}</g:title>`,
         `<g:description>${xml(description)}</g:description>`,
-        `<g:link>${xml(link)}</g:link>`,
+        `<g:link>${xml(multi ? `${link}?v=${encodeURIComponent(v.id)}` : link)}</g:link>`,
         `<g:image_link>${xml(image)}</g:image_link>`,
         extraImages,
         `<g:availability>${inStock ? "in_stock" : "out_of_stock"}</g:availability>`,

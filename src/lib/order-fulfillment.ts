@@ -9,6 +9,7 @@ import { sendOrderConfirmation } from "@/lib/email";
 import { addContact, AUDIENCES } from "@/lib/email/audiences";
 import { clearPendingCart } from "@/lib/store/pending-cart";
 import { logEvent } from "@/lib/store/analytics";
+import { recordOrderSale } from "@/lib/store/stock-ledger";
 
 /**
  * Verwerk een betaalde order: schiet hem in Channable (die routeert naar Tilroy)
@@ -16,6 +17,10 @@ import { logEvent } from "@/lib/store/analytics";
  * opnieuw gepusht.
  */
 export async function fulfillPaidOrder(order: Order): Promise<void> {
+  // Voorraad afboeken op het gedeelde grootboek (idempotent per order) — zodat
+  // een webverkoop direct meetelt met wat de kassa/voorraad nog beschikbaar ziet.
+  void recordOrderSale(order).catch(() => {});
+
   if (order.channableStatus === "sent" || order.channableStatus === "demo") return;
 
   const result = await pushChannableOrder(order);

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Tag, Palette, ArrowRight } from "lucide-react";
 import { navCategories } from "@/lib/data/categories";
 import { getSubCategories } from "@/lib/data/products";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { localizeCategories } from "@/lib/data/categories-i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,8 +21,10 @@ const NAV_SHORT: Record<string, string> = {
 
 export function MainNav() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const locale = useLocale();
+  const nav = useMemo(() => localizeCategories(navCategories, locale), [locale]);
 
-  const active = navCategories.find((c) => c.slug === openSlug);
+  const active = nav.find((c) => c.slug === openSlug);
   const activeGroups = active?.subGroups ?? null;
   const activeSubs = active ? getSubCategories(active.slug) : [];
   const activeHasSub = (activeGroups?.length ?? 0) > 0 || activeSubs.length > 0;
@@ -32,7 +36,7 @@ export function MainNav() {
     >
       <div className="container-klusr">
         <ul className="flex items-center gap-1">
-          {navCategories.map((cat) => {
+          {nav.map((cat) => {
             const isActie = cat.slug === "acties";
             const hasSub =
               (cat.subGroups?.length ?? 0) > 0 || getSubCategories(cat.slug).length > 0;
@@ -47,7 +51,7 @@ export function MainNav() {
                   )}
                 >
                   {isActie && <Tag className="h-4 w-4 shrink-0" />}
-                  {NAV_SHORT[cat.slug] ?? cat.title}
+                  {locale === "nl" ? NAV_SHORT[cat.slug] ?? cat.title : cat.title}
                   {hasSub && <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" />}
                 </Link>
               </li>

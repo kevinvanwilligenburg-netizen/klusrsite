@@ -3,10 +3,23 @@ import { stores } from "./stores";
 import { categories } from "./categories";
 import feedData from "./feed-products.generated.json";
 import priceOverrides from "./price-overrides.generated.json";
+import catalogOverridesData from "./catalog-overrides.generated.json";
+import customProductsData from "./custom-products.generated.json";
+import { applyCatalogOverlay, type CatalogOverrides } from "./catalog-overlay";
 import { onlineStock } from "@/lib/stock";
 
 /** Adviesprijs/normale prijs per sku uit de prijsfeed (scripts/build-price-feed.mjs). */
 const PRICE_OVERRIDES = priceOverrides as Record<string, { n?: number; a?: number }>;
+
+/**
+ * De kale SKU van een product-/variant-id, los van de (legacy) bron-prefix. Het
+ * `tilroy-`-voorvoegsel is sinds de Tilroy-ontkoppeling puur historisch: ids
+ * blijven stabiel (orders, overlays, slugs verwijzen ernaar), maar de logica is
+ * bron-agnostisch — eigen producten dragen gewoon hun eigen id zonder prefix.
+ */
+export function skuOf(id: string): string {
+  return id.replace(/^(?:tilroy|channable|feed)-/, "");
+}
 
 /**
  * Verrijkt een variant/product met de adviesprijs (RRP) uit de prijsfeed als
@@ -15,8 +28,7 @@ const PRICE_OVERRIDES = priceOverrides as Record<string, { n?: number; a?: numbe
 function withAdviesPrice<T extends { id: string; price: number; compareAtPrice?: number }>(
   v: T,
 ): T {
-  const sku = v.id.replace(/^tilroy-/, "");
-  const o = PRICE_OVERRIDES[sku];
+  const o = PRICE_OVERRIDES[skuOf(v.id)];
   if (o?.a != null && o.a > v.price) return { ...v, compareAtPrice: o.a };
   return v;
 }
@@ -1090,9 +1102,11 @@ function enforceKluspasDiscount(p: Product): Product {
  * curated fallback set. Helpers below operate on this combined source. De
  * KLUSRPAS-prijs wordt centraal op een vaste 5% korting gezet.
  */
-export const products: Product[] = (
-  feedProducts.length ? feedProducts : curatedProducts
-).map(enforceKluspasDiscount);
+export const products: Product[] = applyCatalogOverlay(
+  (feedProducts.length ? feedProducts : curatedProducts).map(enforceKluspasDiscount),
+  catalogOverridesData as CatalogOverrides,
+  customProductsData as unknown as Product[],
+);
 
 /* ------------------------------------------------------------------ lookups */
 

@@ -25,6 +25,10 @@ import {
   RotateCcw,
   MapPin,
   Mail,
+  Globe,
+  Calculator,
+  Truck,
+  Tags,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDate, cn } from "@/lib/utils";
@@ -41,15 +45,21 @@ import { HeroImages } from "./hero-images";
 import { ChannableTestOrder } from "./channable-test-order";
 import { MollieTest } from "./mollie-test";
 import { SeoRankPanel } from "./seo-rank-panel";
+import { KassaPanel } from "./kassa-panel";
+import { InkoopPanel } from "./inkoop-panel";
+import { CatalogPanel } from "./catalog-panel";
 
 type SectionId =
   | "overzicht"
+  | "kassa"
   | "orders"
   | "afgebroken"
   | "tickets"
   | "gesprekken"
   | "klanten"
   | "voorraad"
+  | "inkoop"
+  | "catalogus"
   | "rapportages"
   | "inzichten"
   | "seo"
@@ -59,12 +69,15 @@ type SectionId =
 
 const NAV: { id: SectionId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overzicht", label: "Overzicht", icon: LayoutDashboard },
+  { id: "kassa", label: "Kassa", icon: Calculator },
   { id: "orders", label: "Orders", icon: ShoppingBag },
   { id: "afgebroken", label: "Afgebroken", icon: XCircle },
   { id: "tickets", label: "Tickets", icon: MessageCircle },
   { id: "gesprekken", label: "Gesprekken", icon: MessagesSquare },
   { id: "klanten", label: "Klanten", icon: Users },
   { id: "voorraad", label: "Voorraad", icon: Boxes },
+  { id: "inkoop", label: "Inkoop", icon: Truck },
+  { id: "catalogus", label: "Catalogus", icon: Tags },
   { id: "rapportages", label: "Rapportages", icon: BarChart3 },
   { id: "seo", label: "SEO-ranking", icon: TrendingUp },
   { id: "content", label: "AI-content", icon: Sparkles },
@@ -112,12 +125,15 @@ export function AdminDashboard() {
       {/* Inhoud */}
       <div className="min-w-0">
         {section === "overzicht" && <Overview orders={orders} onGo={setSection} />}
+        {section === "kassa" && <KassaPanel orders={orders} />}
         {section === "orders" && <OrdersPanel />}
         {section === "afgebroken" && <AbandonedPanel />}
         {section === "tickets" && <TicketsPanel />}
         {section === "gesprekken" && <ConversationsPanel />}
         {section === "klanten" && <CustomersPanel orders={orders} />}
         {section === "voorraad" && <StockPanel />}
+        {section === "inkoop" && <InkoopPanel />}
+        {section === "catalogus" && <CatalogPanel />}
         {(section === "rapportages" || section === "inzichten") && (
           <div className="space-y-8">
             <Insights />
@@ -415,17 +431,22 @@ function Reports({ orders }: { orders: Order[] }) {
 }
 
 interface InsightsData {
+  period: { days: number };
   total: number;
-  searchCount: number;
-  chatCount: number;
+  live: number;
+  visitors: number;
   pageviews: number;
   conversions: number;
   revenue: number;
-  visitorsToday: number;
-  live: number;
+  conversionRate: number;
+  searchCount: number;
+  chatCount: number;
   topSearches: { query: string; count: number }[];
   topViewed: { title: string; count: number }[];
   recentChats: { question: string; ts: number }[];
+  topCountries: { code: string; count: number }[];
+  topCities: { name: string; count: number }[];
+  herkomst: { source: string; count: number }[];
 }
 
 interface LiveSession {
@@ -732,40 +753,147 @@ function IpExclusionCard() {
   );
 }
 
+const ANALYTICS_PERIODS: { days: number; label: string }[] = [
+  { days: 1, label: "Vandaag" },
+  { days: 7, label: "7 dagen" },
+  { days: 30, label: "30 dagen" },
+  { days: 90, label: "90 dagen" },
+];
+
+// Landcode → Nederlandse landnaam (Intl) + vlag-emoji uit regionale-indicators.
+const regionNames =
+  typeof Intl !== "undefined" && "DisplayNames" in Intl
+    ? new Intl.DisplayNames(["nl"], { type: "region" })
+    : null;
+function countryName(code: string): string {
+  try {
+    return regionNames?.of(code) || code;
+  } catch {
+    return code;
+  }
+}
+function flagEmoji(code: string): string {
+  if (!/^[A-Z]{2}$/.test(code)) return "🏳️";
+  return String.fromCodePoint(...[...code].map((c) => 127397 + c.charCodeAt(0)));
+}
+
+/** Top-lijst met balkjes + percentage (landen, steden, herkomst). */
+function BreakdownCard({
+  title,
+  icon: Icon,
+  items,
+  empty,
+}: {
+  title: string;
+  icon: typeof Globe;
+  items: { label: string; count: number }[];
+  empty: string;
+}) {
+  const max = Math.max(1, ...items.map((i) => i.count));
+  const total = items.reduce((s, i) => s + i.count, 0);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Icon className="h-4 w-4 text-primary" /> {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{empty}</p>
+        ) : (
+          <ul className="space-y-2">
+            {items.map((it) => (
+              <li key={it.label} className="text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate">{it.label}</span>
+                  <span className="shrink-0 font-semibold tabular-nums">
+                    {it.count}
+                    {total > 0 && (
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        {Math.round((it.count / total) * 100)}%
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${(it.count / max) * 100}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function Insights() {
+  const [days, setDays] = useState(7);
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     const load = () =>
-      fetch("/api/admin/analytics", { cache: "no-store" })
+      fetch(`/api/admin/analytics?days=${days}`, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => active && d && setData(d))
         .catch(() => {})
         .finally(() => active && setLoading(false));
     load();
-    // Live-aantal + cijfers elke 15s verversen.
+    // Cijfers elke 15s verversen (binnen de gekozen periode).
     const id = setInterval(load, 15_000);
     return () => {
       active = false;
       clearInterval(id);
     };
-  }, []);
+  }, [days]);
 
-  if (loading) return <p className="text-sm text-muted-foreground">Inzichten laden…</p>;
+  if (loading && !data)
+    return <p className="text-sm text-muted-foreground">Inzichten laden…</p>;
   if (!data) return <p className="text-sm text-muted-foreground">Geen inzichten beschikbaar.</p>;
+
+  const countryItems = data.topCountries.map((c) => ({
+    label: `${flagEmoji(c.code)} ${countryName(c.code)}`,
+    count: c.count,
+  }));
+  const cityItems = data.topCities.map((c) => ({ label: c.name, count: c.count }));
+  const herkomstItems = data.herkomst.map((h) => ({ label: h.source, count: h.count }));
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-black tracking-tight">Bezoekers &amp; statistieken</h2>
         <p className="text-sm text-muted-foreground">
-          Live verkeer, paginaweergaven en IP-uitsluiting — ververst elke 15s.
+          Live verkeer, conversie, herkomst en geografie — ververst elke 15s.
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Periodekiezer */}
+      <div className="flex flex-wrap items-center gap-2">
+        {ANALYTICS_PERIODS.map((p) => (
+          <button
+            key={p.days}
+            type="button"
+            onClick={() => setDays(p.days)}
+            className={cn(
+              "rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+              days === p.days
+                ? "bg-klusr-black text-white"
+                : "bg-secondary text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Kerncijfers over de periode */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
             <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-klusr-stock/10 text-klusr-stock">
@@ -780,19 +908,43 @@ function Insights() {
             </div>
           </CardContent>
         </Card>
-        <StatCard icon={Users} label="Bezoekers vandaag" value={String(data.visitorsToday)} />
+        <StatCard icon={Users} label="Bezoekers" value={String(data.visitors)} />
         <StatCard icon={Eye} label="Paginaweergaven" value={String(data.pageviews)} />
         <StatCard icon={ShoppingBag} label="Conversies" value={String(data.conversions)} />
+        <StatCard icon={TrendingUp} label="Conversieratio" value={`${data.conversionRate}%`} />
+        <StatCard icon={Euro} label="Omzet" value={formatPrice(data.revenue)} />
       </div>
 
       <LiveSessionsCard />
 
+      {/* Geografie */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <BreakdownCard
+          title="Landen"
+          icon={Globe}
+          items={countryItems}
+          empty="Nog geen landdata in deze periode."
+        />
+        <BreakdownCard
+          title="Steden"
+          icon={MapPin}
+          items={cityItems}
+          empty="Nog geen stedendata in deze periode."
+        />
+      </div>
+
+      <BreakdownCard
+        title="Herkomst (bron)"
+        icon={Radio}
+        items={herkomstItems}
+        empty="Nog geen herkomstdata in deze periode."
+      />
+
       <IpExclusionCard />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard icon={Search} label="Zoekopdrachten" value={String(data.searchCount)} />
         <StatCard icon={MessageCircle} label="Chat-vragen" value={String(data.chatCount)} />
-        <StatCard icon={Euro} label="Omzet (events)" value={formatPrice(data.revenue)} />
         <StatCard icon={TrendingUp} label="Events totaal" value={String(data.total)} />
       </div>
 
@@ -853,9 +1005,10 @@ function Insights() {
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Live ververst elke 15s. Bezoekers/weergaven o.b.v. anonieme bezoeker-id; eigen verkeer
-        filter je met <code>INTERNAL_IPS</code> in de omgeving of via &quot;IP-uitsluiting&quot;
-        hierboven. Events in KV (zet KV aan voor persistentie over deploys).
+        Bezoekers, landen, steden en herkomst zijn per dag geaggregeerd over de gekozen periode;
+        zoekopdrachten/weergaven/conversies komen uit de recente events-buffer. Land/stad o.b.v. de
+        Vercel geo-headers. Eigen verkeer filter je met <code>INTERNAL_IPS</code> of via
+        &quot;IP-uitsluiting&quot;. Zet KV aan voor persistentie over deploys.
       </p>
     </div>
   );

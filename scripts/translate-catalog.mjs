@@ -35,12 +35,12 @@ const I18N = join(DATA, "i18n");
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const BASE_URL = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/$/, "");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
-const LOCALES = (process.env.I18N_LOCALES || "en,fr,de").split(",").map((s) => s.trim()).filter(Boolean);
+const LOCALES = (process.env.I18N_LOCALES || "en,fr,de,pl").split(",").map((s) => s.trim()).filter(Boolean);
 const CHUNK = Math.max(1, parseInt(process.env.I18N_CHUNK || "20", 10));
 const LIMIT = parseInt(process.env.I18N_LIMIT || "0", 10);
 const POLL_MS = Math.max(3000, parseInt(process.env.I18N_POLL_MS || "15000", 10));
 
-const LANG_NAME = { en: "English", fr: "French (français)", de: "German (Deutsch)" };
+const LANG_NAME = { en: "English", fr: "French (français)", de: "German (Deutsch)", pl: "Polish (polski)" };
 
 if (!API_KEY) {
   console.error("✗ ANTHROPIC_API_KEY ontbreekt — zet de key en draai opnieuw.");

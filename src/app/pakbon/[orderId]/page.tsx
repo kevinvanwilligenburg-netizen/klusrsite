@@ -151,7 +151,13 @@ export default async function PakbonPage({ params }: { params: { orderId: string
                   ) : null}
                 </td>
                 <td className="py-2.5 text-right font-mono text-xs text-black">
-                  {it.gtin?.trim() || String(it.productId).replace(/^tilroy-/, "")}
+                  {it.gtin?.trim() ? (
+                    it.gtin.trim()
+                  ) : (
+                    <span className="text-neutral-500">
+                      art. {String(it.productId).replace(/^tilroy-/, "")}
+                    </span>
+                  )}
                 </td>
                 <td className="py-2.5 text-center text-base font-black">{it.quantity}</td>
               </tr>

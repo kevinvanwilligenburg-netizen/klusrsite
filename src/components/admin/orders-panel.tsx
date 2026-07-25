@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Repeat,
   Briefcase,
+  Store,
 } from "lucide-react";
 import type { Order, OrderStatus } from "@/types";
 import { isBrievenbusOrder } from "@/lib/brievenbus";
@@ -48,7 +49,19 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   refunded: "Terugbetaald",
 };
 
+/** Kassaverkoop (toonbank) — geen picken/verzenden nodig. */
+const isPos = (o: Order) => o.channel === "pos";
+
 const needsLabel = (o: Order) =>
+  !isPos(o) && (o.paymentStatus === "paid" || o.paymentStatus === "authorized") && !o.shipment;
+
+/**
+ * "Openstaand" = betaald (of geautoriseerd) én nog niet verwerkt (geen label).
+ * Onbetaalde orders (open/pending — vaak afgebroken checkouts) en afgeronde of
+ * geannuleerde orders vallen weg. Zodra er een label is, verdwijnt de order uit
+ * deze pick-/verzendqueue.
+ */
+const isOpenOrder = (o: Order) =>
   (o.paymentStatus === "paid" || o.paymentStatus === "authorized") && !o.shipment;
 
 // Net geplaatste orders 15 min vasthouden (nabestelvenster) — nog niet picken/labelen.
@@ -69,6 +82,9 @@ export function OrdersPanel() {
   // Uitklapbare orderregels + bezorgadres.
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
+  // Filters: kanaal (web/kassa/alle) + alleen openstaande orders.
+  const [channel, setChannel] = useState<"web" | "pos" | "all">("web");
+  const [openOnly, setOpenOnly] = useState(true);
   // Hoe vaak deze klant (e-mail) heeft besteld — voor de 'terugkerend'-tag.
   const orderCount = useMemo(() => {
     const m: Record<string, number> = {};
@@ -78,6 +94,19 @@ export function OrdersPanel() {
     }
     return m;
   }, [orders]);
+
+  const webCount = useMemo(() => orders.filter((o) => !isPos(o)).length, [orders]);
+  const posCount = useMemo(() => orders.filter(isPos).length, [orders]);
+  const visible = useMemo(
+    () =>
+      orders.filter((o) => {
+        if (channel === "web" && isPos(o)) return false;
+        if (channel === "pos" && !isPos(o)) return false;
+        if (openOnly && !isOpenOrder(o)) return false;
+        return true;
+      }),
+    [orders, channel, openOnly],
+  );
 
   async function load() {
     setLoading(true);
@@ -144,7 +173,10 @@ export function OrdersPanel() {
           <div>
             <CardTitle className="text-base">Orders</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Openstaande orders en verzending. Maak per betaalde order een PostNL-verzendlabel aan.
+              Webshop-orders pick en verzend je hier (PostNL-label). <strong>Kassaverkopen</strong>{" "}
+              zijn toonbankverkopen — die hoef je niet te picken. Filter op <strong>Webshop</strong>{" "}
+              voor de pickqueue; <strong>Alleen openstaande</strong> verbergt afgeronde en
+              geannuleerde orders.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -174,9 +206,43 @@ export function OrdersPanel() {
           </div>
         )}
 
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Package className="h-4 w-4 text-primary" />
-          {loading ? "Laden…" : `${open.length} openstaande order(s) · ${orders.length} totaal`}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {([
+              ["web", `Webshop (${webCount})`],
+              ["pos", `Kassa (${posCount})`],
+              ["all", "Alle"],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setChannel(key)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+                  channel === key
+                    ? "bg-klusr-black text-white"
+                    : "bg-secondary text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={() => setOpenOnly((v) => !v)}
+              aria-pressed={openOnly}
+              className={cn(
+                "ml-1 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+                openOnly
+                  ? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                  : "bg-secondary text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ListChecks className="h-3.5 w-3.5" /> Alleen openstaande
+            </button>
+          </div>
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Package className="h-4 w-4 text-primary" />
+            {loading ? "Laden…" : `${open.length} te picken · ${visible.length} getoond`}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -191,7 +257,7 @@ export function OrdersPanel() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((o) => {
+              {visible.map((o) => {
                 const res = results[o.id];
                 const bbSuggested = isBrievenbusOrder(o.items);
                 const bb = bbChoice[o.id] ?? bbSuggested;
@@ -217,13 +283,18 @@ export function OrdersPanel() {
                           <span className="block text-xs text-muted-foreground">{formatDate(o.createdAt)}</span>
                         </span>
                       </button>
+                      {isPos(o) && (
+                        <span className="mt-1 flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          <Store className="h-3 w-3" /> Kassa
+                        </span>
+                      )}
                       <a
-                        href={`/pakbon/${o.id}`}
+                        href={isPos(o) ? `/kassa/bon/${o.id}` : `/pakbon/${o.id}`}
                         target="_blank"
                         rel="noreferrer"
                         className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                       >
-                        <FileText className="h-3 w-3" /> Print pakbon
+                        <FileText className="h-3 w-3" /> {isPos(o) ? "Kassabon" : "Print pakbon"}
                       </a>
                     </td>
                     <td className="py-3 pr-3">
@@ -259,7 +330,11 @@ export function OrdersPanel() {
                     </td>
                     <td className="py-3 pr-3 font-semibold">{formatPrice(o.total)}</td>
                     <td className="py-3 pr-3">
-                      {o.shipment ? (
+                      {isPos(o) ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                          <Store className="h-3.5 w-3.5" /> Toonbankverkoop · geen verzending
+                        </span>
+                      ) : o.shipment ? (
                         <div className="space-y-1 text-xs">
                           <div className="inline-flex items-center gap-1 font-semibold text-klusr-stock">
                             <Truck className="h-3.5 w-3.5" /> {o.shipment.barcode}
@@ -421,10 +496,10 @@ export function OrdersPanel() {
                   </Fragment>
                 );
               })}
-              {!loading && orders.length === 0 && (
+              {!loading && visible.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-6 text-center text-sm text-muted-foreground">
-                    Geen orders gevonden.
+                    {orders.length === 0 ? "Geen orders gevonden." : "Geen orders voor deze filter."}
                   </td>
                 </tr>
               )}

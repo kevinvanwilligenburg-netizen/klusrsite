@@ -36,7 +36,10 @@ export default async function LooplijstPage() {
   const now = Date.now();
   const open = (await listOrders()).filter(
     (o) =>
-      (o.paymentStatus === "paid" || o.paymentStatus === "authorized") && !o.shipment,
+      // Kassaverkopen (toonbank) horen niet in de pick-/looplijst.
+      o.channel !== "pos" &&
+      (o.paymentStatus === "paid" || o.paymentStatus === "authorized") &&
+      !o.shipment,
   );
   const orders = open.filter((o) => now - new Date(o.createdAt).getTime() >= ORDER_HOLD_MS);
   const heldCount = open.length - orders.length;

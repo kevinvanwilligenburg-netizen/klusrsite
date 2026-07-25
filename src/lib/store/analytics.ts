@@ -80,7 +80,7 @@ const dayKey = (d = new Date()) => `analytics:visitors:${isoDay(d)}`;
 
 // Herkomst (traffic source) per dag: hash bron→aantal, plus de éérste bron per
 // bezoeker (zodat de telling stabiel blijft en niet bij elke pageview oploopt).
-const HERKOMST_DAY_TTL_S = 60 * 60 * 24 * 8; // ~8 dagen, daarna ruimt de TTL het op
+const HERKOMST_DAY_TTL_S = 60 * 60 * 24 * 40; // ~40 dagen (genoeg voor een 30-daagse periode)
 const herkomstDayKey = (d = new Date()) => `analytics:herkomst:${isoDay(d)}`;
 const visitorSourceKey = (vid: string, d = new Date()) =>
   `analytics:vsource:${isoDay(d)}:${vid}`;
@@ -387,12 +387,172 @@ export async function getHerkomstToday(
   }
 }
 
-async function getVisitorsToday(): Promise<number> {
+/* ------------------------------------------------------------------ */
+/* Geografie (land/stad) — per dag, één keer per bezoeker              */
+/* ------------------------------------------------------------------ */
+
+const GEO_TTL_S = 60 * 60 * 24 * 40; // ~40 dagen (genoeg voor een 30-daagse periode)
+const geoCountryKey = (ds: string) => `analytics:geo:country:${ds}`;
+const geoCityKey = (ds: string) => `analytics:geo:city:${ds}`;
+const visitorGeoKey = (vid: string, ds = isoDay()) => `analytics:vgeo:${ds}:${vid}`;
+const memGeoCountry = new Map<string, Map<string, number>>(); // dag → (land → aantal)
+const memGeoCity = new Map<string, Map<string, number>>(); // dag → (stad → aantal)
+const memVisitorGeo = new Set<string>(); // "dag:vid" → al geteld
+
+function cleanCity(city?: string): string | undefined {
+  if (!city) return undefined;
+  const s = String(city).replace(/\s+/g, " ").trim().slice(0, 60);
+  return s || undefined;
+}
+
+/**
+ * Leg land/stad van een bezoeker vast voor de dagaggregatie — één keer per
+ * bezoeker per dag (NX-claim), net als de herkomst. Best-effort.
+ */
+async function recordGeo(visitorId: string, country?: string, city?: string): Promise<void> {
+  const cc = country && /^[A-Z]{2}$/.test(country) ? country : undefined;
+  const city2 = cleanCity(city);
+  if (!cc && !city2) return;
+  const day = isoDay();
   try {
-    if (isKvEnabled()) return (await kvSMembers(dayKey())).length;
-    return memVisitors.get(dayKey())?.size ?? 0;
+    if (isKvEnabled()) {
+      const first = await kvSetExNX(visitorGeoKey(visitorId, day), "1", GEO_TTL_S);
+      if (!first) return;
+      if (cc) {
+        await kvHIncrBy(geoCountryKey(day), cc, 1);
+        await kvExpire(geoCountryKey(day), GEO_TTL_S);
+      }
+      if (city2) {
+        await kvHIncrBy(geoCityKey(day), city2, 1);
+        await kvExpire(geoCityKey(day), GEO_TTL_S);
+      }
+    } else {
+      const vKey = `${day}:${visitorId}`;
+      if (memVisitorGeo.has(vKey)) return;
+      memVisitorGeo.add(vKey);
+      if (cc) {
+        const m = memGeoCountry.get(day) ?? new Map<string, number>();
+        m.set(cc, (m.get(cc) || 0) + 1);
+        memGeoCountry.set(day, m);
+      }
+      if (city2) {
+        const m = memGeoCity.get(day) ?? new Map<string, number>();
+        m.set(city2, (m.get(city2) || 0) + 1);
+        memGeoCity.set(day, m);
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Periode-aggregaties (meerdere dagen)                                */
+/* ------------------------------------------------------------------ */
+
+/** isoDay-strings van de laatste `days` dagen (incl. vandaag). */
+function dayStrsForRange(days: number): string[] {
+  const out: string[] = [];
+  const now = new Date();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - i);
+    out.push(isoDay(d));
+  }
+  return out;
+}
+
+/** Begin (ms, UTC-middernacht) van de periode van `days` dagen incl. vandaag. */
+function periodStartTs(days: number): number {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - (days - 1));
+  return d.getTime();
+}
+
+const visitorsKey = (ds: string) => `analytics:visitors:${ds}`;
+
+/** Unieke bezoekers over de periode (union van de dag-sets). */
+async function getVisitorsForRange(days: number): Promise<number> {
+  const dayStrs = dayStrsForRange(days);
+  try {
+    const set = new Set<string>();
+    if (isKvEnabled()) {
+      const lists = await Promise.all(dayStrs.map((ds) => kvSMembers(visitorsKey(ds))));
+      for (const list of lists) for (const v of list) set.add(v);
+    } else {
+      for (const ds of dayStrs) {
+        const s = memVisitors.get(visitorsKey(ds));
+        if (s) for (const v of s) set.add(v);
+      }
+    }
+    return set.size;
   } catch {
     return 0;
+  }
+}
+
+/** Som van een per-dag telhash (land/stad/herkomst) over de periode. */
+async function sumDayHashes(
+  keyFor: (ds: string) => string,
+  memFor: Map<string, Map<string, number>>,
+  days: number,
+): Promise<Map<string, number>> {
+  const dayStrs = dayStrsForRange(days);
+  const sum = new Map<string, number>();
+  if (isKvEnabled()) {
+    const hashes = await Promise.all(dayStrs.map((ds) => kvHGetAll(keyFor(ds))));
+    for (const hash of hashes) {
+      for (const [k, c] of Object.entries(hash)) sum.set(k, (sum.get(k) || 0) + (Number(c) || 0));
+    }
+  } else {
+    for (const ds of dayStrs) {
+      const m = memFor.get(ds);
+      if (m) for (const [k, c] of m) sum.set(k, (sum.get(k) || 0) + c);
+    }
+  }
+  return sum;
+}
+
+function topEntries(m: Map<string, number>, limit: number): [string, number][] {
+  return [...m.entries()]
+    .filter(([k, c]) => k && c > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit);
+}
+
+/** Top landen + steden over de periode. */
+export async function getGeoForRange(
+  days: number,
+  limit = 12,
+): Promise<{
+  countries: { code: string; count: number }[];
+  cities: { name: string; count: number }[];
+}> {
+  try {
+    const [country, city] = await Promise.all([
+      sumDayHashes(geoCountryKey, memGeoCountry, days),
+      sumDayHashes(geoCityKey, memGeoCity, days),
+    ]);
+    return {
+      countries: topEntries(country, limit).map(([code, count]) => ({ code, count })),
+      cities: topEntries(city, limit).map(([name, count]) => ({ name, count })),
+    };
+  } catch {
+    return { countries: [], cities: [] };
+  }
+}
+
+/** Herkomst (traffic source) over de periode. */
+export async function getHerkomstForRange(
+  days: number,
+  limit = 12,
+): Promise<{ source: string; count: number }[]> {
+  try {
+    const sum = await sumDayHashes((ds) => `analytics:herkomst:${ds}`, memHerkomst, days);
+    return topEntries(sum, limit).map(([source, count]) => ({ source, count }));
+  } catch {
+    return [];
   }
 }
 
@@ -411,9 +571,12 @@ export async function recordVisit(input: {
   source?: string;
   /** Compacte winkelmand-momentopname (pageview én heartbeat). */
   cart?: LiveCart;
+  /** Land (ISO-2) en stad uit de Vercel geo-headers (alleen bij pageview). */
+  country?: string;
+  city?: string;
   logType?: "pageview" | "view_item" | null;
 }): Promise<void> {
-  const { visitorId, path, ip, productId, title, source, cart, logType } = input;
+  const { visitorId, path, ip, productId, title, source, cart, country, city, logType } = input;
   try {
     if (visitorId) {
       // Herkomst is alleen bij de éérste pageview aanwezig; leg 'm vast voor de
@@ -422,6 +585,7 @@ export async function recordVisit(input: {
       if (source) await recordHerkomst(visitorId, source);
       const liveSource = cleanSource(source) ?? (await getVisitorSource(visitorId));
       await touchSession(visitorId, path, ip, liveSource, cleanCart(cart));
+      if (country || city) await recordGeo(visitorId, country, city);
       if (isKvEnabled()) {
         await kvSAdd(dayKey(), visitorId);
       } else {
@@ -446,9 +610,15 @@ export async function getEvents(limit = MAX): Promise<AnalyticsEvent[]> {
   return mem.slice(0, limit);
 }
 
-/** Geaggregeerde inzichten voor het admin-dashboard. */
-export async function getInsights() {
+/** Geaggregeerde inzichten voor het admin-dashboard, over een periode in dagen. */
+export async function getInsights(opts: { days?: number } = {}) {
+  const days = Math.max(1, Math.min(90, Math.floor(opts.days || 1)));
+  const sinceTs = periodStartTs(days);
   const events = await getEvents();
+  // Event-gebaseerde cijfers (zoek/chat/views/conversies/pageviews) over de
+  // gekozen periode; begrensd door de event-buffer (laatste ~1000 events).
+  const inPeriod = events.filter((e) => typeof e.ts === "number" && e.ts >= sinceTs);
+
   const searches = new Map<string, number>();
   const viewed = new Map<string, { title: string; count: number }>();
   const recentChats: { question: string; ts: number }[] = [];
@@ -458,7 +628,7 @@ export async function getInsights() {
   let chatCount = 0;
   let pageviews = 0;
 
-  for (const e of events) {
+  for (const e of inPeriod) {
     if (e.type === "search" && e.query) {
       searchCount++;
       const q = String(e.query).toLowerCase().trim();
@@ -484,23 +654,35 @@ export async function getInsights() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 20);
 
-  const topViewed = [...viewed.values()]
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 20);
+  const topViewed = [...viewed.values()].sort((a, b) => b.count - a.count).slice(0, 20);
 
-  const [live, visitorsToday] = await Promise.all([getLiveCount(), getVisitorsToday()]);
+  // Bezoekers + geo + herkomst komen uit de dag-aggregaties (volledige periode).
+  const [live, visitors, geo, herkomst] = await Promise.all([
+    getLiveCount(),
+    getVisitorsForRange(days),
+    getGeoForRange(days, 12),
+    getHerkomstForRange(days, 12),
+  ]);
+
+  // Conversieratio = conversies (events) / unieke bezoekers (dag-sets) × 100.
+  const conversionRate = visitors > 0 ? Math.round((conversions / visitors) * 1000) / 10 : 0;
 
   return {
-    total: events.length,
-    searchCount,
-    chatCount,
+    period: { days },
+    total: inPeriod.length,
+    live,
+    visitors,
     pageviews,
     conversions,
     revenue: Math.round(revenue * 100) / 100,
-    visitorsToday,
-    live,
+    conversionRate,
+    searchCount,
+    chatCount,
     topSearches,
     topViewed,
     recentChats,
+    topCountries: geo.countries,
+    topCities: geo.cities,
+    herkomst,
   };
 }

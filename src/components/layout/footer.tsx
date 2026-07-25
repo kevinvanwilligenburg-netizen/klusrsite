@@ -6,7 +6,8 @@ import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { navCategories } from "@/lib/data/categories";
 import { PaymentIcons, PostNlBadge } from "@/components/shared/payment-icons";
 import { COMPANY } from "@/components/shared/legal-page";
-import { t } from "@/lib/i18n/server";
+import { t, getLocale } from "@/lib/i18n/server";
+import { localizeCategories } from "@/lib/data/categories-i18n";
 
 export function Footer() {
   const serviceLinks = [
@@ -100,7 +101,7 @@ export function Footer() {
         </div>
 
         <FooterColumn title={t("footer.col.assortment")}>
-          {navCategories.slice(0, 6).map((c) => (
+          {localizeCategories(navCategories.slice(0, 6), getLocale()).map((c) => (
             <FooterLink key={c.slug} href={`/categorie/${c.slug}`}>
               {c.title}
             </FooterLink>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Menu, ChevronRight, Headphones, User, CreditCard, Palette } from "lucide-react";
 import {
@@ -13,8 +13,9 @@ import {
 import { Logo } from "./logo";
 import { navCategories } from "@/lib/data/categories";
 import { getSubCategories } from "@/lib/data/products";
+import { localizeCategories, catTitle } from "@/lib/data/categories-i18n";
 import { cn } from "@/lib/utils";
-import { useT } from "@/components/i18n/locale-provider";
+import { useT, useLocale } from "@/components/i18n/locale-provider";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { i18nEnabled } from "@/lib/i18n/config";
 
@@ -23,6 +24,8 @@ export function MobileMenu() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const close = () => setOpen(false);
   const t = useT();
+  const locale = useLocale();
+  const nav = useMemo(() => localizeCategories(navCategories, locale), [locale]);
 
   const quickLinks = [
     { href: "/kluspas", label: "KLUSRPAS", icon: CreditCard },
@@ -51,8 +54,11 @@ export function MobileMenu() {
               Assortiment
             </p>
             <ul>
-              {navCategories.map((cat) => {
-                const subs = getSubCategories(cat.slug);
+              {nav.map((cat) => {
+                const subs = getSubCategories(cat.slug).map((s) => ({
+                  ...s,
+                  title: catTitle(s.slug, locale, s.title),
+                }));
                 const isOpen = expanded === cat.slug;
                 if (subs.length === 0) {
                   return (

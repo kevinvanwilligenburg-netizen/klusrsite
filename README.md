@@ -31,7 +31,7 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 ### Integraties
 | Integratie | Gebruik | Demo‑modus zonder key |
 | --- | --- | --- |
-| **Channable** | Productdata + voorraad **in**, orders **uit** → Tilroy | Catalogus uit gecommitte snapshot, orders gelogd |
+| **Channable / Tilroy** | _Optionele_ import-bron voor productdata + voorraad (`CATALOG_SOURCE`). Standaard UIT — de eigen snapshot is de master | Catalogus uit eigen snapshot, beheer via `/admin` |
 | **Claude AI** (`@anthropic-ai/sdk`) | Productadvies, content‑generatie, klushulp‑chat | Heuristische fallback‑antwoorden |
 | **Mollie** (`@mollie/api-client`) | Betalingen (iDEAL, Bancontact, Creditcard, Klarna) | Gesimuleerde betaling → bedanktpagina |
 | **Mailchimp** (`@mailchimp/mailchimp_marketing`) | Nieuwsbrief, abandoned cart | No‑op (logt naar console) |
@@ -41,23 +41,23 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 
 > De webshop draait **volledig zonder secrets** in demo‑modus, zodat je direct kunt ontwikkelen.
 
-#### Channable ↔ Tilroy
-- **Productdata & voorraad** komen via Channable binnen (`scripts/build-channable-catalog.mjs`,
-  `npm run feed:channable`) — Channable haalt de data uit Tilroy. Zonder
-  Channable‑credentials val je terug op de directe Tilroy‑feed
-  (`npm run feed:tilroy`). De gegenereerde snapshot staat in
-  `src/lib/data/feed-products.generated.json`.
-- **Sync op build**: `npm run build` ververst de catalogus automatisch uit
-  Channable (`scripts/feed-prebuild.mjs`, draait vóór `next build`). Is Channable
-  niet geconfigureerd of faalt de sync, dan bouwt de deploy door op de bestaande
-  snapshot — een feed‑sync breekt nooit de build. Activeren in productie: zet
-  `CHANNABLE_TOKEN`, `CHANNABLE_COMPANY_ID` **en** `CHANNABLE_PROJECT_ID` (of
-  `CHANNABLE_ITEMS_URL`) in de Vercel‑env.
-- **Orders** worden na succesvolle betaling in Channable "ingeschoten"
-  (`src/lib/channable.ts` → `pushChannableOrder`), waarna Channable ze doorzet
-  naar Tilroy voor fulfilment. De regels dragen het Tilroy‑artikel‑id (en bij
-  gemengde verf de kleurcode + basis) mee. Order‑push staat default aan; zet
-  `CHANNABLE_ORDERS_ENABLED=false` om hem tijdelijk te pauzeren (kill‑switch).
+#### Catalogus-bron — eigen master (Tilroy-ontkoppeld)
+- **Eigen master**: de gecommitte snapshot
+  `src/lib/data/feed-products.generated.json` is de bron‑van‑waarheid voor de
+  catalogus. De build haalt **standaard niets** bij Tilroy/Channable op —
+  prijzen, eigen producten en voorraad beheer je in `/admin` (overlay‑laag +
+  voorraad‑grootboek). De `tilroy-…`‑artikel‑ids blijven stabiel maar zijn puur
+  historisch (zie `skuOf()` in `src/lib/data/products.ts`).
+- **Optioneel (her)importeren** uit een externe bron via `CATALOG_SOURCE`
+  (`scripts/feed-prebuild.mjs`, draait vóór `next build`): `channable` (publieke
+  Google‑feed), `channable-api` (items‑API, vereist `CHANNABLE_*`) of `tilroy`
+  (directe S3‑feeds). Los kan ook met `npm run feed:channable` /
+  `npm run feed:tilroy`. Een import mag de deploy nooit breken: faalt 'ie, dan
+  blijft de bestaande snapshot staan.
+- **Orders**: webshop‑orders blijven in de eigen orderstore; Channable kent geen
+  endpoint om ze in te schieten (`pushChannableOrder` is bewust een no‑op).
+  Channable is wél de inbound‑route voor marketplace‑orders (bol/Amazon) en
+  `pushShipment()` koppelt PostNL‑tracking terug.
 - Endpoints/schema zijn volledig override‑baar via env
   (`CHANNABLE_ITEMS_URL` / `CHANNABLE_ORDERS_URL`) voor account‑specifieke paden.
 
@@ -160,16 +160,20 @@ betaalinformatie) worden nooit automatisch aangepast — content gaat via het
 ---
 
 ## 📦 Productdata
-De catalogus (~600 producten over 8 categorieën) wordt gegenereerd uit de
-**Channable/Tilroy**‑feeds naar `src/lib/data/feed-products.generated.json`:
+De catalogus (~600 producten over 8 categorieën) staat als **eigen master** in
+`src/lib/data/feed-products.generated.json` en wordt in `/admin` beheerd
+(prijzen/eigen producten via de overlay, voorraad via het grootboek). De build
+verandert 'm niet — Tilroy/Channable zijn losgekoppeld.
+
+Eenmalig (her)importeren uit een externe bron kan expliciet:
 
 ```bash
-npm run feed:channable   # primair — productdata + voorraad via Channable
-npm run feed:tilroy      # fallback — directe Tilroy Google-feed + stock-CSV
+npm run feed:channable   # import — productdata + voorraad uit de Channable-feed
+npm run feed:tilroy      # import — directe Tilroy Google-feed + stock-CSV
 ```
 
-Varianten worden gegroepeerd per `item_group_id`, de Tilroy‑taxonomie wordt op de
-KLUSR‑categorieën gemapt en voorraad komt per winkel uit de feed. Winkels,
+Varianten worden gegroepeerd per `item_group_id`, de bron‑taxonomie wordt op de
+KLUSR‑categorieën gemapt en voorraad komt per winkel uit de snapshot. Winkels,
 kleurcollecties en adviesartikelen staan als verzorgde dataset in `src/lib/data`.
 Client‑componenten halen losse productkaarten op via `/api/products` zodat de
 volledige catalogus niet in de browser‑bundle belandt.

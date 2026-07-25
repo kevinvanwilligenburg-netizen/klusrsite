@@ -135,6 +135,60 @@ export async function createPayment(
   };
 }
 
+/** Mollie-terminal (Point-of-Sale) voor pinnen aan de fysieke kassa. */
+export function getMollieTerminalId(): string | undefined {
+  const id = (process.env.MOLLIE_TERMINAL_ID || "").trim();
+  return id || undefined;
+}
+
+/** Is er een Mollie-betaalterminal gekoppeld (sleutel + terminal-id)? */
+export function isMollieTerminalConfigured(): boolean {
+  return isMollieConfigured() && Boolean(getMollieTerminalId());
+}
+
+export interface TerminalPaymentInput {
+  amount: number;
+  description: string;
+  orderId: string;
+  reference: string;
+  /** Basis-URL voor de webhook (uit de request-origin); valt terug op SITE_URL. */
+  baseUrl?: string;
+  /** Specifieke terminal; valt terug op MOLLIE_TERMINAL_ID. */
+  terminalId?: string;
+}
+
+export interface TerminalPaymentResult {
+  molliePaymentId?: string;
+  status: string;
+  demo: boolean;
+}
+
+/**
+ * Start een Point-of-Sale-betaling op een Mollie-betaalterminal: het bedrag
+ * verschijnt op de pinautomaat en de klant betaalt daar. De kassa pollt daarna
+ * de status (`getPaymentStatus`) tot "paid". Zonder Mollie/terminal degradeert
+ * dit naar demo (meteen betaald), zodat de kassa-flow testbaar blijft.
+ */
+export async function createTerminalPayment(
+  input: TerminalPaymentInput,
+): Promise<TerminalPaymentResult> {
+  const mollie = getClient();
+  const terminalId = input.terminalId || getMollieTerminalId();
+  if (!mollie || !terminalId) {
+    return { status: "paid", demo: true };
+  }
+  const base = (input.baseUrl || SITE_URL).replace(/\/$/, "");
+  const payment = await mollie.payments.create({
+    amount: { currency: "EUR", value: input.amount.toFixed(2) },
+    description: input.description,
+    method: "pointofsale",
+    terminalId,
+    webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${base}/api/checkout/webhook`,
+    metadata: { orderId: input.orderId, reference: input.reference },
+  } as never);
+  return { molliePaymentId: payment.id, status: payment.status, demo: false };
+}
+
 /** Fetch a Mollie payment's status (used by the webhook). */
 export async function getPaymentStatus(
   paymentId: string,

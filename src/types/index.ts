@@ -210,6 +210,24 @@ export interface OrderCustomer {
   };
 }
 
+/** Verkoopkanaal van een order: webshop of de fysieke kassa (POS). */
+export type OrderChannel = "web" | "pos";
+
+/** Kassa-(POS)-specifieke gegevens bij een toonbankverkoop. */
+export interface PosMeta {
+  /** Vestiging waar de verkoop plaatsvond (store-id, bv. "nijverdal"). */
+  storeId: string;
+  /** Naam/initialen van de kassamedewerker (optioneel). */
+  cashier?: string;
+  /** Betaalwijze aan de kassa. */
+  method: "cash" | "terminal" | "pin" | "manual";
+  /** Bij contant: ontvangen bedrag en teruggegeven wisselgeld. */
+  cashGiven?: number;
+  change?: number;
+  /** Mollie-terminal waarop gepind is (indien van toepassing). */
+  terminalId?: string;
+}
+
 export interface Order {
   id: string;
   reference: string;
@@ -218,6 +236,10 @@ export interface Order {
   paymentStatus: OrderStatus;
   paymentMethod?: string;
   molliePaymentId?: string;
+  /** Verkoopkanaal (default "web"). POS-orders komen van de fysieke kassa. */
+  channel?: OrderChannel;
+  /** Kassagegevens (alleen bij channel === "pos"). */
+  pos?: PosMeta;
   /** Testbestelling (Mollie test-mode of demo-seed) — telt niet mee in de rapportage. */
   isTest?: boolean;
   /** (Deels) terugbetaald bedrag via Mollie (in euro's). */

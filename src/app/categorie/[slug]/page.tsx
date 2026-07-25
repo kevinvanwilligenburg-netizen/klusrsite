@@ -5,6 +5,8 @@ import { ArrowRight, Tag } from "lucide-react";
 import { categories, getCategory } from "@/lib/data";
 import { getSubCategories } from "@/lib/data";
 import { getLocalizedProductsByCategory } from "@/lib/data/products-i18n";
+import { getLocale } from "@/lib/i18n/server";
+import { localizeCategory, catTitle } from "@/lib/data/categories-i18n";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { CategoryIcon } from "@/components/shared/category-icon";
@@ -41,11 +43,16 @@ export function generateMetadata({ params }: CategoryPageProps): Metadata {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const category = getCategory(params.slug);
-  if (!category) notFound();
+  const baseCategory = getCategory(params.slug);
+  if (!baseCategory) notFound();
+  const locale = getLocale();
+  const category = localizeCategory(baseCategory, locale);
 
   const products = getLocalizedProductsByCategory(category.slug);
-  const subs = getSubCategories(category.slug);
+  const subs = getSubCategories(category.slug).map((s) => ({
+    ...s,
+    title: catTitle(s.slug, locale, s.title),
+  }));
   const isActies = category.slug === "acties";
 
   // Door de owner gegenereerde fal.ai-hero (gecachet in KV). Ontbreekt 'ie of

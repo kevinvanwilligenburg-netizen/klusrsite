@@ -73,6 +73,10 @@ export interface CreateOrderInput {
   paymentMethod?: string;
   /** GA4-attributie uit de cookies (voor de server-side `purchase` in de webhook). */
   ga?: Order["ga"];
+  /** Verkoopkanaal (default "web"). Zet "pos" voor een kassaverkoop. */
+  channel?: Order["channel"];
+  /** Kassagegevens (alleen bij channel === "pos"). */
+  pos?: Order["pos"];
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
@@ -88,6 +92,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     items: input.items,
     paymentStatus: "open",
     paymentMethod: input.paymentMethod,
+    ...(input.channel ? { channel: input.channel } : {}),
+    ...(input.pos ? { pos: input.pos } : {}),
     ...(input.ga ? { ga: input.ga } : {}),
     subtotal: input.subtotal,
     shipping: input.shipping,

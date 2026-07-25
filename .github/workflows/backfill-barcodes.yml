@@ -1,0 +1,57 @@
+name: Backfill productbarcodes (Channable)
+
+# Haalt de EAN's/barcodes uit Channable en vult ze NON-DESTRUCTIEF in de
+# catalogus-snapshot (alleen product.gtin; verder blijft alles ongemoeid).
+# Draaien: tabblad "Actions" → "Backfill productbarcodes" → "Run workflow".
+#
+# Eénmalig instellen: Settings → Secrets and variables → Actions → New
+# repository secret voor CHANNABLE_TOKEN, CHANNABLE_COMPANY_ID en
+# CHANNABLE_PROJECT_ID (dezelfde waarden als in Vercel).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backfill-barcodes
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Barcodes uit Channable mergen
+        env:
+          CHANNABLE_TOKEN: ${{ secrets.CHANNABLE_TOKEN }}
+          CHANNABLE_API_TOKEN: ${{ secrets.CHANNABLE_API_TOKEN }}
+          CHANNABLE_COMPANY_ID: ${{ secrets.CHANNABLE_COMPANY_ID }}
+          CHANNABLE_PROJECT_ID: ${{ secrets.CHANNABLE_PROJECT_ID }}
+        run: |
+          if [ -z "$CHANNABLE_TOKEN$CHANNABLE_API_TOKEN" ] || [ -z "$CHANNABLE_COMPANY_ID" ] || [ -z "$CHANNABLE_PROJECT_ID" ]; then
+            echo "::error::Channable-secrets ontbreken in GITHUB (niet Vercel). Voeg toe via Settings → Secrets and variables → Actions: CHANNABLE_API_TOKEN (of CHANNABLE_TOKEN), CHANNABLE_COMPANY_ID, CHANNABLE_PROJECT_ID."
+            exit 1
+          fi
+          node scripts/backfill-barcodes.mjs
+
+      - name: Commit barcodes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/data/feed-products.generated.json
+          if git diff --staged --quiet; then
+            echo "Geen wijzigingen — niets te committen."
+          else
+            git commit -m "chore: productbarcodes (EAN) gevuld uit Channable"
+            git push
+          fi

@@ -11,6 +11,8 @@ import {
   getLocalizedProductsByCategory,
   getLocalizedProductsBySubCategory,
 } from "@/lib/data/products-i18n";
+import { getLocale } from "@/lib/i18n/server";
+import { localizeCategory, catTitle } from "@/lib/data/categories-i18n";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductListing } from "@/components/plp/product-listing";
 import { getVerfLeafContent } from "@/lib/data/verf-content";
@@ -52,8 +54,11 @@ export function generateMetadata({ params }: SubPageProps): Metadata {
 }
 
 export default function SubCategoryPage({ params }: SubPageProps) {
-  const { category, subCategory } = resolve(params);
-  if (!category || !subCategory) notFound();
+  const { category: baseCategory, subCategory: baseSub } = resolve(params);
+  if (!baseCategory || !baseSub) notFound();
+  const locale = getLocale();
+  const category = localizeCategory(baseCategory, locale);
+  const subCategory = { ...baseSub, title: catTitle(baseSub.slug, locale, baseSub.title) };
 
   const subProducts = getLocalizedProductsBySubCategory(subCategory.slug);
   const usesFallback = subProducts.length === 0;

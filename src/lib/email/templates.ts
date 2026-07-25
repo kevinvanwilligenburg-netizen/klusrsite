@@ -408,6 +408,40 @@ export function supportConfirmationEmail(
   };
 }
 
+/** Interne melding naar de klantenservice-inbox bij een nieuw contactformulier-ticket. */
+export function supportTeamNotificationEmail(
+  name: string,
+  email: string,
+  reference: string,
+  subject: string,
+  body: string,
+): { subject: string; html: string; text: string } {
+  const who = name ? `${esc(name)} (${esc(email)})` : esc(email);
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Nieuw bericht via de klantenservice</h1>` +
+    `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:${C.text};">Van <strong>${who}</strong> — ticket <strong style="color:${C.text};">${esc(reference)}</strong>.</p>` +
+    `<div style="margin:0 0 16px;padding:16px;border:1px solid ${C.border};border-radius:10px;background:${C.bg};">` +
+    `<p style="margin:0 0 6px;font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:0.04em;color:${C.muted};">${esc(subject)}</p>` +
+    `<p style="margin:0;font-size:14px;line-height:1.6;color:${C.text};">${nl2br(body)}</p>` +
+    `</div>` +
+    `<p style="margin:0;font-size:13px;line-height:1.6;color:${C.muted};">Beantwoord deze e-mail om direct aan ${esc(email)} te antwoorden, of behandel het ticket in /admin.</p>`;
+  return {
+    subject: `Klantenservice: ${subject} [${reference}]`,
+    html: layout({
+      title: "Nieuw klantenservicebericht",
+      preheader: `${who}: ${subject}`,
+      content,
+      footerNote: `Ticket ${reference} — reply-to is de klant.`,
+      hidePromo: true,
+    }),
+    text:
+      `Nieuw bericht via de klantenservice — ticket ${reference}.\n` +
+      `Van: ${name ? `${name} <${email}>` : email}\n` +
+      `Onderwerp: ${subject}\n\n${body}\n\n` +
+      `Beantwoord deze e-mail om direct aan de klant te antwoorden.`,
+  };
+}
+
 /** Antwoord van de klantenservice op een ticket. */
 export function supportReplyEmail(
   name: string,
