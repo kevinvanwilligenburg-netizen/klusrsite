@@ -38,7 +38,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAP = join(__dirname, "..", "src", "lib", "data", "feed-products.generated.json");
 
 const STOCK_URL =
-  process.env.VDM_STOCK_URL || "https://dashboardvdm-k-evin-s-projects.vercel.app/api/voorraad/feed";
+  process.env.VDM_STOCK_URL || "https://dashboardvdm.vercel.app/api/voorraad/feed";
 const ACCEPT_TOTAL = /^(1|true|ja|yes)$/i.test(process.env.VDM_STOCK_ACCEPT_TOTAL || "");
 const PAGE = 2000; // max van de dashboard-API
 const PRIMARY_STORE_ID = "nijverdal";

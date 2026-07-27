@@ -10,7 +10,7 @@ import { colorCollections, type ColorCollection } from "@/lib/data/colors";
  * Overschrijfbaar via NEXT_PUBLIC_KLEURENKIEZER_API (bv. https://kleur.devoordeelmarkt.nl).
  */
 const API_BASE = (
-  process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm-k-evin-s-projects.vercel.app"
+  process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app"
 ).replace(/\/+$/, "");
 // Eerst onze gecachete server-proxy (zelfde origin, klein + snel), dan de
 // volledige bron-feed, dan de lichtere public-colors, dan de gecureerde set.
