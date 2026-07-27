@@ -72,13 +72,17 @@ dashboard bij voorkeur het **read-only token** van de Upstash-database aan
 (dashboard → database → REST API → "Read-Only Token") in plaats van het
 volwaardige token te kopiëren — het dashboard hoeft alleen te lezen.
 
-## Toekomst: producten
+## Producten / catalogus — via de Tilroy-feed (Channable-vrij)
 
-"Producten enz." kan dezelfde route volgen: het dashboard heeft de volledige
-feed-catalogus (`lib/productFeed`) plus handmatige producten
-(`/api/manual-products`). Een publieke product-feed (id, titel, merk, prijs,
-EAN, afbeelding, categorie) zou de Channable-/Tilroy-importscripts in KLUSR
-volledig kunnen vervangen. Nog niet gebouwd — eerst voorraad + prijzen stabiel.
+De volledige catalogus komt sinds 2026-07-27 weer rechtstreeks uit de publieke
+Tilroy Google-feed (`npm run feed:tilroy`, incl. native EAN's per artikel);
+daarna zetten de backfills prijzen/adviesprijzen en de live Nijverdal-voorraad
+erbovenop. Een herimport is een bewuste, handmatige actie (titels/groeperingen
+kunnen verschuiven) — de dagelijkse cron ververst alleen voorraad + prijzen.
+
+**Rol van Channable is daarmee beperkt tot marketplace-orders** (bol/Amazon
+inbound + tracking-terugkoppeling via `pushShipment`). De catalogus-, prijs-,
+barcode- en voorraadpaden gebruiken Channable hooguit nog als stille terugval.
 
 ## Orders → Tilroy (dashboard doet de push, KLUSR levert sku's)
 

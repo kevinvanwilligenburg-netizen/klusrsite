@@ -66,7 +66,15 @@ function mapCategory(productType = "") {
   // niet in een verf-/klusshop.
   if (full.includes("aanhangw") || full.includes("neuswiel")) return null;
   if (top.includes("ijzerwaren")) return "ijzerwaren";
-  if (top.includes("huishoud") || top.includes("reinig") || top.includes("schoonmaak"))
+  // Reiniging kan op elk niveau zitten: de feed verhuisde "Huishoudelijk" van
+  // het topsegment naar een subsegment onder Verfbenodigdheden (2026-07) —
+  // check daarom óók de diepere segmenten, vóór de verf-benodigdheden-regel.
+  const deep = segs.slice(2).join(" ").toLowerCase();
+  if (
+    [top, deep].some(
+      (s) => s.includes("huishoud") || s.includes("reinig") || s.includes("schoonmaak"),
+    )
+  )
     return "reiniging";
   if (top.startsWith("verf") && top.includes("benodigd")) return "gereedschap";
   if (top.startsWith("verf") || top.includes("beits")) return "verf";

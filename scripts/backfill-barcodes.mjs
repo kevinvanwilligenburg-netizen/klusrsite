@@ -1,17 +1,16 @@
 // @ts-nocheck
 /**
- * Backfill productbarcodes (EAN/gtin) in de bestaande catalogus-snapshot vanuit
- * Channable — NON-DESTRUCTIEF. Vult alleen `product.gtin`; prijzen, titels,
- * voorraad en al het andere blijven ongemoeid. Respecteert de Tilroy-ontkoppeling
- * (overschrijft de catalogus niet, importeert 'm niet opnieuw).
+ * Backfill productbarcodes (EAN/gtin) in de bestaande catalogus-snapshot —
+ * NON-DESTRUCTIEF. Vult alleen `product.gtin`; prijzen, titels, voorraad en al
+ * het andere blijven ongemoeid.
  *
- * Channable heeft de EAN's wél (Items → veld `gtin`); onze gegenereerde snapshot
- * had ze niet. Dit haalt ze op en koppelt ze op het artikel-id.
+ * Bron (in volgorde):
+ *   1. VDM-dashboard prijsfeed (publiek; per product sku + ean) — geen secrets
+ *      nodig. Override: PRIJSFEED_URL.
+ *   2. Channable items-API — alleen als terugval wanneer de CHANNABLE_*-secrets
+ *      aanwezig zijn (CHANNABLE_ITEMS_URL optioneel als endpoint-override).
  *
- *   CHANNABLE_TOKEN=… CHANNABLE_COMPANY_ID=… CHANNABLE_PROJECT_ID=… \
- *     node scripts/backfill-barcodes.mjs
- *
- * Optioneel: CHANNABLE_ITEMS_URL (volledige override van het items-endpoint).
+ *   node scripts/backfill-barcodes.mjs
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -39,8 +38,36 @@ function itemsUrl(offset, limit) {
   return `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/items?offset=${offset}&limit=${limit}`;
 }
 
-/** Haal alle Channable-items op en bouw een map artikel-id → gtin. */
-async function fetchGtinMap() {
+const VDM_PRIJSFEED_URL =
+  process.env.PRIJSFEED_URL ||
+  process.env.VDM_PRIJSFEED_URL ||
+  "https://dashboardvdm.vercel.app/api/prijsfeed";
+
+/**
+ * EAN's uit de VDM-dashboard prijsfeed (publiek; per product sku + ean).
+ * Primaire bron sinds de Tilroy-migratie — geen Channable-secrets nodig.
+ */
+async function fetchGtinMapVdm() {
+  const u = new URL(VDM_PRIJSFEED_URL);
+  u.searchParams.set("format", "json");
+  const res = await fetch(u.toString(), {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) throw new Error(`VDM-prijsfeed → ${res.status}`);
+  const body = await res.json();
+  const rows = Array.isArray(body) ? body : (body.products ?? body.items ?? []);
+  const map = new Map();
+  for (const r of rows) {
+    const id = String(r.sku ?? "").trim();
+    const gtin = String(r.ean ?? r.gtin ?? "").trim();
+    if (id && isGtin(gtin)) map.set(id, gtin);
+  }
+  return map;
+}
+
+/** Terugval: alle Channable-items ophalen en een map artikel-id → gtin bouwen. */
+async function fetchGtinMapChannable() {
   const map = new Map();
   const pageSize = 1000;
   let offset = 0;
@@ -65,15 +92,20 @@ async function fetchGtinMap() {
 }
 
 async function main() {
-  if (!TOKEN || !COMPANY_ID || (!PROJECT_ID && !process.env.CHANNABLE_ITEMS_URL)) {
-    console.error(
-      "✗ Channable niet geconfigureerd. Zet CHANNABLE_TOKEN, CHANNABLE_COMPANY_ID en CHANNABLE_PROJECT_ID (of CHANNABLE_ITEMS_URL).",
-    );
-    process.exit(1);
+  let gtins = new Map();
+  try {
+    console.log(`→ Barcodes ophalen uit de VDM-dashboard prijsfeed: ${VDM_PRIJSFEED_URL}`);
+    gtins = await fetchGtinMapVdm();
+  } catch (err) {
+    console.warn(`⚠ VDM-prijsfeed niet beschikbaar (${err.message}).`);
   }
 
-  console.log("→ Barcodes ophalen uit Channable…");
-  const gtins = await fetchGtinMap();
+  // Terugval: Channable items-API — alleen wanneer de secrets aanwezig zijn.
+  if (gtins.size === 0 && TOKEN && COMPANY_ID && (PROJECT_ID || process.env.CHANNABLE_ITEMS_URL)) {
+    console.log("→ Terugval: barcodes ophalen uit Channable…");
+    gtins = await fetchGtinMapChannable();
+  }
+
   console.log(`  ${gtins.size} items met een geldige EAN.`);
   if (gtins.size === 0) {
     console.warn("⚠ Geen EAN's gevonden — niets bij te werken.");
