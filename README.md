@@ -31,7 +31,8 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 ### Integraties
 | Integratie | Gebruik | Demo‑modus zonder key |
 | --- | --- | --- |
-| **Channable / Tilroy** | _Optionele_ import-bron voor productdata + voorraad (`CATALOG_SOURCE`). Standaard UIT — de eigen snapshot is de master | Catalogus uit eigen snapshot, beheer via `/admin` |
+| **Tilroy / VDM-dashboard** | Catalogus (wekelijkse import), prijzen + adviesprijzen, EAN's en live Nijverdal-voorraad (dagelijkse sync + live checkout-guard). Zie `docs/vdm-dashboard-koppeling.md` | Catalogus uit eigen snapshot, beheer via `/admin` |
+| **Channable** | Alléén marketplace-orders (bol/Amazon inbound + tracking-terugkoppeling) | Orders alleen gelogd |
 | **Claude AI** (`@anthropic-ai/sdk`) | Productadvies, content‑generatie, klushulp‑chat | Heuristische fallback‑antwoorden |
 | **Mollie** (`@mollie/api-client`) | Betalingen (iDEAL, Bancontact, Creditcard, Klarna) | Gesimuleerde betaling → bedanktpagina |
 | **Mailchimp** (`@mailchimp/mailchimp_marketing`) | Nieuwsbrief, abandoned cart | No‑op (logt naar console) |
@@ -48,12 +49,12 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
   prijzen, eigen producten en voorraad beheer je in `/admin` (overlay‑laag +
   voorraad‑grootboek). De `tilroy-…`‑artikel‑ids blijven stabiel maar zijn puur
   historisch (zie `skuOf()` in `src/lib/data/products.ts`).
-- **Optioneel (her)importeren** uit een externe bron via `CATALOG_SOURCE`
-  (`scripts/feed-prebuild.mjs`, draait vóór `next build`): `channable` (publieke
-  Google‑feed), `channable-api` (items‑API, vereist `CHANNABLE_*`) of `tilroy`
-  (directe S3‑feeds). Los kan ook met `npm run feed:channable` /
-  `npm run feed:tilroy`. Een import mag de deploy nooit breken: faalt 'ie, dan
-  blijft de bestaande snapshot staan.
+- **(Her)importeren** uit de Tilroy S3‑feeds via `CATALOG_SOURCE=tilroy`
+  (`scripts/feed-prebuild.mjs`, draait vóór `next build`) of los met
+  `npm run feed:tilroy`. Draait ook **wekelijks automatisch**
+  (`.github/workflows/import-catalogus.yml`, ma 04:15 UTC) met een
+  gezondheidscheck; een ongezonde feed wordt geweigerd en de bestaande
+  snapshot blijft dan staan — een import mag de deploy nooit breken.
 - **Non‑destructieve backfills** (aanbevolen i.p.v. herimport):
   `CATALOG_SOURCE=vdm` ververst per build barcodes → prijzen → Nijverdal‑voorraad
   met het **VDM‑dashboard** als primaire bron (`dashboardvdm.vercel.app` leest
@@ -168,16 +169,18 @@ betaalinformatie) worden nooit automatisch aangepast — content gaat via het
 ---
 
 ## 📦 Productdata
-De catalogus (~600 producten over 8 categorieën) staat als **eigen master** in
-`src/lib/data/feed-products.generated.json` en wordt in `/admin` beheerd
-(prijzen/eigen producten via de overlay, voorraad via het grootboek). De build
-verandert 'm niet — Tilroy/Channable zijn losgekoppeld.
+De catalogus (~2.500 producten) staat als snapshot in
+`src/lib/data/feed-products.generated.json` en wordt automatisch vers gehouden:
+**wekelijks** een volledige Tilroy-import (ma 04:15 UTC, met gezondheidscheck)
+en **dagelijks** een voorraad-/prijssync uit het VDM-dashboard (05:45 UTC) —
+beide pushen naar `main` en deployen vanzelf. Prijsuitzonderingen en eigen
+producten beheer je in `/admin` (overlay + grootboek); die winnen altijd van
+de import.
 
-Eenmalig (her)importeren uit een externe bron kan expliciet:
+Handmatig (her)importeren kan ook:
 
 ```bash
-npm run feed:channable   # import — productdata + voorraad uit de Channable-feed
-npm run feed:tilroy      # import — directe Tilroy Google-feed + stock-CSV
+npm run feed:tilroy      # volledige import — Tilroy Google-feed + stock-CSV
 ```
 
 Varianten worden gegroepeerd per `item_group_id` en de bron‑taxonomie wordt op

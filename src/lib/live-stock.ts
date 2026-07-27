@@ -123,6 +123,45 @@ export interface StockShortage {
 }
 
 /**
+ * Live verkoopbare voorraad per variant-id (Nijverdal, na de
+ * veiligheidsvoorraadregel). Onbekende varianten ontbreken in de map.
+ * Gedeelde kern voor de checkout-guard én de PDP-live-voorraad-route.
+ */
+export async function liveAvailability(variantIds: string[]): Promise<Map<string, number>> {
+  const ids = [...new Set(variantIds.filter(Boolean))];
+  const out = new Map<string, number>();
+  if (!ids.length) return out;
+
+  const [sold, adjust, safety] = await Promise.all([
+    getSoldMap(),
+    getAdjustMap(),
+    getSafetyStock().catch(() => 2),
+  ]);
+  const dashboard = await fetchDashboardStock(ids.map((id) => skuOf(id)));
+
+  for (const variantId of ids) {
+    // Vind de variant in de catalogus (catalogus is runtime Nijverdal-only).
+    let feedQty: number | null = null;
+    for (const p of products) {
+      const v = p.variants.find((x) => x.id === variantId);
+      if (v) {
+        feedQty = primaryStock(v.stockByStore);
+        break;
+      }
+    }
+    if (feedQty == null) continue; // onbekende variant
+
+    const ledgerLive = liveStock(feedQty, sold[variantId] ?? 0, adjust[variantId] ?? 0);
+    const dashLive = dashboard.get(skuOf(variantId));
+    const live = dashLive != null ? Math.min(ledgerLive, dashLive) : ledgerLive;
+    // Zelfde verkoopregel als de storefront: onder de veiligheidsvoorraad
+    // verkopen we niet online.
+    out.set(variantId, live >= safety ? live : 0);
+  }
+  return out;
+}
+
+/**
  * Controleer of de gevraagde aantallen leverbaar zijn uit Nijverdal.
  * Retourneert de tekorten (leeg = alles leverbaar). Onbekende varianten
  * (bv. net verwijderd uit de catalogus) worden niet geblokkeerd.
@@ -143,34 +182,12 @@ export async function checkStockForItems(items: CartItem[]): Promise<StockShorta
     }
     if (requested.size === 0) return [];
 
-    const [sold, adjust, safety] = await Promise.all([
-      getSoldMap(),
-      getAdjustMap(),
-      getSafetyStock().catch(() => 2),
-    ]);
-    const dashboard = await fetchDashboardStock(
-      [...requested.keys()].map((id) => skuOf(id)),
-    );
+    const availability = await liveAvailability([...requested.keys()]);
 
     const shortages: StockShortage[] = [];
     for (const [variantId, req] of requested) {
-      // Vind de variant in de catalogus (catalogus is runtime Nijverdal-only).
-      let feedQty: number | null = null;
-      for (const p of products) {
-        const v = p.variants.find((x) => x.id === variantId);
-        if (v) {
-          feedQty = primaryStock(v.stockByStore);
-          break;
-        }
-      }
-      if (feedQty == null) continue; // onbekende variant → niet blokkeren
-
-      const ledgerLive = liveStock(feedQty, sold[variantId] ?? 0, adjust[variantId] ?? 0);
-      const dashLive = dashboard.get(skuOf(variantId));
-      const live = dashLive != null ? Math.min(ledgerLive, dashLive) : ledgerLive;
-      // Zelfde verkoopregel als de storefront: onder de veiligheidsvoorraad
-      // verkopen we niet online.
-      const available = live >= safety ? live : 0;
+      const available = availability.get(variantId);
+      if (available == null) continue; // onbekende variant → niet blokkeren
       if (req.qty > available) {
         shortages.push({ variantId, title: req.title, requested: req.qty, available });
       }
