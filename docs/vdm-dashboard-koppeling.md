@@ -135,7 +135,26 @@ sku's + costPrice zitten onder `colours[].skus` (niet top-level), `brand` is
 een object `{code, descriptions[]}`, en de `fields`-parameter moet `"colours"`
 bevatten.
 
-## Verzending: PostNL → DHL (aangekondigd, nog niet bouwen)
+## Verzending: PostNL → DHL (webshop-kant af)
+
+**Gedaan (2026-07-27):** de bezorgklok in `src/lib/delivery.ts` volgt de
+DHL-regels — cutoff 10:00, vóór die tijd same-day, daarna de volgende dag, en
+DHL bezorgt 's avonds door heel Nederland. Niet-bezorgdagen staan op één plek
+(`NON_DELIVERY_DAYS`, nu alleen zondag) — pas dat aan als het DHL-contract
+andere dagen kent. Alle beloftes in de UI, SEO-teksten, e-mails, AI-prompts en
+de vijf talen zijn meegegaan, en de vervoerder-badge in winkelwagen/footer toont
+DHL in plaats van PostNL.
+
+**Nog open aan de webshop-kant:**
+- Het officiële DHL-logo ontbreekt in `/public`; de badge is nu tekst.
+  Zodra het bestand er is, kan `CarrierBadge` weer een `<img>` worden.
+- `src/lib/postnl.ts` en de PostNL-labelknop in `/admin` bestaan nog naast de
+  DHL-labelflow van het dashboard (`/api/dhl/label`). Zolang beide bestaan kan
+  er per ongeluk een PostNL-label gemaakt worden — opruimen zodra het dashboard
+  de labels definitief overneemt.
+- Verzendtarieven in `src/lib/shipping.ts` zijn bewust ongewijzigd gebleven.
+
+## Oude aankondiging (ter referentie)
 
 Beide sites migreren van PostNL naar de **DHL API**, met nieuwe klokregels van
 Kevin: besteld **vóór 10:00 → same-day**, **10:00–23:59 → next-day**. Raakt in
