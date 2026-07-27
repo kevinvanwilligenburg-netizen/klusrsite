@@ -1,4 +1,5 @@
 import type { Order } from "@/types";
+import baseline from "@/lib/data/stock-baseline.generated.json";
 import {
   isKvEnabled,
   kvHGetAll,
@@ -12,20 +13,45 @@ import {
 /**
  * Gedeeld voorraad-grootboek (stock ledger) — de kern van de omnichannel-voorraad.
  *
- * De catalogus-voorraad (`stockByStore`) is een momentopname uit de Channable/
- * Tilroy-feed die alleen bij een build/deploy ververst. Elke verkoop — zowel via
- * de webshop als via de fysieke kassa (POS) — boeken we hier als "verkocht sinds
- * de feed". De live-voorraad is dan: feed-voorraad − verkocht (≥ 0).
+ * De catalogus-voorraad (`stockByStore`) is een momentopname uit Tilroy. Elke
+ * verkoop — zowel via de webshop als via de fysieke kassa (POS) — boeken we hier
+ * als "verkocht sinds die momentopname". De live-voorraad is dan:
+ * feed-voorraad − verkocht + handmatige correcties (≥ 0). Zo telt een
+ * toonbankverkoop in Nijverdal direct mee met wat de webshop nog als beschikbaar
+ * ziet, en omgekeerd.
  *
- * Zo telt een toonbankverkoop in Nijverdal direct mee met wat de webshop nog als
- * beschikbaar ziet, en omgekeerd. Persistent via KV (hash `stock:sold`), met een
- * in-memory fallback voor demo. Idempotent per order: een order wordt nooit twee
- * keer afgeboekt (claim via SET NX), ook niet over serverless-instances heen.
+ * ⚠️ GEBONDEN AAN DE MOMENTOPNAME. Sinds de voorraad dagelijks uit Tilroy wordt
+ * ververst (scripts/backfill-stock.mjs) is "sinds de feed" een bewegend
+ * ijkpunt. Een cumulatieve teller zou verkopen dubbel aftrekken zodra Tilroy ze
+ * óók heeft uitgeboekt — de stand zou monotoon wegzakken tot alles ten onrechte
+ * uitverkocht lijkt. Daarom zijn de tellers **gescoped op het ijkpunt**: de
+ * sleutels dragen de `asOf` van de Tilroy-stand waarop ze zijn geteld
+ * (stock-baseline.generated.json, meegeschreven door de backfill). Komt er een
+ * verse stand binnen, dan begint het tellen automatisch bij nul tegen die nieuwe
+ * basis — zonder resetjob, en zonder dat oude tellingen kunnen blijven hangen.
+ *
+ * Aanvaarde marge: verkopen tussen het Tilroy-moment en de deploy van die stand
+ * vallen tegen de oude basis en tellen niet mee (venster van minuten tot een
+ * uur). Dat kan de voorraad kortstondig iets te hoog laten lijken; dat is de
+ * veilige kant vergeleken met structureel wegzakken, en vervalt zodra
+ * webshop-orders rechtstreeks in Tilroy worden ingeschoten.
+ *
+ * Persistent via KV, met een in-memory fallback voor demo. Idempotent per order:
+ * een order wordt nooit twee keer afgeboekt (claim via SET NX), ook niet over
+ * serverless-instances heen.
  */
 
-const SOLD_KEY = "stock:sold"; // hash: variantId → cumulatief verkochte stuks
-const ADJUST_KEY = "stock:adjust"; // hash: variantId → netto handmatige correctie (±)
-const MOVES_KEY = "stock:moves"; // lijst met recente voorraadmutaties (gecapt)
+/**
+ * IJkpunt van de huidige voorraadbasis: de `asOf` van de Tilroy-stand in de
+ * snapshot. Vast voor de levensduur van een deployment (het JSON-bestand wordt
+ * bij de build ingelezen), dus alle instances rekenen met dezelfde sleutels.
+ * Kolons eruit zodat de KV-sleutel leesbaar blijft.
+ */
+const BASELINE = String((baseline as { asOf?: string }).asOf || "onbekend").replace(/:/g, "-");
+
+const SOLD_KEY = `stock:sold:${BASELINE}`; // hash: variantId → verkocht sinds dit ijkpunt
+const ADJUST_KEY = `stock:adjust:${BASELINE}`; // hash: variantId → netto correctie sinds dit ijkpunt
+const MOVES_KEY = "stock:moves"; // lijst met recente voorraadmutaties (gecapt, ijkpunt-overstijgend)
 const claimKey = (orderId: string) => `stock:claimed:${orderId}`;
 const MAX_MOVES = 200;
 
