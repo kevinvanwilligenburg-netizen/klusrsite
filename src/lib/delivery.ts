@@ -14,25 +14,30 @@
  *  - Besteld vóór 10:00  → nog DEZELFDE dag bezorgd (same-day).
  *  - Besteld 10:00–23:59 → de VOLGENDE dag bezorgd.
  *  - DHL bezorgt in de avond, door heel Nederland (geen regio-uitzondering).
+ *  - In het weekend wordt niet bezorgd: zaterdag- en zondagbestellingen komen
+ *    op maandag. Een bestelling van vrijdag ná 10:00 schuift daardoor óók door
+ *    naar maandag — zaterdag is immers geen bezorgdag.
  *
  * Controle-voorbeelden:
  *  - di 09:00 → di ("vandaag", 's avonds)
  *  - di 11:00 → wo ("morgen")
- *  - za 09:00 → za ("vandaag")
- *  - za 11:00 → ma (zondag wordt overgeslagen)
+ *  - vr 09:00 → vr ("vandaag")
+ *  - vr 11:00 → ma (za/zo worden overgeslagen)
+ *  - za en zo (elk tijdstip) → ma
  */
 
 /** Cutoff-uur (lokale tijd). Vóór dit hele uur bezorgen we nog vandaag. */
 export const CUTOFF_HOUR = 10;
 
 /**
- * Dagen waarop DHL niet bezorgt: zondag (0).
+ * Dagen waarop DHL niet bezorgt: zaterdag (6) en zondag (0). Maandag is met
+ * DHL wél een bezorgdag — dat verschilt van de oude PostNL-klok, waar juist
+ * zondag én maandag afvielen.
  *
- * Bevestig dit bij een wijziging in het DHL-contract — dit is de enige plek
- * waar het staat. Bezorgt DHL bijvoorbeeld ook niet op maandag, voeg dan 1 toe
- * en de hele site (beloftes, aftelling, bezorgdatum) volgt automatisch.
+ * Dit is de enige plek waar de bezorgdagen staan; de beloftes, de aftelling en
+ * de getoonde bezorgdatum volgen automatisch.
  */
-const NON_DELIVERY_DAYS = new Set([0]);
+const NON_DELIVERY_DAYS = new Set([0, 6]);
 
 export type DeliveryLabel = "today" | "tomorrow" | "dayAfter" | "weekday";
 
