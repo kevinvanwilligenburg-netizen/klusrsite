@@ -71,6 +71,17 @@ laten tonen kan later via dezelfde helper.
 
 ## Beveiliging
 
+⚠️ **Bot-challenge op het dashboard.** Het dashboard-project heeft Vercel's
+Attack Challenge Mode aanstaan. Die blokkeert élke machine-to-machine call met
+een 403 (`x-vercel-mitigated: challenge`) — een script kan de JS-challenge niet
+oplossen. Er staat daarom een firewall-regel met actie **Bypass** op de
+publieke feed-paden (`/api/voorraad/*`, `/api/prijsfeed`, `/api/kleurenkiezer/*`,
+`/api/mailchimp/klanten`). Zonder die regel vallen stil: de dagelijkse
+voorraad-/prijssync, de live checkout-guard (fail-open) en de kleurkiezer
+(valt terug op de ingebouwde collecties). Herken je het: de feed antwoordt met
+HTML in plaats van JSON, of meldt onterecht `configured: false` — die melding
+kwam bij ons uit de challenge-pagina, niet uit ontbrekende Tilroy-keys.
+
 Beide feeds zijn nu publiek (bewust: CORS + CDN-cache; de dashboard-middleware
 gate't `/api/*` niet). Prijzen en voorraad zijn niet gevoelig
 (consument-prijzen), maar wil je het dichtzetten: geef beide routes een
