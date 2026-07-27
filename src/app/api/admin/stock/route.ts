@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminSession } from "@/auth";
 import { products, getSubCategory } from "@/lib/data/products";
 import { stores } from "@/lib/data/stores";
+import { PRIMARY_STORE_ID } from "@/lib/stock";
 import { getCategoryTitle } from "@/lib/data/categories";
 import {
   getSoldMap,
@@ -17,6 +18,14 @@ export const dynamic = "force-dynamic";
 
 /** Drempel waaronder een product als "bijna op" geldt (totale voorraad ≤ 5). */
 const LOW_STOCK_THRESHOLD = 5;
+
+/**
+ * De webshop voert alleen de voorraad van de hoofdvestiging (Nijverdal); de
+ * catalogus bevat sinds die keuze ook alléén die vestiging (zie
+ * lib/data/products.ts). Het voorraadoverzicht toont dus alleen deze winkel —
+ * de stands van de overige vestigingen staan niet (meer) in dit systeem.
+ */
+const WEBSHOP_STORES = stores.filter((s) => s.id === PRIMARY_STORE_ID);
 
 type StockStatus = "uitverkocht" | "bijna-op" | "op-voorraad";
 
@@ -131,8 +140,7 @@ export async function GET(req: Request) {
 
   const rows: StockRow[] = products.map((p) => {
     const per = perStoreStock(p);
-    // Houd de winkelvolgorde van stores.ts aan voor een stabiele weergave.
-    const perStore: StockStoreLine[] = stores.map((s) => ({
+    const perStore: StockStoreLine[] = WEBSHOP_STORES.map((s) => ({
       storeId: s.id,
       qty: per.get(s.id) ?? 0,
     }));
@@ -180,7 +188,7 @@ export async function GET(req: Request) {
     categories: [...categorySet.entries()]
       .map(([slug, title]) => ({ slug, title }))
       .sort((a, b) => a.title.localeCompare(b.title, "nl")),
-    stores: stores.map((s) => ({ id: s.id, name: s.city })),
+    stores: WEBSHOP_STORES.map((s) => ({ id: s.id, name: s.city })),
     threshold: LOW_STOCK_THRESHOLD,
     counts: { total: rows.length, uitverkocht, bijnaOp, opVoorraad },
   };

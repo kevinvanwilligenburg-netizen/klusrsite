@@ -26,6 +26,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
+import { onlineStock } from "@/lib/stock";
 import { useViewMode } from "@/lib/store/view-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { cn } from "@/lib/utils";
@@ -95,10 +96,6 @@ const JUNK_BRANDS = new Set([
   "", "onbekend", "merk", "overig", "overige", "partijhandel", "partij",
 ]);
 
-/** Total stock across all stores for a product. */
-function totalStock(product: Product): number {
-  return product.stockByStore.reduce((sum, s) => sum + s.quantity, 0);
-}
 
 function prettySub(slug: string): string {
   const s = slug.replace(/-/g, " ").trim();
@@ -381,9 +378,11 @@ export function ProductListing({
   // gepersisteerde voorkeur).
   const showList = mounted && viewMode === "list";
 
-  // Uitverkochte producten tonen we niet (geen voorraad in welke winkel dan ook).
+  // Uitverkochte producten tonen we niet. De webshop kijkt uitsluitend naar de
+  // online verkoopbare voorraad (Nijverdal, boven de veiligheidsvoorraad) —
+  // voorraad van andere vestigingen telt niet mee.
   const visibleProducts = useMemo(
-    () => products.filter((p) => totalStock(p) > 0),
+    () => products.filter((p) => onlineStock(p.stockByStore) > 0),
     [products],
   );
 
