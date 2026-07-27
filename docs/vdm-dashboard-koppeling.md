@@ -77,8 +77,11 @@ volwaardige token te kopiëren — het dashboard hoeft alleen te lezen.
 De volledige catalogus komt sinds 2026-07-27 weer rechtstreeks uit de publieke
 Tilroy Google-feed (`npm run feed:tilroy`, incl. native EAN's per artikel);
 daarna zetten de backfills prijzen/adviesprijzen en de live Nijverdal-voorraad
-erbovenop. Een herimport is een bewuste, handmatige actie (titels/groeperingen
-kunnen verschuiven) — de dagelijkse cron ververst alleen voorraad + prijzen.
+erbovenop. De herimport draait **wekelijks** (maandag 04:15 UTC,
+`import-catalogus.yml`) met een gezondheidscheck die de bestaande snapshot
+behoudt bij een kapotte of verschoven feed (te weinig producten/afbeeldingen,
+rommelige titels, hard zakkend aantal of een instortende categorie); de
+dagelijkse cron (05:45 UTC) ververst alleen voorraad + prijzen.
 
 **Rol van Channable is daarmee beperkt tot marketplace-orders** (bol/Amazon
 inbound + tracking-terugkoppeling via `pushShipment`). De catalogus-, prijs-,

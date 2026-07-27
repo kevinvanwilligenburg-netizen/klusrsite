@@ -1,0 +1,66 @@
+name: Wekelijkse catalogus-import (Tilroy)
+
+# Herimporteert elke maandagochtend de volledige catalogus uit de publieke
+# Tilroy-feed (nieuwe producten, vervallen artikelen, titels, afbeeldingen,
+# native EAN's) en legt daar direct de prijzen/adviesprijzen en de live
+# Nijverdal-voorraad overheen. Push naar main → Vercel deployt productie.
+#
+# Veiligheid: build-tilroy-catalog.mjs heeft een gezondheidscheck die de
+# bestaande snapshot behoudt bij een kapotte of verschoven feed (te weinig
+# producten/afbeeldingen, rommelige titels, hard zakkend aantal of een
+# instortende categorie — zoals de "reiniging"-verhuizing van 2026-07). Faalt
+# een stap, dan faalt de run zichtbaar en wordt er niets gecommit.
+#
+# Handmatig draaien: tabblad "Actions" → deze workflow → "Run workflow".
+
+on:
+  schedule:
+    - cron: "15 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-catalogus
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Catalogus importeren uit de Tilroy-feed (met gezondheidscheck)
+        run: node scripts/build-tilroy-catalog.mjs
+
+      - name: Barcodes aanvullen (VDM-prijsfeed)
+        run: node scripts/backfill-barcodes.mjs
+
+      - name: Prijzen + adviesprijzen (VDM-prijsfeed)
+        run: node scripts/backfill-prices.mjs
+
+      - name: Live Nijverdal-voorraad (VDM-voorraadfeed)
+        run: node scripts/backfill-stock.mjs
+
+      - name: Commit & push (triggert de Vercel-productie-deploy)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/data/feed-products.generated.json
+          if git diff --staged --quiet; then
+            echo "Geen wijzigingen — niets te committen."
+          else
+            git commit -m "chore: wekelijkse catalogus-import uit de Tilroy-feed"
+            git pull --rebase origin main
+            git push origin main
+          fi
