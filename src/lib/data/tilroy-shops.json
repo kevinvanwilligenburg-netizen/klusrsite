@@ -1,0 +1,13 @@
+{
+  "_doc": "Tilroy-vestigingen. 'webshop' = de shop-ids waaruit de webshop levert (winkel Nijverdal + magazijn/webvoorraad); die optelling is de online verkoopbare voorraad. Gedeeld door scripts/backfill-stock.mjs en src/lib/live-stock.ts zodat beide met hetzelfde voorraadbegrip rekenen.",
+  "webshop": ["7827", "8934"],
+  "namen": {
+    "7827": "Nijverdal",
+    "8602": "TEST",
+    "8626": "Apeldoorn",
+    "8627": "Emmen",
+    "8628": "Deventer",
+    "8629": "Zutphen",
+    "8934": "Webshop/magazijn"
+  }
+}

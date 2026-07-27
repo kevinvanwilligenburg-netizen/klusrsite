@@ -58,6 +58,10 @@ function stockByStore(perStore = []) {
   return KLUSR_STORES.map((storeId) => ({ storeId, quantity: mapped[storeId] ?? 0 }));
 }
 
+/** Subsegmenten die écht "reiniging & onderhoud" zijn (volledig segment). */
+const CLEANING_SEGMENT_RE =
+  /^(huishoudelijk|huishouden|reiniging(smiddelen)?|reinigers|schoonmaak(middelen)?|ongediertebestrijding)$/i;
+
 function mapCategory(productType = "") {
   const segs = productType.split(">").map((s) => s.trim());
   const top = (segs[1] || segs[0] || "").toLowerCase();
@@ -69,13 +73,12 @@ function mapCategory(productType = "") {
   // Reiniging kan op elk niveau zitten: de feed verhuisde "Huishoudelijk" van
   // het topsegment naar een subsegment onder Verfbenodigdheden (2026-07) —
   // check daarom óók de diepere segmenten, vóór de verf-benodigdheden-regel.
-  const deep = segs.slice(2).join(" ").toLowerCase();
-  if (
-    [top, deep].some(
-      (s) => s.includes("huishoud") || s.includes("reinig") || s.includes("schoonmaak"),
-    )
-  )
+  // Op diep niveau matchen we het hele segment (geen losse woorddelen), anders
+  // kapen we producten als "Kwastreiniger" of "Schoonmaakgereedschap" die bij
+  // verf respectievelijk gereedschap horen.
+  if (top.includes("huishoud") || top.includes("reinig") || top.includes("schoonmaak"))
     return "reiniging";
+  if (segs.slice(2).some((s) => CLEANING_SEGMENT_RE.test(s.trim()))) return "reiniging";
   if (top.startsWith("verf") && top.includes("benodigd")) return "gereedschap";
   if (top.startsWith("verf") || top.includes("beits")) return "verf";
   if (top.includes("gereedschap")) return "gereedschap";

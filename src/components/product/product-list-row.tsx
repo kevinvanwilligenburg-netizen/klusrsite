@@ -17,6 +17,7 @@ import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { productKindLabel } from "@/lib/product-kind";
+import { bestVariantStock } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 
@@ -161,7 +162,7 @@ export function ProductListRow({
           className="sm:items-end"
         />
         <StockStatus
-          stockByStore={product.stockByStore}
+          stockByStore={bestVariantStock(product)}
           showScarcity
           className="sm:items-end"
         />

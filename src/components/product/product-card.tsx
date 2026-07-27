@@ -17,6 +17,7 @@ import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { productKindLabel } from "@/lib/product-kind";
+import { bestVariantStock } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 
@@ -157,7 +158,7 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
             size="md"
             from={product.variants.length > 1}
           />
-          <StockStatus stockByStore={product.stockByStore} showScarcity />
+          <StockStatus stockByStore={bestVariantStock(product)} showScarcity />
           <Button onClick={handleAdd} className="w-full" size="sm">
             <ShoppingCart className="h-4 w-4" />
             {t("pdp.addToCart")}

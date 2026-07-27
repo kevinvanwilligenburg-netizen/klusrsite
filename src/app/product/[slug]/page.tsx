@@ -13,7 +13,7 @@ import { ArticleCard } from "@/components/content/article-card";
 import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductBuybox } from "@/components/product/product-buybox";
-import { onlineStock } from "@/lib/stock";
+import { onlineStock, bestVariantStock } from "@/lib/stock";
 import { getSafetyStock } from "@/lib/store/settings";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
@@ -91,7 +91,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
   ];
 
   const safetyStock = await getSafetyStock();
-  const totalStock = onlineStock(product.stockByStore, safetyStock);
+  // Beschikbaarheid voor schema.org: leverbaar zolang één variant voorraad heeft.
+  const totalStock = onlineStock(bestVariantStock(product), safetyStock);
 
   // Prijsrange over alle maten: de Merchant-feed stuurt per maat de NORMALE prijs
   // (de 5% KLUSRPAS-korting is een ingelogd voordeel en hoort niet in de feed),
