@@ -15,6 +15,14 @@ import {
  * en deploys — nodig voor betrouwbare bestelstatus, webhook-afhandeling en het
  * admin-overzicht. Zonder KV draait alles in-memory (demo).
  *
+ * ⚠️ EXTERN CONTRACT — het VDM-dashboard (repo dashboardvdm,
+ * lib/webshopOrders.ts) leest deze KV READ-ONLY mee voor zijn
+ * webshop-orderoverzicht, rechtstreeks op de keys `order:<id>` (Order-JSON) en
+ * `order:index` (SET met alle order-ids), en op de Order-veldnamen
+ * (reference/customer/items/paymentStatus/total/createdAt/isTest/channel/
+ * refundedAmount/shipment). Wijzig die keys of veldnamen dus niet zonder
+ * dashboardvdm mee te nemen. Zie docs/vdm-dashboard-koppeling.md.
+ *
  * Een paar seeded orders blijven bestaan zodat de "Bestelstatus"-pagina out of
  * the box werkt om te demonstreren.
  */
