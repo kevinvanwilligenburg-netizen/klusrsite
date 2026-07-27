@@ -1,8 +1,10 @@
-import type { CartItem } from "@/types";
-import { products, skuOf } from "@/lib/data/products";
-import { primaryStock } from "@/lib/stock";
+import type { CartItem, PaintBaseSelection } from "@/types";
+import { getVariantById, skuOf } from "@/lib/data/products";
+import { paintBases } from "@/lib/paint-bases";
+import { primaryStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
 import { getSafetyStock } from "@/lib/store/settings";
-import { getSoldMap, getAdjustMap, liveStock } from "@/lib/store/stock-ledger";
+import { getSoldFor, getAdjustFor, liveStock } from "@/lib/store/stock-ledger";
+import TILROY_SHOPS from "@/lib/data/tilroy-shops.json";
 
 /**
  * Live verkoopbare voorraad (Nijverdal) voor de checkout-guard.
@@ -29,7 +31,7 @@ const FETCH_TIMEOUT_MS = 2_500;
 const CACHE_TTL_MS = 45_000;
 
 /** Vestiging-keys zoals de dashboard-feed ze levert (winkel + magazijn). */
-const NIJVERDAL_SHOP_IDS = ["7827", "8934"] as const;
+const NIJVERDAL_SHOP_IDS: string[] = (TILROY_SHOPS as { webshop: string[] }).webshop;
 
 // Per-lambda cache: sku → { qty (Nijverdal) of null (onbekend), ts }.
 const cache = new Map<string, { qty: number | null; ts: number }>();
@@ -133,23 +135,17 @@ export async function liveAvailability(variantIds: string[]): Promise<Map<string
   if (!ids.length) return out;
 
   const [sold, adjust, safety] = await Promise.all([
-    getSoldMap(),
-    getAdjustMap(),
-    getSafetyStock().catch(() => 2),
+    getSoldFor(ids),
+    getAdjustFor(ids),
+    getSafetyStock().catch(() => DEFAULT_SAFETY_STOCK),
   ]);
   const dashboard = await fetchDashboardStock(ids.map((id) => skuOf(id)));
 
   for (const variantId of ids) {
-    // Vind de variant in de catalogus (catalogus is runtime Nijverdal-only).
-    let feedQty: number | null = null;
-    for (const p of products) {
-      const v = p.variants.find((x) => x.id === variantId);
-      if (v) {
-        feedQty = primaryStock(v.stockByStore);
-        break;
-      }
-    }
-    if (feedQty == null) continue; // onbekende variant
+    // Catalogus is runtime Nijverdal-only; de index maakt dit een O(1)-lookup.
+    const variant = getVariantById(variantId);
+    if (!variant) continue; // onbekende variant
+    const feedQty = primaryStock(variant.stockByStore);
 
     const ledgerLive = liveStock(feedQty, sold[variantId] ?? 0, adjust[variantId] ?? 0);
     const dashLive = dashboard.get(skuOf(variantId));
@@ -162,34 +158,62 @@ export async function liveAvailability(variantIds: string[]): Promise<Map<string
 }
 
 /**
+ * Voorraad van één tinting-basis. Mengverf wordt per basis (wit/medium/deep)
+ * uit een eigen blik geschept; de productpagina toont daarom een deel van de
+ * variantvoorraad. Zonder deze correctie zou de guard méér doorlaten dan de
+ * klant beschikbaar zag.
+ */
+function forBase(qty: number, base?: PaintBaseSelection | null): number {
+  if (!base) return qty;
+  const factor = paintBases[base.id]?.stockFactor;
+  return factor == null ? qty : Math.max(0, Math.floor(qty * factor));
+}
+
+/**
  * Controleer of de gevraagde aantallen leverbaar zijn uit Nijverdal.
  * Retourneert de tekorten (leeg = alles leverbaar). Onbekende varianten
  * (bv. net verwijderd uit de catalogus) worden niet geblokkeerd.
  */
 export async function checkStockForItems(items: CartItem[]): Promise<StockShortage[]> {
   try {
-    // Zelfde variant kan als meerdere regels in de wagen staan (kleuren) —
-    // valideer op het totaal per variant.
-    const requested = new Map<string, { qty: number; title: string }>();
+    // Groepeer per variant én tinting-basis: dezelfde maat kan twee keer in de
+    // wagen staan in verschillende kleuren, en elke basis komt uit een eigen
+    // blik. Regels binnen één groep tellen wél bij elkaar op.
+    const requested = new Map<
+      string,
+      { variantId: string; base?: PaintBaseSelection; qty: number; title: string }
+    >();
     for (const it of items) {
-      const id = it.variantId || it.productId;
-      if (!id) continue;
-      const cur = requested.get(id);
-      requested.set(id, {
+      const variantId = it.variantId || it.productId;
+      if (!variantId) continue;
+      const base = it.selectedColor?.base;
+      const key = `${variantId}::${base?.id ?? ""}`;
+      const cur = requested.get(key);
+      requested.set(key, {
+        variantId,
+        base,
         qty: (cur?.qty ?? 0) + Math.max(0, Math.round(it.quantity)),
         title: cur?.title ?? it.title,
       });
     }
     if (requested.size === 0) return [];
 
-    const availability = await liveAvailability([...requested.keys()]);
+    const availability = await liveAvailability(
+      [...requested.values()].map((r) => r.variantId),
+    );
 
     const shortages: StockShortage[] = [];
-    for (const [variantId, req] of requested) {
-      const available = availability.get(variantId);
-      if (available == null) continue; // onbekende variant → niet blokkeren
+    for (const req of requested.values()) {
+      const variantAvailable = availability.get(req.variantId);
+      if (variantAvailable == null) continue; // onbekende variant → niet blokkeren
+      const available = forBase(variantAvailable, req.base);
       if (req.qty > available) {
-        shortages.push({ variantId, title: req.title, requested: req.qty, available });
+        shortages.push({
+          variantId: req.variantId,
+          title: req.title,
+          requested: req.qty,
+          available,
+        });
       }
     }
     return shortages;

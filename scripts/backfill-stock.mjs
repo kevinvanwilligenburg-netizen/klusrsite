@@ -48,6 +48,13 @@ const PRIMARY_STORE_ID = "nijverdal";
 const skuOf = (id) => String(id ?? "").replace(/^(?:tilroy|channable|feed)-/, "");
 const isGtin = (s) => /^\d{8,14}$/.test(String(s ?? "").trim());
 
+// Eén bron voor "welke Tilroy-vestigingen vormen de webshopvoorraad" — gedeeld
+// met src/lib/live-stock.ts, zodat de nachtelijke backfill en de live
+// checkout-guard nooit met een ander voorraadbegrip kunnen gaan rekenen.
+const WEBSHOP_SHOP_IDS = JSON.parse(
+  readFileSync(join(__dirname, "..", "src", "lib", "data", "tilroy-shops.json"), "utf8"),
+).webshop;
+
 function num(v) {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string") {
@@ -67,10 +74,8 @@ function nijverdalQty(item) {
   if (shops && typeof shops === "object" && !Array.isArray(shops)) {
     const named = num(shops[PRIMARY_STORE_ID]);
     if (named != null) return named;
-    // Tilroy-shop-ids: 7827 = winkel Nijverdal, 8934 = magazijn/webshop.
-    const winkel = num(shops["7827"]);
-    const magazijn = num(shops["8934"]);
-    if (winkel != null || magazijn != null) return (winkel ?? 0) + (magazijn ?? 0);
+    const parts = WEBSHOP_SHOP_IDS.map((id) => num(shops[id]));
+    if (parts.some((p) => p != null)) return parts.reduce((s, p) => s + (p ?? 0), 0);
   }
   return null;
 }

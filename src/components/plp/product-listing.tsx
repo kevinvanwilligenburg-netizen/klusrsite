@@ -26,7 +26,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
-import { onlineStock } from "@/lib/stock";
+import { onlineStock, bestVariantStock } from "@/lib/stock";
 import { useViewMode } from "@/lib/store/view-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { cn } from "@/lib/utils";
@@ -380,9 +380,10 @@ export function ProductListing({
 
   // Uitverkochte producten tonen we niet. De webshop kijkt uitsluitend naar de
   // online verkoopbare voorraad (Nijverdal, boven de veiligheidsvoorraad) —
-  // voorraad van andere vestigingen telt niet mee.
+  // voorraad van andere vestigingen telt niet mee. Eén leverbare maat is genoeg
+  // om het product te tonen, ook als de lead-variant net op is.
   const visibleProducts = useMemo(
-    () => products.filter((p) => onlineStock(p.stockByStore) > 0),
+    () => products.filter((p) => onlineStock(bestVariantStock(p)) > 0),
     [products],
   );
 

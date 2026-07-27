@@ -3,6 +3,7 @@ import baseline from "@/lib/data/stock-baseline.generated.json";
 import {
   isKvEnabled,
   kvHGetAll,
+  kvHMGet,
   kvHIncrBy,
   kvLPush,
   kvLRange,
@@ -148,8 +149,51 @@ export async function getSoldMap(): Promise<Record<string, number>> {
 
 /** Verkochte stuks voor één variant (sinds de feed-momentopname). */
 export async function getSold(variantId: string): Promise<number> {
-  const map = await getSoldMap();
+  const map = await getSoldFor([variantId]);
   return map[variantId] ?? 0;
+}
+
+/** Lees uit een KV-hash alleen de gevraagde varianten (HMGET), met mem-fallback. */
+async function pickFromHash(
+  key: string,
+  mem: Map<string, number>,
+  variantIds: string[],
+  keepZero: boolean,
+): Promise<Record<string, number>> {
+  const ids = [...new Set(variantIds.filter(Boolean))];
+  if (!ids.length) return {};
+  try {
+    const out: Record<string, number> = {};
+    if (isKvEnabled()) {
+      const raw = await kvHMGet(key, ids);
+      for (const [k, v] of Object.entries(raw)) {
+        const n = Number(v);
+        if (Number.isFinite(n) && (keepZero ? n !== 0 : n > 0)) out[k] = n;
+      }
+      return out;
+    }
+    for (const id of ids) {
+      const n = mem.get(id) ?? 0;
+      if (keepZero ? n !== 0 : n > 0) out[id] = n;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Verkochte stuks voor een specifieke set varianten. Gebruik dit in
+ * verkoop-/weergavepaden (checkout-guard, productpagina) in plaats van
+ * getSoldMap: dat leest de hele hash, die met elke verkoop groeit.
+ */
+export async function getSoldFor(variantIds: string[]): Promise<Record<string, number>> {
+  return pickFromHash(SOLD_KEY, memSold, variantIds, false);
+}
+
+/** Netto handmatige correcties voor een specifieke set varianten. */
+export async function getAdjustFor(variantIds: string[]): Promise<Record<string, number>> {
+  return pickFromHash(ADJUST_KEY, memAdjust, variantIds, true);
 }
 
 export interface AdjustInput {

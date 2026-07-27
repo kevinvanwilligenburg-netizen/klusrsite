@@ -5,31 +5,10 @@ import { createPayment } from "@/lib/payments";
 import { triggerCartReminder } from "@/lib/mailchimp";
 import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfillment";
 import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
+import { cartItemSchema } from "@/lib/checkout-schema";
 import type { CartItem } from "@/types";
 
 export const runtime = "nodejs";
-
-const cartItemSchema = z.object({
-  key: z.string(),
-  productId: z.string(),
-  variantId: z.string(),
-  title: z.string(),
-  brand: z.string(),
-  image: z.string(),
-  variantLabel: z.string(),
-  slug: z.string(),
-  quantity: z.number().int().positive(),
-  price: z.number(),
-  kluspasPrice: z.number(),
-  selectedColor: z
-    .object({
-      name: z.string(),
-      code: z.string(),
-      hex: z.string(),
-      collection: z.string().optional(),
-    })
-    .optional(),
-});
 
 const bodySchema = z.object({
   customer: z.object({

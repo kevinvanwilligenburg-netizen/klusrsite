@@ -1109,21 +1109,22 @@ function primaryStoreOnly(list: StoreStock[] | undefined): StoreStock[] {
   return [{ storeId: PRIMARY_STORE_ID, quantity: qty }];
 }
 
+/**
+ * Product- én variantvoorraad blijven de échte stand van de hoofdvestiging: het
+ * productniveau spiegelt de lead-variant, precies zoals de snapshot 'm levert.
+ * Of een product als verkoopbaar geldt (één maat op voorraad is genoeg) is een
+ * afgeleide vraag; die beantwoordt `bestVariantStock()` uit lib/stock.ts op de
+ * plek waar hij gesteld wordt, zodat hier geen verzonnen aantallen in het model
+ * belanden die elders als echte voorraad worden gelezen.
+ */
 function withPrimaryStoreStock(p: Product): Product {
-  const variants = (p.variants ?? []).map((v) => ({
-    ...v,
-    stockByStore: primaryStoreOnly(v.stockByStore),
-  }));
-  // Productniveau spiegelt de best leverbare variant: een product is verkoopbaar
-  // (en zichtbaar op de PLP) zolang één maat/kleur nog voorraad heeft — de
-  // lead-variant kan leeg zijn terwijl grotere maten er nog wel zijn.
-  const best = variants.length
-    ? Math.max(...variants.map((v) => v.stockByStore[0]?.quantity ?? 0))
-    : (primaryStoreOnly(p.stockByStore)[0]?.quantity ?? 0);
   return {
     ...p,
-    stockByStore: [{ storeId: PRIMARY_STORE_ID, quantity: best }],
-    variants,
+    stockByStore: primaryStoreOnly(p.stockByStore),
+    variants: (p.variants ?? []).map((v) => ({
+      ...v,
+      stockByStore: primaryStoreOnly(v.stockByStore),
+    })),
   };
 }
 
@@ -1154,6 +1155,23 @@ export function getProduct(slug: string): Product | undefined {
 
 export function getProductById(id: string): Product | undefined {
   return products.find((p) => p.id === id);
+}
+
+/**
+ * Variant-id → variant, lui opgebouwd. Voorraadpaden (checkout-guard,
+ * live-voorraad op de productpagina) zoeken tientallen varianten per request op;
+ * zonder index is dat een lineaire scan over de hele catalogus per id.
+ */
+let variantIndex: Map<string, ProductVariant> | null = null;
+
+export function getVariantById(variantId: string): ProductVariant | undefined {
+  if (!variantIndex) {
+    variantIndex = new Map();
+    for (const p of products) {
+      for (const v of p.variants ?? []) variantIndex.set(v.id, v);
+    }
+  }
+  return variantIndex.get(variantId);
 }
 
 export function getProductsByCategory(categorySlug: string): Product[] {

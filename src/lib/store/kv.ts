@@ -116,6 +116,25 @@ export async function kvHIncrBy(key: string, field: string, by = 1): Promise<voi
 }
 
 /**
+ * Lees alleen de opgegeven velden uit een hash (HMGET). Gebruik dit boven
+ * kvHGetAll zodra je weet welke velden je nodig hebt: de hashes groeien met
+ * elke verkoop, en dan is een volledige uitlezing per request verspilling.
+ * Ontbrekende velden komen niet in het resultaat; leeg bij elke fout.
+ */
+export async function kvHMGet(key: string, fields: string[]): Promise<Record<string, string>> {
+  if (!fields.length) return {};
+  const res = await cmd<unknown>(["HMGET", key, ...fields]);
+  const out: Record<string, string> = {};
+  if (Array.isArray(res)) {
+    fields.forEach((f, i) => {
+      const v = res[i];
+      if (v != null) out[f] = String(v);
+    });
+  }
+  return out;
+}
+
+/**
  * Lees een hele hash als field→value object (HGETALL). Leeg bij elke fout.
  * Upstash REST kan de hash als vlakke array [field, value, …] of als object
  * teruggeven; beide vormen worden afgevangen.

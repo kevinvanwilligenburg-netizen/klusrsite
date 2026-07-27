@@ -38,3 +38,25 @@ export function inStockOnline(
 ): boolean {
   return primaryStock(stockByStore) >= safety;
 }
+
+/** Minimale vorm die `bestVariantStock` nodig heeft (geen import van de catalogus). */
+interface StockedProduct {
+  stockByStore?: StoreStock[];
+  variants?: { stockByStore?: StoreStock[] }[];
+}
+
+/**
+ * Voorraad van de best leverbare variant van een product.
+ *
+ * Een product is verkoopbaar zolang één maat of kleur nog op voorraad ligt: de
+ * lead-variant kan leeg zijn terwijl grotere maten er nog wel zijn. Overzichten
+ * (listing, kaart, schema.org-beschikbaarheid) beslissen daarom hierop, in
+ * plaats van op de product-niveau voorraad — die spiegelt de lead-variant en is
+ * bedoeld als échte stand, niet als verkoopbaarheidssignaal.
+ */
+export function bestVariantStock(p: StockedProduct): StoreStock[] {
+  const variants = p.variants ?? [];
+  if (!variants.length) return p.stockByStore ?? [];
+  const best = Math.max(...variants.map((v) => primaryStock(v.stockByStore)));
+  return [{ storeId: PRIMARY_STORE_ID, quantity: best }];
+}
