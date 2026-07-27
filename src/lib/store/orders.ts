@@ -20,8 +20,11 @@ import {
  * webshop-orderoverzicht, rechtstreeks op de keys `order:<id>` (Order-JSON) en
  * `order:index` (SET met alle order-ids), en op de Order-veldnamen
  * (reference/customer/items/paymentStatus/total/createdAt/isTest/channel/
- * refundedAmount/shipment). Wijzig die keys of veldnamen dus niet zonder
- * dashboardvdm mee te nemen. Zie docs/vdm-dashboard-koppeling.md.
+ * refundedAmount/shipment). Sinds 2026-07 draagt elke orderregel ook
+ * `items[].sku` (kale Tilroy-artikel-id) — het dashboard gebruikt dat om
+ * webshop-orders centraal in Tilroy in te schieten (saleapi/orderapi). Wijzig
+ * die keys of veldnamen dus niet zonder dashboardvdm mee te nemen. Zie
+ * docs/vdm-dashboard-koppeling.md.
  *
  * Een paar seeded orders blijven bestaan zodat de "Bestelstatus"-pagina out of
  * the box werkt om te demonstreren.
@@ -87,6 +90,17 @@ export interface CreateOrderInput {
   pos?: Order["pos"];
 }
 
+/**
+ * Kale Tilroy-artikel-id van een orderregel: het variant-id zonder bron-prefix
+ * (zelfde regel als skuOf() in lib/data/products.ts — hier gedupliceerd zodat
+ * de orderstore niet de volledige catalogus in elke lambda trekt). Het
+ * VDM-dashboard schiet orders hiermee in Tilroy in; de variant is het échte
+ * artikel (bij multi-maat-producten wijkt die af van productId).
+ */
+function lineSku(it: CartItem): string {
+  return (it.variantId || it.productId).replace(/^(?:tilroy|channable|feed)-/, "");
+}
+
 export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const id = generateId();
   const now = new Date();
@@ -97,7 +111,8 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     id,
     reference: generateReference(),
     customer: input.customer,
-    items: input.items,
+    // Elke regel draagt het kale sku-veld voor de dashboard→Tilroy-orderpush.
+    items: input.items.map((it) => ({ ...it, sku: it.sku || lineSku(it) })),
     paymentStatus: "open",
     paymentMethod: input.paymentMethod,
     ...(input.channel ? { channel: input.channel } : {}),

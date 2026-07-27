@@ -64,6 +64,31 @@ feed-catalogus (`lib/productFeed`) plus handmatige producten
 EAN, afbeelding, categorie) zou de Channable-/Tilroy-importscripts in KLUSR
 volledig kunnen vervangen. Nog niet gebouwd — eerst voorraad + prijzen stabiel.
 
+## Orders → Tilroy (dashboard doet de push, KLUSR levert sku's)
+
+Uit de Tilroy API-docs (dashboardvdm PR #284): webshop-orders kúnnen wel
+degelijk in Tilroy worden ingeschoten — `POST saleapi/import/sales`
+(orderNumber = webshop-referentie) of de rijkere `POST orderapi/orders`
+(reserveert voorraad, mollieReference, dispatches met trackingCode). Die push
+gebeurt **centraal vanuit het dashboard** (dat de order-KV toch al leest); de
+no-op `pushChannableOrder` in `src/lib/channable.ts` blijft in klusrsite dus
+gewoon staan.
+
+Wat KLUSR daarvoor levert: sinds 2026-07 draagt elke orderregel een kaal
+`items[].sku`-veld (gezet in `createOrder`, `src/lib/store/orders.ts`).
+**Let op bij het mappen in het dashboard:** de sku is afgeleid van het
+*variant*-id, niet van `productId` — bij multi-maat-producten is de bestelde
+maat een eigen Tilroy-artikel en wijkt het variant-id af van het product-id.
+Voor oudere orders zonder sku-veld: val terug op `variantId` (of `productId`)
+zonder het `tilroy-`-prefix. Het bezorgadres zit al volledig op
+`customer`; `items[].gtin` is het product-niveau-EAN (lead-artikel) en kan bij
+multi-variant-producten afwijken van de bestelde variant — gebruik de sku.
+
+FYI voor wie ooit rechtstreeks de Tilroy **Product-bulk-API** aanspreekt:
+sku's + costPrice zitten onder `colours[].skus` (niet top-level), `brand` is
+een object `{code, descriptions[]}`, en de `fields`-parameter moet `"colours"`
+bevatten.
+
 ## Verzending: PostNL → DHL (aangekondigd, nog niet bouwen)
 
 Beide sites migreren van PostNL naar de **DHL API**, met nieuwe klokregels van

@@ -135,6 +135,12 @@ export interface CartItem {
   slug: string;
   /** EAN/GTIN — getoond op de orderregel in het admin-overzicht. */
   gtin?: string;
+  /**
+   * Kale Tilroy-artikel-id (variant-id zonder bron-prefix). Wordt bij het
+   * aanmaken van de order server-side gezet (createOrder) — het VDM-dashboard
+   * gebruikt dit veld om webshop-orders in Tilroy in te schieten.
+   */
+  sku?: string;
   quantity: number;
   price: number;
   kluspasPrice: number;
