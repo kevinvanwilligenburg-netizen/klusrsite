@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
  * Bezorgklok met live aftelling.
  *
  * Toont WANNEER een bestelling geleverd wordt (zie `@/lib/delivery`):
- *  - Vóór de cutoff (19:00): "Vóór 19:00 besteld, ‹morgen/overmorgen/weekdag›
- *    in huis" + een live aftelling "nog 3 u 12 m".
- *  - Ná de cutoff: "Besteld → ‹dag› in huis" (geen dringende aftelling).
+ *  - Vóór de cutoff (10:00): "Vóór 10:00 besteld, ‹vanavond› in huis" + een
+ *    live aftelling "nog 3 u 12 m" — DHL bezorgt dan nog dezelfde avond.
+ *  - Ná de cutoff: "Besteld → ‹morgen/weekdag› in huis" (geen aftelling).
  *
  * Hydratie-veilig: vóór `mounted` (server + eerste client-paint) rendert 'ie een
  * stabiele placeholder zonder `Date.now()`, daarna pas de live waarde. Zo is er
@@ -77,8 +77,10 @@ export function DeliveryCountdown({
     </DeliveryRow>
   );
 
-  /** Vertaalde dag-aanduiding: "morgen"/"overmorgen" of de echte weekdag. */
+  /** Vertaalde dag-aanduiding: "vanavond"/"morgen"/"overmorgen" of de weekdag. */
   function dayLabel(): string {
+    // DHL bezorgt 's avonds; vóór de cutoff is dat nog dezelfde dag.
+    if (info.label === "today") return t("delivery.today");
     if (info.label === "tomorrow") return t("delivery.tomorrow");
     if (info.label === "dayAfter") return t("delivery.dayAfter");
     return new Intl.DateTimeFormat(locale, { weekday: "long" }).format(
@@ -93,7 +95,7 @@ function countdownParts(ms: number): { h: number; m: number } {
   return { h: Math.floor(totalMinutes / 60), m: totalMinutes % 60 };
 }
 
-/** Cutoff-tijd netjes geformatteerd (bv. "19:00") in de actieve locale. */
+/** Cutoff-tijd netjes geformatteerd (bv. "10:00") in de actieve locale. */
 function formatCutoff(locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",

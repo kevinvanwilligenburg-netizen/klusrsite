@@ -34,7 +34,7 @@ import type { Product } from "@/types";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { formatPrice } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
-import { PaymentIcons, PostNlBadge } from "@/components/shared/payment-icons";
+import { PaymentIcons, CarrierBadge } from "@/components/shared/payment-icons";
 
 export function CartView() {
   const {
@@ -315,7 +315,7 @@ export function CartView() {
                 <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {t("footer.trust.shipTitle")}
                 </span>
-                <PostNlBadge />
+                <CarrierBadge />
               </div>
             </div>
           </div>

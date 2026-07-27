@@ -281,7 +281,12 @@ export interface Order {
   reviewRequestedAt?: string;
   /** Verzending (PostNL-label). */
   shipment?: {
-    carrier: "postnl";
+    /**
+     * Vervoerder van deze zending. Sinds de overstap naar DHL (2026-07) worden
+     * nieuwe labels als "dhl" vastgelegd; oudere orders houden "postnl", zodat
+     * pakbon en bestelstatus historisch kloppen.
+     */
+    carrier: "postnl" | "dhl";
     barcode: string;
     trackTrace?: string;
     labelCreatedAt: string;

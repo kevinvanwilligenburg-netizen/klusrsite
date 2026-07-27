@@ -99,7 +99,8 @@ export default async function PakbonPage({ params }: { params: { orderId: string
             <p className="mt-1 leading-relaxed">
               {order.shipment ? (
                 <>
-                  PostNL · <span className="font-semibold">{order.shipment.barcode}</span>
+                  {order.shipment.carrier === "dhl" ? "DHL" : "PostNL"} ·{" "}
+                  <span className="font-semibold">{order.shipment.barcode}</span>
                   <br />
                   {order.shipment.trackTrace && (
                     <span className="break-all text-xs text-neutral-600">
@@ -112,7 +113,7 @@ export default async function PakbonPage({ params }: { params: { orderId: string
                   Nog niet verzonden
                   <br />
                   <span className="text-xs text-neutral-600">
-                    Voor 19:00 besteld, morgen in huis
+                    Voor 10:00 besteld, vanavond in huis
                   </span>
                 </>
               )}

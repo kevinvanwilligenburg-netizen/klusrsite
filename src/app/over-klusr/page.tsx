@@ -110,7 +110,7 @@ export default function OverKlusrPage() {
             {
               icon: Truck,
               title: "Bezorgd door heel Nederland en België",
-              body: "Voor 19:00 besteld op werkdagen? Dan ligt je bestelling de volgende dag in huis.",
+              body: "Voor 10:00 besteld op werkdagen? Dan ligt je bestelling vanavond in huis.",
             },
             {
               icon: Paintbrush,

@@ -33,7 +33,7 @@ export const articles: Article[] = [
       "- De eerste laag niet genoeg laten drogen voor de tweede — je rolt de eerste laag er dan uit",
       "- Tape pas na volledig uitharden verwijderen — dan breekt de verfrand en moet je bijwerken",
       "- Een zuigende of beschadigde muur zonder primer schilderen — de verf trekt ongelijkmatig weg en dekt slecht",
-      "Een goed geschilderde muur begint met vijf minuten extra voorbereiding per stap. Twijfel je over welke verf het beste bij jouw ondergrond of kleurwens past? Bij KLUSR mengen we elke kleur op maat en bezorgen we vóór 19:00 besteld de volgende dag bij je thuis. Gratis verzending ook, vanaf €50.",
+      "Een goed geschilderde muur begint met vijf minuten extra voorbereiding per stap. Twijfel je over welke verf het beste bij jouw ondergrond of kleurwens past? Bij KLUSR mengen we elke kleur op maat en bezorgen we vóór 10:00 besteld vanavond bij je thuis. Gratis verzending ook, vanaf €50.",
     ],
     relatedLinks: [
       { label: "Alle muurverf", href: "/categorie/verf/binnenverf" },
@@ -173,7 +173,7 @@ export const articles: Article[] = [
       "### Aardtinten",
       "Zand, beige, okertinten, bruinrood en olijfgroen. De meest tijdloze combinatie voor een woonkamer of slaapkamer — warmt op zonder te overheersen.",
       "## Onze kleurkiezer en mengservice",
-      "Via onze digitale kleurkiezer vergelijk je tinten naast elkaar zonder dat er ook maar een kwast aan te pas komt. Heb je eenmaal je kleur gevonden? We mengen hem voor je op maat — in elke gewenste verfsoort en glansgraad. Vóór 19:00 besteld is je verf de volgende dag in huis, gratis verzending vanaf €50.",
+      "Via onze digitale kleurkiezer vergelijk je tinten naast elkaar zonder dat er ook maar een kwast aan te pas komt. Heb je eenmaal je kleur gevonden? We mengen hem voor je op maat — in elke gewenste verfsoort en glansgraad. Vóór 10:00 besteld is je verf vanavond in huis, gratis verzending vanaf €50.",
       "## Veelgemaakte fouten",
       "- Een kleur kiezen op basis van een klein kleurkaartje in een verlichte winkel — altijd thuis testen",
       "- Alle muren in een diepe kleur schilderen in een kleine ruimte — begin met één accentmuur",
@@ -247,7 +247,7 @@ export const articles: Article[] = [
       "- Beitsen in de volle middagzon — te snelle droging, slechte indringing en aanzetten",
       "- Eén dikke laag aanbrengen in plaats van twee dunne — geeft een kleffe, slecht beschermende laag",
       "- De kopse kanten vergeten — juist daar dringt vocht het makkelijkst het hout in",
-      "Een goed gebeitste schutting vraagt om herhaling: controleer jaarlijks en beits opnieuw als het hout waterdruppels begint op te nemen in plaats van te laten afparelen. Met een beetje onderhoud gaat tuinhout tientallen jaren mee. Vóór 19:00 besteld bij KLUSR, morgen in huis — gratis verzending vanaf €50.",
+      "Een goed gebeitste schutting vraagt om herhaling: controleer jaarlijks en beits opnieuw als het hout waterdruppels begint op te nemen in plaats van te laten afparelen. Met een beetje onderhoud gaat tuinhout tientallen jaren mee. Vóór 10:00 besteld bij KLUSR, vanavond in huis — gratis verzending vanaf €50.",
     ],
     relatedLinks: [
       { label: "Transparante beits", href: "/categorie/verf/transparante-beits" },
@@ -314,7 +314,7 @@ export const articles: Article[] = [
       "- Draden verwisselen bij het aansluiten — fase en nul omgewisseld is soms niet meteen merkbaar maar wel een risico",
       "- De aardingsdraad niet aansluiten — aarding is er niet voor niets, laat die nooit weg",
       "- Werken aan een nieuw circuit of extra stopcontact toevoegen zonder installateur — dat is voorbehouden aan erkende elektriciens",
-      "Een stopcontact vervangen is prima te doen als je de procedure stap voor stap volgt en je spanningzoeker gebruikt. Bij enige twijfel — over de bedrading, het aantal draden, rare kleuren of een afwijkende situatie — stop en schakel een erkend installateur in. Bij KLUSR vind je het juiste materiaal voor de klus; vóór 19:00 besteld, morgen in huis.",
+      "Een stopcontact vervangen is prima te doen als je de procedure stap voor stap volgt en je spanningzoeker gebruikt. Bij enige twijfel — over de bedrading, het aantal draden, rare kleuren of een afwijkende situatie — stop en schakel een erkend installateur in. Bij KLUSR vind je het juiste materiaal voor de klus; vóór 10:00 besteld, vanavond in huis.",
     ],
     relatedLinks: [
       { label: "Elektra & installatiemateriaal", href: "/categorie/elektra" },
@@ -458,7 +458,7 @@ export const articles: Article[] = [
       "- Slechts één laag plannen en halverwege de klus merken dat de verf niet dekt",
       "- Ramen en deuren wél aftrekken maar de extra zuiging van gerepareerde plekken vergeten",
       "- Te ruim afronden zodat je met een halfvol blik blijft zitten dat je niet meer kwijtraakt",
-      "Een accurate verfberekening kost je vijf minuten maar bespaart je een hoop gedoe. Twijfel je toch? Onze ex-schilders bij de Klushulp rekenen het gratis voor je uit. Bestel je voor 19:00 uur, dan heb je de verf — al op maat gemengd in jouw kleur — de volgende dag gewoon in huis. Gratis verzending vanaf €50.",
+      "Een accurate verfberekening kost je vijf minuten maar bespaart je een hoop gedoe. Twijfel je toch? Onze ex-schilders bij de Klushulp rekenen het gratis voor je uit. Bestel je voor 10:00 uur, dan heb je de verf — al op maat gemengd in jouw kleur — vanavond gewoon in huis. Gratis verzending vanaf €50.",
     ],
     relatedLinks: [
       { label: "Bekijk alle muurverf", href: "/categorie/verf/binnenverf" },
@@ -530,7 +530,7 @@ export const articles: Article[] = [
       "- Matte muurverf in de badkamer — die is niet vochtbestendig en gaat schimmelen",
       "- Een glanzende verf kiezen om af te kunnen wassen, zonder de ondergrond goed voor te bereiden — glans maakt elke oneffenheid zichtbaar",
       "- 'Latex' denken dat het om een rubbercoating gaat en het daarmee verwarren met een vloercoating of dakrenovatie-product",
-      "Kort samengevat: voor de meeste binnenmuren kies je een goede matte of zijdematte muurverf op acrylbasis. Plafonds doe je met sausverf. Keuken, hal en kinderkamer vragen een afwasbare zijdematte of zijdeglanzende variant, en in vochtige ruimtes ga je altijd voor schimmelwerende muurverf. Twijfel je over de juiste keuze? Bij KLUSR mengen we de verf niet alleen op jouw kleur, maar geven we je ook eerlijk advies over welke soort het beste bij jouw wand en ruimte past. Voor 19:00 uur besteld, morgen in huis — gratis verzending vanaf €50.",
+      "Kort samengevat: voor de meeste binnenmuren kies je een goede matte of zijdematte muurverf op acrylbasis. Plafonds doe je met sausverf. Keuken, hal en kinderkamer vragen een afwasbare zijdematte of zijdeglanzende variant, en in vochtige ruimtes ga je altijd voor schimmelwerende muurverf. Twijfel je over de juiste keuze? Bij KLUSR mengen we de verf niet alleen op jouw kleur, maar geven we je ook eerlijk advies over welke soort het beste bij jouw wand en ruimte past. Voor 10:00 uur besteld, vanavond in huis — gratis verzending vanaf €50.",
     ],
     relatedLinks: [
       { label: "Binnenverf & muurverf", href: "/categorie/verf/binnenverf" },
@@ -608,7 +608,7 @@ export const articles: Article[] = [
       "- Dezelfde primer gebruiken voor metaal als voor muren: een muurprimer hecht niet op metaal en biedt geen roestbescherming.",
       "- De primer te dik aanbrengen in één laag: primer is dun van opbouw — twee dunne lagen geven betere hechting dan één dikke.",
       "- Primer overslaan op gladde ondergronden: verf op tegels of kunststof zonder hechtprimer bladdert gegarandeerd los, soms al binnen weken.",
-      "Samengevat: een grondlaag is geen overbodige stap maar de basis van duurzaam schilderwerk. Op nieuwe, kale, gerepareerde of moeilijk hechtende ondergronden is primer geen optie maar de slimste investering van je klus. Vóór 19:00 besteld bij KLUSR en de primer ligt morgen al op je drempel, met gratis verzending vanaf €50.",
+      "Samengevat: een grondlaag is geen overbodige stap maar de basis van duurzaam schilderwerk. Op nieuwe, kale, gerepareerde of moeilijk hechtende ondergronden is primer geen optie maar de slimste investering van je klus. Vóór 10:00 besteld bij KLUSR en de primer ligt vanavond al op je drempel, met gratis verzending vanaf €50.",
     ],
     relatedLinks: [
       { label: "Primer & grondverf", href: "/categorie/verf/multiprimer" },
@@ -676,7 +676,7 @@ export const articles: Article[] = [
       "- Schilderen over actieve schimmel: de schimmel groeit door onder de verflaag en het probleem keert terug, erger dan voorheen.",
       "- Op een vochtige of onvoldoende droge ondergrond schilderen: de verf hecht niet goed en begint snel los te komen.",
       "- Maar één laag aanbrengen: in een badkamer zijn twee lagen de absolute minimumeis voor voldoende bescherming en een egale afdekking.",
-      "Goed badkamerschilderwerk begint bij de juiste voorbereiding en de juiste verf, en eindigt bij structurele ventilatie. Doe je alle stappen goed, dan geniet je jarenlang van een frisse, schimmelvrije badkamer. Vóór 19:00 besteld bij KLUSR en alles — van schimmelwerende verf tot afplaktape — ligt morgen bij je thuis, gratis verzonden vanaf €50.",
+      "Goed badkamerschilderwerk begint bij de juiste voorbereiding en de juiste verf, en eindigt bij structurele ventilatie. Doe je alle stappen goed, dan geniet je jarenlang van een frisse, schimmelvrije badkamer. Vóór 10:00 besteld bij KLUSR en alles — van schimmelwerende verf tot afplaktape — ligt vanavond bij je thuis, gratis verzonden vanaf €50.",
     ],
     relatedLinks: [
       { label: "Schimmelwerende muurverf", href: "/categorie/verf/binnenverf" },
@@ -734,7 +734,7 @@ export const articles: Article[] = [
       "### Herfst (september-oktober)",
       "De vroege herfst is de tweede piekperiode. De zomerhitte is weg, maar de temperaturen zijn nog comfortabel. Sluit je buitenschilderwerk uiterlijk in oktober af: daarna worden de nachten te koud en zijn regenperiodes te onvoorspelbaar.",
       "### Winter (november-maart)",
-      "Buiten schilderen in de winter is in Nederland vrijwel altijd een slecht idee. Te koud, te vochtig en te weinig daglicht om goed te werken en te zien wat je doet. Plan liever nu alvast je lente-klus en bestel je verf of beits tijdig — vóór 19:00 besteld bij KLUSR en het ligt morgen bij je thuis.",
+      "Buiten schilderen in de winter is in Nederland vrijwel altijd een slecht idee. Te koud, te vochtig en te weinig daglicht om goed te werken en te zien wat je doet. Plan liever nu alvast je lente-klus en bestel je verf of beits tijdig — vóór 10:00 besteld bij KLUSR en het ligt vanavond bij je thuis.",
       "## De ondergrond: droger dan je denkt",
       "De luchttemperatuur is één ding, de toestand van de ondergrond is minstens zo belangrijk. Hout moet droog zijn voordat je begint: een vochtgehalte boven de 15% is te hoog voor verf of beits om goed te hechten. Na een regenperiode kan dat dagen duren.",
       "- Begin niet voor 10 uur 's ochtends: ochtenddauw en nachtcondensatie op het hout moeten eerst verdampen.",
@@ -824,7 +824,7 @@ export const articles: Article[] = [
       "- Kale plekken niet gronden, waardoor de lak dof wegslaat",
       "- Te dikke laklagen aanbrengen in de hoop dekking te halen — dit geeft druipers en een ongelijke glans",
       "- De tape te laat aftrekken — als de lak volledig uitgehard is, scheurt de verf mee",
-      "Wie deze zeven stappen volgt en de tijd neemt voor elke laag, eindigt met kozijnen die eruitzien als vers schilderwerk van een vakman. Verf op kleur laten mengen voor een perfecte match met je interieur? Bij KLUSR mengen we elke gewenste tint in de verfsoort en glansgraad van jouw keuze — voor 19:00 besteld, morgen aan de slag.",
+      "Wie deze zeven stappen volgt en de tijd neemt voor elke laag, eindigt met kozijnen die eruitzien als vers schilderwerk van een vakman. Verf op kleur laten mengen voor een perfecte match met je interieur? Bij KLUSR mengen we elke gewenste tint in de verfsoort en glansgraad van jouw keuze — voor 10:00 besteld, morgen aan de slag.",
     ],
     relatedLinks: [
       { label: "Lakverf voor kozijnen", href: "/categorie/verf/binnenlak" },
@@ -972,7 +972,7 @@ export const articles: Article[] = [
       "- Stof niet verwijderen tussen de lagen — dit geeft een ruwe, puntige eindlaag",
       "- Dwars op de houtnerf schuren — de krassen blijven zichtbaar onder lak",
       "- Te lang doorgaan met dezelfde korrel — vervang je schuurpapier zodra het niet meer 'bijt'",
-      "De juiste korrel op het juiste moment, gevolgd door het zorgvuldig verwijderen van stof: dat is het geheim van een strakke laklaag. Heb je na het schuren een mooie gladde ondergrond en ben je klaar om te schilderen? Bestel je lak of verf bij KLUSR — voor 19:00 besteld, morgen in huis.",
+      "De juiste korrel op het juiste moment, gevolgd door het zorgvuldig verwijderen van stof: dat is het geheim van een strakke laklaag. Heb je na het schuren een mooie gladde ondergrond en ben je klaar om te schilderen? Bestel je lak of verf bij KLUSR — voor 10:00 besteld, vanavond in huis.",
     ],
     relatedLinks: [
       { label: "Schildersgereedschap", href: "/categorie/gereedschap" },
@@ -1033,7 +1033,7 @@ export const articles: Article[] = [
       "Geef bij je bestelling aan voor welk oppervlak en welke situatie je de verf nodig hebt, dan helpen we je de juiste basis en verfsoort kiezen.",
       "## Het recept bewaren: bijkleuren is altijd mogelijk",
       "Een groot voordeel van mengverf is dat het recept digitaal wordt opgeslagen. Ben je halverwege een kamer en kom je verf tekort? Of wil je na een verhuizing dezelfde kleur in je nieuwe woning? Zolang je het receptnummer of je ordernummer bij de hand hebt, mengen we exact dezelfde kleur opnieuw. Geen kleurverschil, geen gedoe.",
-      "Weet je niet zeker hoeveel liter je nodig hebt? Meet het te schilderen oppervlak op en deel dat door het rendement dat op de verpakking staat. Liever wat te veel besteld dan te weinig — bij KLUSR geldt: voor 19:00 besteld, morgen in huis, met gratis verzending vanaf vijftig euro.",
+      "Weet je niet zeker hoeveel liter je nodig hebt? Meet het te schilderen oppervlak op en deel dat door het rendement dat op de verpakking staat. Liever wat te veel besteld dan te weinig — bij KLUSR geldt: voor 10:00 besteld, vanavond in huis, met gratis verzending vanaf vijftig euro.",
       "## Kleurstalen thuis bekijken",
       "Een kleur op een scherm ziet er anders uit dan op je muur — en bij daglicht anders dan bij kunstlicht. Ons advies: bestel altijd een kleurstaal of laat een klein monster mengen voordat je een hele liter of meer bestelt. Plak het staal op verschillende plekken op de muur en bekijk het op meerdere momenten van de dag. Zo kom je nooit voor verrassingen te staan.",
       "### Tips voor het kiezen van de juiste tint",
@@ -1062,7 +1062,7 @@ export const articles: Article[] = [
       {
         question: "Hoe lang duurt het voordat mengverf bij me is?",
         answer:
-          "Bestel je voor 19:00, dan ontvang je je bestelling de volgende werkdag. Mengverf wordt vers aangemaakt na je bestelling.",
+          "Bestel je voor 10:00, dan ontvang je je bestelling vanavond. Mengverf wordt vers aangemaakt na je bestelling.",
       },
       {
         question: "Kan ik mengverf later bijbestellen in exact dezelfde kleur?",

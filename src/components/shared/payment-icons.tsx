@@ -47,26 +47,24 @@ export function PaymentIcons({ className }: { className?: string }) {
   );
 }
 
-/** PostNL-verzendbadge: het officiële PostNL-logo op een witte tegel. */
-export function PostNlBadge({ className }: { className?: string }) {
+/**
+ * Verzendpartner-badge. Sinds de overstap van PostNL naar DHL (2026-07) staat
+ * hier de naam als tekst: het officiële DHL-logo zit nog niet in /public. Zodra
+ * dat er is, kan dit weer een `<img>` worden — de badge wordt op twee plekken
+ * getoond (winkelwagen en footer), dus de vervoerder mag hier nooit afwijken
+ * van wat er daadwerkelijk bezorgt.
+ */
+export function CarrierBadge({ className }: { className?: string }) {
   return (
     <span
-      title="PostNL"
-      aria-label="Verzending met PostNL"
+      title="DHL"
+      aria-label="Verzending met DHL"
       className={cn(
-        "inline-flex h-[30px] items-center justify-center rounded-[5px] border border-black/10 bg-white px-2 shadow-sm",
+        "inline-flex h-[30px] items-center justify-center rounded-[5px] border border-black/10 bg-white px-2.5 text-[15px] font-extrabold tracking-tight text-[#D40511] shadow-sm",
         className,
       )}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/postnl-logo.png"
-        alt="PostNL"
-        width={24}
-        height={24}
-        loading="lazy"
-        className="h-[24px] w-auto"
-      />
+      DHL
     </span>
   );
 }

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Alle verfkleuren & kleurcollecties — op kleur gemengd",
   description:
-    "Bekijk alle KLUSR-verfkleuren en kleurcollecties: RAL Classic, trendkleuren en kleurfamilies (wit, grijs, blauw, groen, warm, bruin, pastels). Wij mengen elke kleur exact op maat. Voor 19:00 besteld, morgen in huis.",
+    "Bekijk alle KLUSR-verfkleuren en kleurcollecties: RAL Classic, trendkleuren en kleurfamilies (wit, grijs, blauw, groen, warm, bruin, pastels). Wij mengen elke kleur exact op maat. Voor 10:00 besteld, vanavond in huis.",
   alternates: { canonical: "/kleuren" },
   openGraph: {
     title: "Alle verfkleuren & kleurcollecties | KLUSR",

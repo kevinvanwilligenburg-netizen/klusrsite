@@ -41,7 +41,8 @@ export const orderStatusBeleving: Record<OrderStatus, string> = {
   pending: "We controleren je betaling — nog heel even geduld.",
   paid: "Gelukt! Onze klussers pakken je bestelling nu zorgvuldig voor je in. 📦",
   authorized: "Betaling bevestigd — we maken je pakket klaar voor verzending.",
-  shipped: "Onderweg! PostNL brengt je pakket naar je toe. 🚚",
+  // Vervoerder-neutraal: nieuwe zendingen gaan met DHL, oudere met PostNL.
+  shipped: "Onderweg! Je pakket is onderweg naar je toe. 🚚",
   delivered: "Bezorgd — veel klusplezier! 🛠️",
   canceled: "Deze bestelling is geannuleerd.",
   failed: "De betaling is helaas niet gelukt.",

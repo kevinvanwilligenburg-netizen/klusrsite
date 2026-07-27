@@ -82,7 +82,7 @@ export default function VoorwaardenPage() {
           heading: "6. Levering en uitvoering",
           body: (
             <p>
-              Voor 19:00 uur op werkdagen besteld, is je bestelling de volgende werkdag in huis
+              Voor 10:00 uur op werkdagen besteld, is je bestelling vanavond in huis
               (tenzij anders vermeld). Verzending is gratis vanaf € 50; daaronder rekenen we
               € 4,95 verzendkosten. We bezorgen door heel Nederland en België. Het risico van
               beschadiging en/of vermissing van producten gaat over op de klant op het moment van

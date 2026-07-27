@@ -490,12 +490,12 @@ export function abandonedCartEmail(input: {
     `<tr><td style="padding:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:${C.text};">Totaal</td>` +
     `<td align="right" style="padding:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:900;color:${C.red};">${euro(input.total)}</td></tr></table>` +
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td>${button("Rond je bestelling af", cartUrl)}</td></tr></table>` +
-    `<p style="margin:0;font-size:13px;color:${C.muted};">Voor 19:00 besteld, morgen in huis. Met de gratis KLUSRPAS pak je bovendien altijd extra voordeel.</p>`;
+    `<p style="margin:0;font-size:13px;color:${C.muted};">Voor 10:00 besteld, vanavond in huis. Met de gratis KLUSRPAS pak je bovendien altijd extra voordeel.</p>`;
   return {
     subject: "Je winkelwagen staat nog klaar bij KLUSR",
     html: layout({
       title: "Je winkelwagen wacht nog op je",
-      preheader: "Rond je bestelling af — voor 19:00 besteld, morgen in huis.",
+      preheader: "Rond je bestelling af — voor 10:00 besteld, vanavond in huis.",
       content,
       footerNote: "Je ontvangt deze herinnering omdat je een bestelling bij KLUSR bent begonnen.",
     }),
@@ -539,7 +539,7 @@ export function orderConfirmationEmail(order: Order): { subject: string; html: s
     `<td valign="top" width="50%" style="padding:0 0 0 10px;font-size:13px;color:${C.text};line-height:1.6;">` +
     `<strong style="display:block;margin-bottom:4px;color:${C.muted};text-transform:uppercase;font-size:11px;letter-spacing:0.5px;">Bezorging</strong>` +
     (delivery ? `Verwacht: <strong>${esc(delivery)}</strong><br>` : "") +
-    `Voor 19:00 besteld, morgen in huis<br>` +
+    `Voor 10:00 besteld, vanavond in huis<br>` +
     `Betaling: ${esc(paymentLabel(order.paymentMethod))}` +
     `</td>` +
     `</tr></table>`;
@@ -837,7 +837,7 @@ export function welcomeEmail({ firstName }: { firstName?: string }): {
         <strong>Wat je van ons krijgt:</strong><br>
         &#10003; Advies van ex-schilders &mdash; geen verkooppraatjes<br>
         &#10003; Professionele kwaliteit voor de eerlijkste prijs<br>
-        &#10003; Voor 19:00 besteld, morgen in huis
+        &#10003; Voor 10:00 besteld, vanavond in huis
       </td></tr>
     </table>
 
@@ -900,7 +900,7 @@ function brandNav(): string {
 function uspBar(): string {
   const usps = [
     "Gratis verzending vanaf € 50",
-    "Vóór 19:00 besteld, morgen in huis",
+    "Vóór 10:00 besteld, vanavond in huis",
     "30.000 kleuren op maat gemengd",
     "Advies van ex-schilders",
     "5% met KLUSRPAS",
@@ -1264,7 +1264,7 @@ export function newsletterEmail({
     (intro || "").trim(),
     "",
     `Klantbeoordelingen: ${formatAverage(testimonialStats.average)} sterren (${formatCount(testimonialStats.count)} reviews)`,
-    "Gratis verzending vanaf 50 euro | Voor 19:00 besteld, morgen in huis | 30.000 kleuren op maat gemengd | Advies van ex-schilders | 5% met KLUSRPAS",
+    "Gratis verzending vanaf 50 euro | Voor 10:00 besteld, vanavond in huis | 30.000 kleuren op maat gemengd | Advies van ex-schilders | 5% met KLUSRPAS",
     "",
     ...(featured.length
       ? [
