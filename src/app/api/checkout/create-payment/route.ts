@@ -4,6 +4,8 @@ import { createOrder, setMolliePaymentId, updateOrderStatus } from "@/lib/store/
 import { createPayment } from "@/lib/payments";
 import { triggerCartReminder } from "@/lib/mailchimp";
 import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfillment";
+import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
+import type { CartItem } from "@/types";
 
 export const runtime = "nodejs";
 
@@ -85,6 +87,17 @@ export async function POST(req: Request) {
     }
 
     const data = parsed.data;
+
+    // 0. Voorraad-guard (Nijverdal, grootboek + live dashboard): voorkom dat
+    // er wordt afgerekend voor meer dan we kunnen leveren. Fail-open bij
+    // storingen — blokkeert alleen op een aantoonbaar tekort.
+    const shortages = await checkStockForItems(data.items as CartItem[]);
+    if (shortages.length) {
+      return NextResponse.json(
+        { error: shortageMessage(shortages), shortages },
+        { status: 409 },
+      );
+    }
 
     // 1. Persist the order (status "open").
     const order = await createOrder({

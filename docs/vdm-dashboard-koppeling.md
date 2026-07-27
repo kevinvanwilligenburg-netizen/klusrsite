@@ -35,11 +35,16 @@ Nog te doen vóór de eerste echte backfill:
    `/api/voorraad/skus?skus=39985524` (een bekend artikel). De backfill logt
    bij nul matches zelf voorbeelden van beide kanten.
 
-**Later — live beschikbaarheid in de storefront:** hetzelfde
-`/api/voorraad/skus`-endpoint (max 200 sku's per call, 30–60 s cache) kan de
-checkout/PDP van live voorraad voorzien. Dat lost de verouderde
-snapshot-voorraad én het oversell-risico bij het afrekenen structureel op —
-eerst de backfill stabiel draaien, dan dit.
+**Live beschikbaarheid — checkout-guard staat al klaar:** alle vier de
+web-orderroutes (checkout, express, Apple Pay ×2) valideren de voorraad nu
+server-side vóór het aanmaken van de betaling (`src/lib/live-stock.ts`). De
+guard rekent met min(eigen grootboek, dashboard-live) — het grootboek kent
+onze eigen webverkopen, het dashboard de winkelverkopen — en gebruikt
+`/api/voorraad/skus?skus=…` (max 200 per call, 45 s cache) automatisch zodra
+dat endpoint deployt; tot die tijd draait hij volledig op het grootboek.
+Fail-open: een storing in de check blokkeert nooit een checkout. Bij een
+tekort krijgt de klant een 409 met een duidelijke melding. De PDP live voorraad
+laten tonen kan later via dezelfde helper.
 
 ## Beveiliging
 

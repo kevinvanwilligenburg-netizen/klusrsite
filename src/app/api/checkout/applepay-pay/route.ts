@@ -4,6 +4,7 @@ import { createOrder, setMolliePaymentId } from "@/lib/store/orders";
 import { createPayment } from "@/lib/payments";
 import { getProductById } from "@/lib/data/products";
 import { shippingForCountry } from "@/lib/shipping";
+import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
 import type { CartItem, OrderCustomer } from "@/types";
 
 export const runtime = "nodejs";
@@ -82,6 +83,15 @@ export async function POST(req: Request) {
       kluspasPrice: variant.kluspasPrice,
       selectedColor: color,
     };
+
+    // 3b. Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
+    const shortages = await checkStockForItems([cartItem]);
+    if (shortages.length) {
+      return NextResponse.json(
+        { ok: false, error: shortageMessage(shortages), shortages },
+        { status: 409 },
+      );
+    }
 
     // 4. Klantgegevens uit het Apple Pay-contact.
     const contact = (data.contact ?? {}) as {

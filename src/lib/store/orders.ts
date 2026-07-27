@@ -112,7 +112,9 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     reference: generateReference(),
     customer: input.customer,
     // Elke regel draagt het kale sku-veld voor de dashboard→Tilroy-orderpush.
-    items: input.items.map((it) => ({ ...it, sku: it.sku || lineSku(it) })),
+    // Altijd server-side afleiden — een door de client meegestuurde sku is
+    // niet te vertrouwen (verkeerd artikel zou in Tilroy belanden).
+    items: input.items.map((it) => ({ ...it, sku: lineSku(it) })),
     paymentStatus: "open",
     paymentMethod: input.paymentMethod,
     ...(input.channel ? { channel: input.channel } : {}),
