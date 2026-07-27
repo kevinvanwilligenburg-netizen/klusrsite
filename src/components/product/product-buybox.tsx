@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { showAddedToCartToast } from "@/components/cart/added-to-cart-toast";
 import type { Product, ProductVariant, SelectedColor } from "@/types";
 import type { GlansVariant } from "@/lib/data/products";
-import { onlineStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
+import { onlineStock, DEFAULT_SAFETY_STOCK, PRIMARY_STORE_ID } from "@/lib/stock";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "./star-rating";
@@ -29,6 +29,7 @@ import { ColorPickerDialog } from "@/components/color/color-picker-dialog";
 import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
+import { useLiveStock } from "@/lib/hooks/use-live-stock";
 import { shippingForCountry, SHIPPING_COUNTRY_MAP } from "@/lib/shipping";
 import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
 
@@ -264,10 +265,20 @@ export function ProductBuybox({
   const surcharge = color?.base?.surcharge ?? 0;
   const effectiveKLUSRPAS = variant.kluspasPrice + surcharge;
   const effectivePrice = variant.price + surcharge;
+  // Live voorraad (grootboek + live Tilroy via het dashboard) verfijnt de
+  // snapshot-stand zodra de fetch binnen is; tot die tijd — of bij een storing —
+  // draait alles op de (dagelijks ververste) snapshot. Client-only, dus de PDP
+  // blijft statisch/ISR en de eerste render is identiek aan de server-render.
+  const liveStockMap = useLiveStock(product.variants.map((v) => v.id));
+  const liveQty = liveStockMap?.get(variant.id);
+  const baseStock =
+    liveQty != null
+      ? [{ storeId: PRIMARY_STORE_ID, quantity: liveQty }]
+      : variant.stockByStore;
   const effectiveStock =
     color?.base && product.colorMatchable
-      ? baseStockByStore(variant.stockByStore, color.base.id)
-      : variant.stockByStore;
+      ? baseStockByStore(baseStock, color.base.id)
+      : baseStock;
   // Online verkoopbaar = Nijverdal-voorraad ≥ veiligheidsvoorraad.
   const sellable = onlineStock(effectiveStock, safetyStock) > 0;
 

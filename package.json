@@ -5,8 +5,6 @@
   "description": "KLUSR — De beste VERF en alles wat je NÚ nodig hebt voor de klus.",
   "scripts": {
     "dev": "next dev",
-    "feed:build": "node scripts/build-channable-catalog.mjs",
-    "feed:channable": "node scripts/build-channable-catalog.mjs",
     "feed:tilroy": "node scripts/build-tilroy-catalog.mjs",
     "translate:catalog": "node scripts/translate-catalog.mjs",
     "barcodes:backfill": "node scripts/backfill-barcodes.mjs",

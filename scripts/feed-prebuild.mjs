@@ -10,9 +10,8 @@
  * Wil je tóch (handmatig, of in een aparte importjob) verversen uit een externe
  * bron, zet dan CATALOG_SOURCE:
  *   - (leeg) | owned | frozen  → standaard: eigen snapshot, géén externe import.
- *   - channable                → import uit de publieke Channable Google-feed (XML).
- *   - channable-api            → import via de Channable items-API (token nodig).
- *   - tilroy                   → import rechtstreeks uit de Tilroy S3-feeds.
+ *   - tilroy                   → import rechtstreeks uit de Tilroy S3-feeds
+ *                                (draait ook wekelijks via import-catalogus.yml).
  *   - barcodes | prices | stock→ non-destructieve backfills (EAN's / prijzen /
  *                                Nijverdal-voorraad) zonder herimport.
  *   - vdm                      → gecombineerd: barcodes → prijzen → voorraad,
@@ -35,8 +34,6 @@ const SOURCE = (process.env.CATALOG_SOURCE || "owned").trim().toLowerCase();
 
 /** Externe-bron → importscript. Alleen gebruikt als CATALOG_SOURCE dit kiest. */
 const IMPORTERS = {
-  channable: "build-channable-feed.mjs",
-  "channable-api": "build-channable-catalog.mjs",
   tilroy: "build-tilroy-catalog.mjs",
 };
 
@@ -113,7 +110,7 @@ if (SOURCE === "vdm") {
 const script = IMPORTERS[SOURCE];
 if (!script) {
   console.warn(
-    `⚠ Onbekende CATALOG_SOURCE="${SOURCE}". Geldig: owned (standaard), channable, channable-api, tilroy. ` +
+    `⚠ Onbekende CATALOG_SOURCE="${SOURCE}". Geldig: owned (standaard), tilroy, barcodes, prices, stock, vdm. ` +
       "Build gaat verder met de bestaande snapshot.",
   );
   process.exit(0);

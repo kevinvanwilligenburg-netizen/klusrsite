@@ -3,6 +3,11 @@ import type { Order } from "@/types";
 /**
  * Channable integratie — Order Connection API v1.
  *
+ * SINDS DE TILROY-MIGRATIE (2026-07) is Channable's rol beperkt tot
+ * MARKETPLACE-ORDERS; catalogus, prijzen, barcodes en voorraad komen
+ * rechtstreeks uit Tilroy / het VDM-dashboard (zie
+ * docs/vdm-dashboard-koppeling.md).
+ *
  * BELANGRIJK over het ordermodel (zo werkt Channable écht):
  *   - Channable ONTVANGT orders van marketplaces (bol.com, Amazon, …) en
  *     routeert ze naar je backoffice (Tilroy). Je leest ze uit via GET /orders.
@@ -13,12 +18,10 @@ import type { Order } from "@/types";
  *   - De schrijf-acties op bestaande orders zijn: shipment (verzending +
  *     tracking terugkoppelen), cancellation, return-status en manual updates.
  *
- * Gevolg voor KLUSR: onze eigen webshop-orders gaan NIET via Channable naar
- * Tilroy — dat is een aparte Tilroy-koppeling. Wat we hier wél doen:
- *   1. fetchChannableItems()  — productdata + voorraad ophalen (project items).
- *   2. fetchChannableOrders() — marketplace-orders ontvangen.
- *   3. pushShipment()         — PostNL-tracking terugkoppelen aan de marketplace.
- *   4. sendTestOrder()        — Sandbox test-order aanmaken om de koppeling te testen.
+ * Wat we hier doen:
+ *   1. fetchChannableOrders() — marketplace-orders ontvangen.
+ *   2. pushShipment()         — PostNL-tracking terugkoppelen aan de marketplace.
+ *   3. sendTestOrder()        — Sandbox test-order aanmaken om de koppeling te testen.
  *
  * Auth: Bearer token, company-/project-scoped. Docs: https://api.channable.com/v1/docs
  * Alles degradeert netjes: zonder credentials draait de webshop in demo-modus.
@@ -32,10 +35,6 @@ const PROJECT_ID = process.env.CHANNABLE_PROJECT_ID;
 // Order Config ID van je Channable order-connectie (nodig voor test-orders;
 // te vinden in Channable onder Connections → de order-connectie → URL/instellingen).
 const ORDER_CONFIG_ID = process.env.CHANNABLE_ORDER_CONFIG_ID;
-
-export function isChannableConfigured(): boolean {
-  return Boolean(TOKEN && COMPANY_ID);
-}
 
 /** Token + company + project — nodig voor het lezen/bijwerken van orders. */
 export function isChannableOrdersConfigured(): boolean {
@@ -58,92 +57,6 @@ function authHeaders(): Record<string, string> {
 /** Basis-URL voor alle order-endpoints (company-/project-scoped). */
 function ordersBase(): string {
   return `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/orders`;
-}
-
-function itemsUrl(offset: number, limit: number): string {
-  if (process.env.CHANNABLE_ITEMS_URL) {
-    const u = new URL(process.env.CHANNABLE_ITEMS_URL);
-    u.searchParams.set("offset", String(offset));
-    u.searchParams.set("limit", String(limit));
-    return u.toString();
-  }
-  return `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/items?offset=${offset}&limit=${limit}`;
-}
-
-/* --------------------------------------------------------------- products */
-
-export interface ChannableItem {
-  /** Channable/Tilroy artikel-id. */
-  id: string;
-  ean?: string;
-  title: string;
-  brand?: string;
-  description?: string;
-  price?: number;
-  image?: string;
-  category?: string;
-  color?: string;
-  size?: string;
-  groupId?: string;
-  /** Totale voorraad over alle vestigingen. */
-  stock?: number;
-  /** Voorraad per vestiging (shop-id → aantal). */
-  stockByLocation?: Record<string, number>;
-  /** Onbewerkte velden voor mapping-flexibiliteit. */
-  raw?: Record<string, unknown>;
-}
-
-/** Normaliseer een ruw Channable-item naar onze ChannableItem. */
-function normalizeItem(raw: Record<string, unknown>): ChannableItem {
-  const f = (raw.data ?? raw) as Record<string, unknown>;
-  const num = (v: unknown) =>
-    typeof v === "number" ? v : v != null ? parseFloat(String(v).replace(",", ".")) : undefined;
-  return {
-    id: String(f.id ?? f.gtin ?? f.ean ?? ""),
-    ean: f.ean ? String(f.ean) : f.gtin ? String(f.gtin) : undefined,
-    title: String(f.title ?? f.name ?? ""),
-    brand: f.brand ? String(f.brand) : undefined,
-    description: f.description ? String(f.description) : undefined,
-    price: num(f.price),
-    image: f.image_link ? String(f.image_link) : f.image ? String(f.image) : undefined,
-    category: f.product_type ? String(f.product_type) : f.category ? String(f.category) : undefined,
-    color: f.color ? String(f.color) : undefined,
-    size: f.size ? String(f.size) : undefined,
-    groupId: f.item_group_id ? String(f.item_group_id) : undefined,
-    stock: num(f.stock ?? f.quantity ?? f.availability_quantity),
-    raw: f,
-  };
-}
-
-/**
- * Haal álle project-items (productdata + voorraad) op uit Channable, gepagineerd.
- * Retourneert een lege lijst wanneer Channable niet is geconfigureerd.
- */
-export async function fetchChannableItems(
-  { pageSize = 1000, maxItems = 20000 } = {},
-): Promise<ChannableItem[]> {
-  if (!isChannableConfigured()) return [];
-
-  const out: ChannableItem[] = [];
-  let offset = 0;
-
-  while (out.length < maxItems) {
-    const res = await fetch(itemsUrl(offset, pageSize), { headers: authHeaders() });
-    if (!res.ok) {
-      console.error("[channable] items fetch failed", res.status, await res.text());
-      break;
-    }
-    const body = await res.json();
-    // Channable kan { items: [...] } of een kale array teruggeven.
-    const rows: Record<string, unknown>[] = Array.isArray(body)
-      ? body
-      : (body.items ?? body.data ?? body.results ?? []);
-    if (!rows.length) break;
-    out.push(...rows.map(normalizeItem));
-    if (rows.length < pageSize) break;
-    offset += pageSize;
-  }
-  return out;
 }
 
 /* ------------------------------------------------------- inkomende orders */
