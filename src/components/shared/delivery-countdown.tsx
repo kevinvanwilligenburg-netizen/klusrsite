@@ -59,7 +59,7 @@ export function DeliveryCountdown({
   const info = deliveryInfo();
   const day = dayLabel();
 
-  if (info.beforeCutoff) {
+  if (info.sameDay) {
     const cutoffTime = formatCutoff(locale);
     return (
       <DeliveryRow compact={compact} className={className} urgent>

@@ -14,38 +14,49 @@
  *  - Besteld vóór 10:00  → nog DEZELFDE dag bezorgd (same-day).
  *  - Besteld 10:00–23:59 → de VOLGENDE dag bezorgd.
  *  - DHL bezorgt in de avond, door heel Nederland (geen regio-uitzondering).
- *  - In het weekend wordt niet bezorgd: zaterdag- en zondagbestellingen komen
- *    op maandag. Een bestelling van vrijdag ná 10:00 schuift daardoor óók door
- *    naar maandag — zaterdag is immers geen bezorgdag.
+ *  - Zaterdag rijden we de vrijdagorders zélf uit (dus niet via DHL). Zaterdag
+ *    is daarmee wél een bezorgdag, maar géén dag waarop same-day kan: een
+ *    bestelling die op zaterdag binnenkomt gaat mee met maandag.
+ *  - Zondag wordt niet bezorgd.
  *
  * Controle-voorbeelden:
  *  - di 09:00 → di ("vandaag", 's avonds)
  *  - di 11:00 → wo ("morgen")
  *  - vr 09:00 → vr ("vandaag")
- *  - vr 11:00 → ma (za/zo worden overgeslagen)
- *  - za en zo (elk tijdstip) → ma
+ *  - vr 11:00 → za (wij bezorgen zelf)
+ *  - za (elk tijdstip) → ma
+ *  - zo (elk tijdstip) → ma
  */
 
 /** Cutoff-uur (lokale tijd). Vóór dit hele uur bezorgen we nog vandaag. */
 export const CUTOFF_HOUR = 10;
 
 /**
- * Dagen waarop DHL niet bezorgt: zaterdag (6) en zondag (0). Maandag is met
- * DHL wél een bezorgdag — dat verschilt van de oude PostNL-klok, waar juist
- * zondag én maandag afvielen.
- *
- * Dit is de enige plek waar de bezorgdagen staan; de beloftes, de aftelling en
- * de getoonde bezorgdatum volgen automatisch.
+ * Dagen waarop niemand bezorgt: zondag (0). Maandag is met DHL wél een
+ * bezorgdag — dat verschilt van de oude PostNL-klok, waar zondag én maandag
+ * afvielen. Zaterdag staat hier bewust niet in: dan rijden we zelf.
  */
-const NON_DELIVERY_DAYS = new Set([0, 6]);
+const NON_DELIVERY_DAYS = new Set([0]);
+
+/**
+ * Dagen waarop géén same-day mogelijk is: zaterdag (6). We rijden zaterdag wel,
+ * maar alleen met de orders van vrijdag; wat op zaterdag zelf binnenkomt gaat
+ * mee met maandag. Een zaterdagbestelling vóór 10:00 valt dus terug op de
+ * normale "volgende bezorgdag"-regel.
+ */
+const NO_SAME_DAY_DAYS = new Set([6]);
 
 export type DeliveryLabel = "today" | "tomorrow" | "dayAfter" | "weekday";
 
 export interface DeliveryInfo {
   /** De (lokale) datum waarop bezorgd wordt, op middernacht genormaliseerd. */
   deliveryDate: Date;
-  /** Was er besteld vóór de cutoff van 10:00 (en dus vandaag nog bezorgd)? */
-  beforeCutoff: boolean;
+  /**
+   * Haalt deze bestelling nog de bezorging van vandaag? Dat vraagt méér dan
+   * "vóór 10:00": op zaterdag rijden we alleen de vrijdagorders uit, dus dan is
+   * same-day niet mogelijk ook al is het 09:00.
+   */
+  sameDay: boolean;
   /**
    * Hoe de UI de dag mag presenteren:
    *  - "today"     → leverdatum is vandaag (same-day, 's avonds)
@@ -57,7 +68,8 @@ export interface DeliveryInfo {
   label: DeliveryLabel;
   /**
    * Milliseconden tot de eerstvolgende 10:00 (voor de live aftelling). Alleen
-   * zinvol als `beforeCutoff` true is; ná de cutoff is dit 0.
+   * zinvol als `sameDay` true is; anders 0 — aftellen naar een deadline die de
+   * bezorgdag toch niet vervroegt zou de klant misleiden.
    */
   msUntilCutoff: number;
 }
@@ -82,10 +94,13 @@ function addDays(d: Date, days: number): Date {
  * @param now Het bestelmoment (default: het huidige moment).
  */
 export function deliveryInfo(now: Date = new Date()): DeliveryInfo {
-  const beforeCutoff = now.getHours() < CUTOFF_HOUR;
+  // Mikken we op vandaag? Dat vraagt vóór de cutoff besteld én een dag waarop we
+  // die dag nog rijden (zaterdag valt af — dan gaan alleen de vrijdagorders mee).
+  const aimToday =
+    now.getHours() < CUTOFF_HOUR && !NO_SAME_DAY_DAYS.has(now.getDay());
 
   // Vóór 10:00 bezorgen we vandaag nog; daarna is morgen de eerste kans.
-  let deliveryDate = beforeCutoff ? startOfDay(now) : addDays(startOfDay(now), 1);
+  let deliveryDate = aimToday ? startOfDay(now) : addDays(startOfDay(now), 1);
 
   // Rol door naar de eerstvolgende bezorgdag als het op een niet-bezorgdag valt.
   while (NON_DELIVERY_DAYS.has(deliveryDate.getDay())) {
@@ -103,13 +118,18 @@ export function deliveryInfo(now: Date = new Date()): DeliveryInfo {
   else if (dayDiff === 2) label = "dayAfter";
   else label = "weekday";
 
-  // ms tot de eerstvolgende 10:00 (alleen relevant vóór de cutoff).
+  // Same-day leiden we af uit de uitkomst, niet uit de klok: op zondagochtend
+  // is het wél vóór 10:00, maar bezorgen we pas maandag. Zo kan er nooit een
+  // aftelling verschijnen die de bezorgdag toch niet vervroegt.
+  const sameDay = dayDiff === 0;
+
+  // ms tot de eerstvolgende 10:00 (alleen relevant als same-day nog kan).
   let msUntilCutoff = 0;
-  if (beforeCutoff) {
+  if (sameDay) {
     const cutoff = startOfDay(now);
     cutoff.setHours(CUTOFF_HOUR, 0, 0, 0);
     msUntilCutoff = Math.max(0, cutoff.getTime() - now.getTime());
   }
 
-  return { deliveryDate, beforeCutoff, label, msUntilCutoff };
+  return { deliveryDate, sameDay, label, msUntilCutoff };
 }
