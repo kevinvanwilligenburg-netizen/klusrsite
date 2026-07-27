@@ -17,7 +17,7 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
 - **Homepage** – hero, klushulp‑funnel, verfcategorieën, populaire producten, Kluspas, acties, inspiratie
 - **Categorie‑ & subcategoriepagina's** – met filters, sortering en SEO‑teksten
 - **Product listing (PLP)** – filters als bottom‑sheet op mobiel, sidebar op desktop
-- **Productdetail (PDP)** – galerij, varianten, kleurkiezer, voorraad per winkel, tabs (omschrijving/specificaties/reviews/FAQ/verwerking), "vaak samen gekocht", alternatieven, recent bekeken, AI‑productadvies, sticky add‑to‑cart op mobiel
+- **Productdetail (PDP)** – galerij, varianten, kleurkiezer, voorraad (online = uitsluitend Nijverdal), tabs (omschrijving/specificaties/reviews/FAQ/verwerking), "vaak samen gekocht", alternatieven, recent bekeken, AI‑productadvies, sticky add‑to‑cart op mobiel
 - **Winkelwagen** – gratis‑verzending progressbar, Kluspas‑voordeel, "vaak vergeten", upsell, bewaar voor later
 - **Checkout** – one‑page, Mollie‑betaalmethoden, orderoverzicht, trust badges
 - **Bedankt** – orderbevestiging + tracking
@@ -54,6 +54,14 @@ Gebouwd met **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS** en
   (directe S3‑feeds). Los kan ook met `npm run feed:channable` /
   `npm run feed:tilroy`. Een import mag de deploy nooit breken: faalt 'ie, dan
   blijft de bestaande snapshot staan.
+- **Non‑destructieve backfills** (aanbevolen i.p.v. herimport):
+  `CATALOG_SOURCE=vdm` ververst per build barcodes → prijzen → Nijverdal‑voorraad
+  met het **VDM‑dashboard** als primaire bron (`dashboardvdm.vercel.app` leest
+  zelf live uit Tilroy). Los: `barcodes`, `prices`, `stock`, of
+  `npm run prices:backfill` / `npm run stock:backfill`. Zie
+  [`docs/vdm-dashboard-koppeling.md`](./docs/vdm-dashboard-koppeling.md) voor de
+  endpoint‑contracten en wat het dashboard nog moet toevoegen (sku +
+  Nijverdal‑aantal in de stock‑API).
 - **Orders**: webshop‑orders blijven in de eigen orderstore; Channable kent geen
   endpoint om ze in te schieten (`pushChannableOrder` is bewust een no‑op).
   Channable is wél de inbound‑route voor marketplace‑orders (bol/Amazon) en
@@ -172,8 +180,12 @@ npm run feed:channable   # import — productdata + voorraad uit de Channable-fe
 npm run feed:tilroy      # import — directe Tilroy Google-feed + stock-CSV
 ```
 
-Varianten worden gegroepeerd per `item_group_id`, de bron‑taxonomie wordt op de
-KLUSR‑categorieën gemapt en voorraad komt per winkel uit de snapshot. Winkels,
+Varianten worden gegroepeerd per `item_group_id` en de bron‑taxonomie wordt op
+de KLUSR‑categorieën gemapt. De webshop voert **uitsluitend de voorraad van de
+hoofdvestiging (Nijverdal)**: bij het laden van de catalogus worden de overige
+vestigingen uit `stockByStore` gestript (`src/lib/data/products.ts`), zodat de
+site ze nergens kan tonen; de volledige per‑winkel‑stand blijft alleen als
+referentie in de snapshot staan. Winkels,
 kleurcollecties en adviesartikelen staan als verzorgde dataset in `src/lib/data`.
 Client‑componenten halen losse productkaarten op via `/api/products` zodat de
 volledige catalogus niet in de browser‑bundle belandt.

@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const revalidate = 86400; // 24 uur
 
 const FEED_URL =
-  (process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app").replace(
+  (process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm-k-evin-s-projects.vercel.app").replace(
     /\/+$/,
     "",
   ) + "/api/kleurenkiezer/feed";

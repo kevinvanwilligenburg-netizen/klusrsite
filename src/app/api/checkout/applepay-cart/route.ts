@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createOrder, setMolliePaymentId } from "@/lib/store/orders";
 import { createPayment } from "@/lib/payments";
+import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
 import type { CartItem, OrderCustomer } from "@/types";
 
 export const runtime = "nodejs";
@@ -65,6 +66,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Ongeldige Apple Pay-gegevens" }, { status: 400 });
     }
     const data = parsed.data;
+
+    // 0. Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
+    const shortages = await checkStockForItems(data.items as CartItem[]);
+    if (shortages.length) {
+      return NextResponse.json(
+        { ok: false, error: shortageMessage(shortages), shortages },
+        { status: 409 },
+      );
+    }
 
     // 1. Klantgegevens uit het Apple Pay-contact (naam, e-mail, bezorgadres).
     const contact = (data.contact ?? {}) as {

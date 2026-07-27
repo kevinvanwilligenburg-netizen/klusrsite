@@ -13,6 +13,11 @@
  *   - channable                → import uit de publieke Channable Google-feed (XML).
  *   - channable-api            → import via de Channable items-API (token nodig).
  *   - tilroy                   → import rechtstreeks uit de Tilroy S3-feeds.
+ *   - barcodes | prices | stock→ non-destructieve backfills (EAN's / prijzen /
+ *                                Nijverdal-voorraad) zonder herimport.
+ *   - vdm                      → gecombineerd: barcodes → prijzen → voorraad,
+ *                                met het VDM-dashboard als primaire bron
+ *                                (zie docs/vdm-dashboard-koppeling.md).
  *
  * Veilig by design: een import mag de deploy nooit breken. Mislukt 'ie (netwerk,
  * lege/ongezonde bron), dan blijft de bestaande snapshot staan en bouwt de
@@ -54,6 +59,54 @@ if (SOURCE === "barcodes") {
   });
   if (r.status !== 0) {
     console.warn("⚠ Barcode-backfill mislukt — build gaat verder met de bestaande snapshot.");
+  }
+  process.exit(0);
+}
+
+// Speciale modus: alleen verkoopprijzen verversen — NON-DESTRUCTIEF (raakt
+// uitsluitend price/kluspasPrice/compareAtPrice aan). Bron: VDM-dashboard
+// prijsfeed, anders Channable items-API, anders de publieke Tilroy-feed.
+// Admin-prijzen (overlay) winnen runtime altijd.
+if (SOURCE === "prices") {
+  console.log("→ Catalogus: verkoopprijzen verversen (non-destructief)…");
+  const r = spawnSync(process.execPath, [join(__dirname, "backfill-prices.mjs")], {
+    stdio: "inherit",
+  });
+  if (r.status !== 0) {
+    console.warn("⚠ Prijs-backfill mislukt — build gaat verder met de bestaande snapshot.");
+  }
+  process.exit(0);
+}
+
+// Speciale modus: alleen de Nijverdal-voorraad verversen uit de VDM-dashboard
+// stock-API — NON-DESTRUCTIEF (alleen de nijverdal-regel van stockByStore).
+if (SOURCE === "stock") {
+  console.log("→ Catalogus: voorraad (Nijverdal) verversen uit het VDM-dashboard…");
+  const r = spawnSync(process.execPath, [join(__dirname, "backfill-stock.mjs")], {
+    stdio: "inherit",
+  });
+  if (r.status !== 0) {
+    console.warn("⚠ Voorraad-backfill mislukt — build gaat verder met de bestaande snapshot.");
+  }
+  process.exit(0);
+}
+
+// Gecombineerde modus: alle non-destructieve backfills in één build, met het
+// VDM-dashboard als primaire bron. Volgorde is bewust: eerst barcodes (EAN's,
+// nodig voor de voorraad-match), dan prijzen, dan voorraad. Elke stap is
+// fail-soft — een haperende bron breekt de deploy nooit.
+if (SOURCE === "vdm") {
+  const steps = [
+    ["barcodes", "backfill-barcodes.mjs"],
+    ["prijzen", "backfill-prices.mjs"],
+    ["voorraad", "backfill-stock.mjs"],
+  ];
+  for (const [label, script] of steps) {
+    console.log(`→ Catalogus (vdm): ${label} verversen…`);
+    const r = spawnSync(process.execPath, [join(__dirname, script)], { stdio: "inherit" });
+    if (r.status !== 0) {
+      console.warn(`⚠ ${label}-backfill mislukt — volgende stap gaat gewoon door.`);
+    }
   }
   process.exit(0);
 }

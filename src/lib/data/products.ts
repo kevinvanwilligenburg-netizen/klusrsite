@@ -6,7 +6,7 @@ import priceOverrides from "./price-overrides.generated.json";
 import catalogOverridesData from "./catalog-overrides.generated.json";
 import customProductsData from "./custom-products.generated.json";
 import { applyCatalogOverlay, type CatalogOverrides } from "./catalog-overlay";
-import { onlineStock } from "@/lib/stock";
+import { onlineStock, PRIMARY_STORE_ID } from "@/lib/stock";
 
 /** Adviesprijs/normale prijs per sku uit de prijsfeed (scripts/build-price-feed.mjs). */
 const PRICE_OVERRIDES = priceOverrides as Record<string, { n?: number; a?: number }>;
@@ -1098,6 +1098,29 @@ function enforceKluspasDiscount(p: Product): Product {
 }
 
 /**
+ * De webshop verkoopt én toont uitsluitend de voorraad van de hoofdvestiging
+ * (Nijverdal — zie lib/stock.ts). We strippen de overige vestigingen daarom al
+ * bij de catalogus-opbouw: zo kan geen enkele pagina of API ze per ongeluk
+ * tonen en blijft de payload naar de browser klein. De volledige per-winkel-
+ * stand blijft als referentie in de snapshot (feed-products.generated.json).
+ */
+function primaryStoreOnly(list: StoreStock[] | undefined): StoreStock[] {
+  const qty = list?.find((s) => s.storeId === PRIMARY_STORE_ID)?.quantity ?? 0;
+  return [{ storeId: PRIMARY_STORE_ID, quantity: qty }];
+}
+
+function withPrimaryStoreStock(p: Product): Product {
+  return {
+    ...p,
+    stockByStore: primaryStoreOnly(p.stockByStore),
+    variants: (p.variants ?? []).map((v) => ({
+      ...v,
+      stockByStore: primaryStoreOnly(v.stockByStore),
+    })),
+  };
+}
+
+/**
  * The active catalogus: real Tilroy feed products when available, otherwise the
  * curated fallback set. Helpers below operate on this combined source. De
  * KLUSRPAS-prijs wordt centraal op een vaste 5% korting gezet.
@@ -1106,7 +1129,7 @@ export const products: Product[] = applyCatalogOverlay(
   (feedProducts.length ? feedProducts : curatedProducts).map(enforceKluspasDiscount),
   catalogOverridesData as CatalogOverrides,
   customProductsData as unknown as Product[],
-);
+).map(withPrimaryStoreStock);
 
 /* ------------------------------------------------------------------ lookups */
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createOrder, setMolliePaymentId } from "@/lib/store/orders";
 import { createPayment } from "@/lib/payments";
+import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
 import type { CartItem, OrderCustomer } from "@/types";
 
 export const runtime = "nodejs";
@@ -63,6 +64,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ongeldige bestelgegevens" }, { status: 400 });
     }
     const data = parsed.data;
+
+    // Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
+    const shortages = await checkStockForItems(data.items as CartItem[]);
+    if (shortages.length) {
+      return NextResponse.json(
+        { error: shortageMessage(shortages), shortages },
+        { status: 409 },
+      );
+    }
 
     // Order met (nog) leeg adres — de wallet/Mollie levert dat; de webhook vult aan.
     const customer: OrderCustomer = {

@@ -14,7 +14,9 @@
     "images:generate": "node scripts/generate-images.mjs",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prices:backfill": "node scripts/backfill-prices.mjs",
+    "stock:backfill": "node scripts/backfill-stock.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
