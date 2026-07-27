@@ -1,0 +1,63 @@
+name: Dagelijkse voorraad- en prijssync (VDM-dashboard)
+
+# Ververst elke ochtend de Nijverdal-voorraad en de prijzen in de
+# catalogus-snapshot vanuit het VDM-dashboard (dat live uit Tilroy leest) en
+# pusht het resultaat naar main — Vercel deployt productie dan automatisch.
+# De dashboard-feeds zijn publiek: geen secrets nodig. Draait bewust ná de
+# Tilroy-cron van het dashboard (05:00 UTC).
+#
+# Handmatig draaien: tabblad "Actions" → deze workflow → "Run workflow".
+#
+# NB: de sync commit rechtstreeks op main (productie). Krijgt een feature-PR
+# daardoor een merge-conflict op feed-products.generated.json, los het dan op
+# door de backfills opnieuw te draaien (scripts/backfill-stock.mjs +
+# backfill-prices.mjs) in plaats van handmatig regels te kiezen.
+
+on:
+  schedule:
+    - cron: "45 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-voorraad-prijzen
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Non-destructief: raakt alleen de Nijverdal-regel van stockByStore aan.
+      # Faalt de bron (dashboard/Tilroy down), dan faalt de run zichtbaar en
+      # blijft de bestaande snapshot gewoon staan.
+      - name: Voorraad (Nijverdal) verversen
+        run: node scripts/backfill-stock.mjs
+
+      # Non-destructief: alleen price/kluspasPrice/compareAtPrice.
+      - name: Prijzen verversen
+        run: node scripts/backfill-prices.mjs
+
+      - name: Commit & push (triggert de Vercel-productie-deploy)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/data/feed-products.generated.json
+          if git diff --staged --quiet; then
+            echo "Geen wijzigingen — niets te committen."
+          else
+            git commit -m "chore: dagelijkse voorraad-/prijssync uit het VDM-dashboard"
+            git push origin main
+          fi
