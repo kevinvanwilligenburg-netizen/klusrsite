@@ -1,9 +1,23 @@
 # KLUSR ⇄ VDM-dashboard — datakoppeling
 
 KLUSR leest productdata uit het interne VDM-dashboard (repo `dashboardvdm`,
-live: `https://dashboardvdm.vercel.app`). Het dashboard praat zelf live met de
-Tilroy-API (dagelijkse voorraad-cron om 05:00 UTC) en is daarmee een véél
-versere bron dan de oude Tilroy S3-feeds of de (uitgeklede) Channable-feed.
+live: `https://dashboardvdm-k-evin-s-projects.vercel.app`). Het dashboard praat
+zelf live met de Tilroy-API (dagelijkse voorraad-cron om 05:00 UTC) en is
+daarmee een véél versere bron dan de oude Tilroy S3-feeds of de (uitgeklede)
+Channable-feed.
+
+> ⚠️ **Gebruik het kale `dashboardvdm.vercel.app` niet meer**: die alias hangt
+> (sinds een oude rollback/verhuizing) vast aan een deployment van 21 juni en
+> hoort niet meer bij het huidige Vercel-project. Alle KLUSR-defaults wijzen
+> naar het canonieke domein hierboven. NB voor de dashboard-sessie: de
+> GTM-overlays op devoordeelmarkt.nl vallen ook terug op het oude domein
+> (`window.DVM_KLEURENKIEZER_API`-fallback) — die laden dus juni-code totdat
+> de alias in Vercel opnieuw wordt gekoppeld of de fallback wordt aangepast.
+
+**Tilroy-winkel-ids** (uit de live feed): 7827 Nijverdal · 8626 Apeldoorn ·
+8627 Emmen · 8628 Deventer · 8629 Zutphen · 8934 Webshop · 8602 TEST. De
+webshop-verkoopvoorraad = **7827 + 8934**. Let op: dit wijkt af van de
+kolomvolgorde die de oude S3-stock-CSV suggereerde.
 
 ## Wat er al werkt
 

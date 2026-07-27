@@ -10,7 +10,7 @@
  *
  * Bron (in volgorde):
  *   1. VDM-dashboard prijsfeed (publiek, sku = Tilroy-artikel-id, mét
- *      adviesprijs) — https://dashboardvdm.vercel.app/api/prijsfeed.
+ *      adviesprijs) — https://dashboardvdm-k-evin-s-projects.vercel.app/api/prijsfeed.
  *      Override: PRIJSFEED_URL (zelfde env als build-price-feed.mjs).
  *   2. Channable items-API — wanneer CHANNABLE_TOKEN/CHANNABLE_API_TOKEN,
  *      CHANNABLE_COMPANY_ID en CHANNABLE_PROJECT_ID (of CHANNABLE_ITEMS_URL)
@@ -34,7 +34,7 @@ const SNAP = join(__dirname, "..", "src", "lib", "data", "feed-products.generate
 const VDM_PRIJSFEED_URL =
   process.env.PRIJSFEED_URL ||
   process.env.VDM_PRIJSFEED_URL ||
-  "https://dashboardvdm.vercel.app/api/prijsfeed";
+  "https://dashboardvdm-k-evin-s-projects.vercel.app/api/prijsfeed";
 const BASE = (process.env.CHANNABLE_API_BASE || "https://api.channable.com/v1").replace(/\/$/, "");
 const TOKEN = process.env.CHANNABLE_TOKEN || process.env.CHANNABLE_API_TOKEN;
 const COMPANY_ID = process.env.CHANNABLE_COMPANY_ID;

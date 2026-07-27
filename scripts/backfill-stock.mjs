@@ -38,7 +38,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAP = join(__dirname, "..", "src", "lib", "data", "feed-products.generated.json");
 
 const STOCK_URL =
-  process.env.VDM_STOCK_URL || "https://dashboardvdm.vercel.app/api/voorraad/feed";
+  process.env.VDM_STOCK_URL || "https://dashboardvdm-k-evin-s-projects.vercel.app/api/voorraad/feed";
 const ACCEPT_TOTAL = /^(1|true|ja|yes)$/i.test(process.env.VDM_STOCK_ACCEPT_TOTAL || "");
 const PAGE = 2000; // max van de dashboard-API
 const PRIMARY_STORE_ID = "nijverdal";
@@ -83,9 +83,11 @@ async function fetchAllStock() {
     const u = new URL(STOCK_URL);
     u.searchParams.set("limit", String(PAGE));
     u.searchParams.set("offset", String(offset));
+    // Ruime timeout: een koude lambda doet server-side een volledige gepagineerde
+    // Tilroy-sweep en kan ~45-60s nodig hebben; daarna cachet het dashboard kort.
     const res = await fetch(u.toString(), {
       headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(90_000),
     });
     if (!res.ok) throw new Error(`VDM-stock → ${res.status}`);
     const body = await res.json();
