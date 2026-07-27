@@ -48,12 +48,11 @@ if (SOURCE === "" || SOURCE === "owned" || SOURCE === "frozen") {
   process.exit(0);
 }
 
-// Speciale modus: alleen productbarcodes (EAN) bijvullen uit Channable —
-// NON-DESTRUCTIEF (vult enkel ontbrekende product.gtin). Gebruikt dezelfde
-// CHANNABLE_*-keys als de rest (incl. CHANNABLE_API_TOKEN). Handig om vanuit
-// Vercel de barcodes binnen te halen zonder de hele catalogus te herimporteren.
+// Speciale modus: alleen productbarcodes (EAN) bijvullen — NON-DESTRUCTIEF
+// (vult enkel product.gtin). Bron: de VDM-dashboard prijsfeed (publiek, geen
+// secrets nodig); de Channable items-API alleen nog als terugval.
 if (SOURCE === "barcodes") {
-  console.log("→ Catalogus: productbarcodes bijvullen uit Channable (non-destructief)…");
+  console.log("→ Catalogus: productbarcodes bijvullen (non-destructief)…");
   const r = spawnSync(process.execPath, [join(__dirname, "backfill-barcodes.mjs")], {
     stdio: "inherit",
   });

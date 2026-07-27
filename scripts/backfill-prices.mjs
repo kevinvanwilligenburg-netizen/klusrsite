@@ -8,14 +8,11 @@
  * intern consistent blijft. Admin-prijzen via de catalogus-overlay winnen
  * runtime altijd van deze basisprijzen.
  *
- * Bron (in volgorde):
+ * Bron (in volgorde) — beide rechtstreeks op Tilroy-data, Channable-vrij:
  *   1. VDM-dashboard prijsfeed (publiek, sku = Tilroy-artikel-id, mét
  *      adviesprijs) — https://dashboardvdm.vercel.app/api/prijsfeed.
  *      Override: PRIJSFEED_URL (zelfde env als build-price-feed.mjs).
- *   2. Channable items-API — wanneer CHANNABLE_TOKEN/CHANNABLE_API_TOKEN,
- *      CHANNABLE_COMPANY_ID en CHANNABLE_PROJECT_ID (of CHANNABLE_ITEMS_URL)
- *      gezet zijn.
- *   3. Publieke Tilroy Google-feed (XML) — zelfde bronprijzen, geen adviesprijs.
+ *   2. Publieke Tilroy Google-feed (XML) — zelfde bronprijzen, geen adviesprijs.
  *      Override: TILROY_FEED_URL.
  *
  *   node scripts/backfill-prices.mjs
@@ -35,10 +32,6 @@ const VDM_PRIJSFEED_URL =
   process.env.PRIJSFEED_URL ||
   process.env.VDM_PRIJSFEED_URL ||
   "https://dashboardvdm.vercel.app/api/prijsfeed";
-const BASE = (process.env.CHANNABLE_API_BASE || "https://api.channable.com/v1").replace(/\/$/, "");
-const TOKEN = process.env.CHANNABLE_TOKEN || process.env.CHANNABLE_API_TOKEN;
-const COMPANY_ID = process.env.CHANNABLE_COMPANY_ID;
-const PROJECT_ID = process.env.CHANNABLE_PROJECT_ID;
 const TILROY_FEED_URL =
   process.env.TILROY_FEED_URL ||
   "https://tilroy.s3.eu-west-1.amazonaws.com/780/feed/google_devoordeelmarkt_NL.xml";
@@ -49,45 +42,6 @@ const r2 = (n) => Math.round(n * 100) / 100;
 
 const num = (v) =>
   typeof v === "number" ? v : v != null ? parseFloat(String(v).replace(",", ".")) : 0;
-
-function channableConfigured() {
-  return Boolean(TOKEN && COMPANY_ID && (PROJECT_ID || process.env.CHANNABLE_ITEMS_URL));
-}
-
-function itemsUrl(offset, limit) {
-  if (process.env.CHANNABLE_ITEMS_URL) {
-    const u = new URL(process.env.CHANNABLE_ITEMS_URL);
-    u.searchParams.set("offset", String(offset));
-    u.searchParams.set("limit", String(limit));
-    return u.toString();
-  }
-  return `${BASE}/companies/${COMPANY_ID}/projects/${PROJECT_ID}/items?offset=${offset}&limit=${limit}`;
-}
-
-/** Prijs per artikel-id uit de Channable items-API. */
-async function fetchChannablePrices() {
-  const map = new Map();
-  const pageSize = 1000;
-  let offset = 0;
-  for (;;) {
-    const res = await fetch(itemsUrl(offset, pageSize), {
-      headers: { Authorization: `Bearer ${TOKEN}`, Accept: "application/json" },
-    });
-    if (!res.ok) throw new Error(`Channable items → ${res.status}: ${await res.text()}`);
-    const body = await res.json();
-    const rows = Array.isArray(body) ? body : body.items ?? body.data ?? body.results ?? [];
-    if (!rows.length) break;
-    for (const raw of rows) {
-      const f = raw.data ?? raw;
-      const id = String(f.id ?? "").trim();
-      const price = num(f.price);
-      if (id && price > 0) map.set(id, { price, advies: null });
-    }
-    if (rows.length < pageSize) break;
-    offset += pageSize;
-  }
-  return map;
-}
 
 /**
  * Prijzen uit de VDM-dashboard prijsfeed (JSON): per product { sku, ean,
@@ -147,18 +101,7 @@ async function main() {
     console.warn(`⚠ VDM-prijsfeed niet beschikbaar (${err.message}) — probeer volgende bron.`);
   }
 
-  // 2. Channable items-API (vereist CHANNABLE_*-secrets).
-  if (!prices?.size && channableConfigured()) {
-    try {
-      console.log("→ Prijzen ophalen uit de Channable items-API…");
-      prices = await fetchChannablePrices();
-      source = "channable-api";
-    } catch (err) {
-      console.warn(`⚠ Channable items-API faalde (${err.message}) — probeer volgende bron.`);
-    }
-  }
-
-  // 3. Publieke Tilroy Google-feed (laatste terugval).
+  // 2. Publieke Tilroy Google-feed (terugval).
   if (!prices?.size) {
     console.log("→ Prijzen ophalen uit de publieke Tilroy-feed…");
     prices = await fetchTilroyPrices();
