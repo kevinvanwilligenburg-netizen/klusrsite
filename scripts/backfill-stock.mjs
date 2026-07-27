@@ -36,6 +36,8 @@ import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAP = join(__dirname, "..", "src", "lib", "data", "feed-products.generated.json");
+// IJkpunt van de voorraadbasis; het grootboek scoopt zijn tellers hierop.
+const BASELINE_OUT = join(__dirname, "..", "src", "lib", "data", "stock-baseline.generated.json");
 
 const STOCK_URL =
   process.env.VDM_STOCK_URL || "https://dashboardvdm.vercel.app/api/voorraad/feed";
@@ -236,12 +238,23 @@ async function main() {
   }
 
   if (changed === 0) {
+    // Bewust ook het ijkpunt laten staan: Tilroy meldt dezelfde stand, dus onze
+    // eigen verkopen sinds het vorige ijkpunt zijn er nog niet in verwerkt en
+    // moeten blijven meetellen (zie de uitleg in src/lib/store/stock-ledger.ts).
     console.log("✓ Alle voorraadstanden waren al actueel — niets geschreven.");
     return;
   }
 
   writeFileSync(SNAP, JSON.stringify(snap, null, 2));
   console.log(`✓ ${changed} voorraadstanden (Nijverdal) bijgewerkt → ${SNAP}`);
+
+  // Nieuw ijkpunt vastleggen: het voorraad-grootboek scoopt zijn tellers hierop,
+  // zodat "verkocht sinds de feed" opnieuw bij nul begint tegen deze verse
+  // Tilroy-stand in plaats van cumulatief door te tellen (en verkopen dubbel af
+  // te trekken zodra Tilroy ze óók heeft uitgeboekt).
+  const stamp = asOf || new Date().toISOString();
+  writeFileSync(BASELINE_OUT, `${JSON.stringify({ asOf: stamp }, null, 2)}\n`);
+  console.log(`✓ Voorraad-ijkpunt → ${stamp}`);
 }
 
 main().catch((err) => {

@@ -46,6 +46,18 @@ Nog te doen vóór de eerste echte backfill:
    `/api/voorraad/skus?skus=39985524` (een bekend artikel). De backfill logt
    bij nul matches zelf voorbeelden van beide kanten.
 
+**Voorraad-ijkpunt (belangrijk bij wijzigingen aan het grootboek):** het
+voorraad-grootboek telt verkopen "sinds de feed". Nu de voorraad dagelijks uit
+Tilroy ververst, is dat ijkpunt niet meer vast, dus de tellers zijn eraan
+gekoppeld: `scripts/backfill-stock.mjs` schrijft bij elke verse stand de `asOf`
+naar `src/lib/data/stock-baseline.generated.json`, en
+`src/lib/store/stock-ledger.ts` neemt die op in zijn KV-sleutels
+(`stock:sold:<asOf>`). Een nieuwe stand betekent dus automatisch nieuwe tellers.
+Zonder die koppeling zou een verkoop dubbel worden afgetrokken zodra Tilroy 'm
+óók heeft uitgeboekt — en dat gebeurt sinds de order-push (dashboardvdm #287)
+automatisch. Bij een ongewijzigde Tilroy-stand blijft het ijkpunt bewust staan,
+zodat eigen verkopen die Tilroy nog niet kent blijven meetellen.
+
 **Live beschikbaarheid — checkout-guard staat al klaar:** alle vier de
 web-orderroutes (checkout, express, Apple Pay ×2) valideren de voorraad nu
 server-side vóór het aanmaken van de betaling (`src/lib/live-stock.ts`). De
