@@ -1110,13 +1110,20 @@ function primaryStoreOnly(list: StoreStock[] | undefined): StoreStock[] {
 }
 
 function withPrimaryStoreStock(p: Product): Product {
+  const variants = (p.variants ?? []).map((v) => ({
+    ...v,
+    stockByStore: primaryStoreOnly(v.stockByStore),
+  }));
+  // Productniveau spiegelt de best leverbare variant: een product is verkoopbaar
+  // (en zichtbaar op de PLP) zolang één maat/kleur nog voorraad heeft — de
+  // lead-variant kan leeg zijn terwijl grotere maten er nog wel zijn.
+  const best = variants.length
+    ? Math.max(...variants.map((v) => v.stockByStore[0]?.quantity ?? 0))
+    : (primaryStoreOnly(p.stockByStore)[0]?.quantity ?? 0);
   return {
     ...p,
-    stockByStore: primaryStoreOnly(p.stockByStore),
-    variants: (p.variants ?? []).map((v) => ({
-      ...v,
-      stockByStore: primaryStoreOnly(v.stockByStore),
-    })),
+    stockByStore: [{ storeId: PRIMARY_STORE_ID, quantity: best }],
+    variants,
   };
 }
 
