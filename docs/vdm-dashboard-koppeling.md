@@ -139,9 +139,11 @@ bevatten.
 
 **Gedaan (2026-07-27):** de bezorgklok in `src/lib/delivery.ts` volgt de
 DHL-regels — cutoff 10:00, vóór die tijd same-day, daarna de volgende dag, en
-DHL bezorgt 's avonds door heel Nederland. Niet-bezorgdagen staan op één plek
-(`NON_DELIVERY_DAYS`, nu alleen zondag) — pas dat aan als het DHL-contract
-andere dagen kent. Alle beloftes in de UI, SEO-teksten, e-mails, AI-prompts en
+DHL bezorgt 's avonds door heel Nederland. In het weekend wordt niet bezorgd:
+zaterdag- en zondagbestellingen komen op maandag, en maandag is met DHL wél
+een gewone bezorgdag (anders dan bij PostNL, waar zondag én maandag afvielen).
+Gevolg om te weten: een bestelling van vrijdag ná 10:00 komt pas maandag.
+Niet-bezorgdagen staan op één plek (`NON_DELIVERY_DAYS` in `delivery.ts`). Alle beloftes in de UI, SEO-teksten, e-mails, AI-prompts en
 de vijf talen zijn meegegaan, en de vervoerder-badge in winkelwagen/footer toont
 DHL in plaats van PostNL.
 
