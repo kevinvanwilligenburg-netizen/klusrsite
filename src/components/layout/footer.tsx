@@ -4,7 +4,7 @@ import { Logo } from "./logo";
 import { NewsletterForm } from "@/components/marketing/newsletter-form";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { navCategories } from "@/lib/data/categories";
-import { PaymentIcons, PostNlBadge } from "@/components/shared/payment-icons";
+import { PaymentIcons, CarrierBadge } from "@/components/shared/payment-icons";
 import { COMPANY } from "@/components/shared/legal-page";
 import { t, getLocale } from "@/lib/i18n/server";
 import { localizeCategories } from "@/lib/data/categories-i18n";
@@ -139,7 +139,7 @@ export function Footer() {
               {t("footer.trust.shipTitle")}
             </p>
             <div className="flex sm:justify-end">
-              <PostNlBadge />
+              <CarrierBadge />
             </div>
           </div>
         </div>

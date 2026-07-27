@@ -94,7 +94,7 @@ export const categories: Category[] = [
       "Professionele verf voor binnen en buiten. Gemengd op elke kleur, met advies van ex-schilders.",
     seoTitle: "Verf kopen | Binnen- & buitenverf op kleur gemengd | KLUSR",
     seoDescription:
-      "Koop professionele verf bij KLUSR. Binnenverf, buitenverf, lak, beits en primer. Op kleur gemengd, voor 19:00 besteld morgen in huis.",
+      "Koop professionele verf bij KLUSR. Binnenverf, buitenverf, lak, beits en primer. Op kleur gemengd, voor 10:00 besteld vanavond in huis.",
     paint: true,
     subGroups: verfSubGroups,
     subCategories: verfSubGroups.flatMap((g) => g.subCategories),

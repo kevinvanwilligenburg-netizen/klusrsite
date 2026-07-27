@@ -53,7 +53,7 @@ const DEFAULTS = {
   subject: "Scherpe KLUSRPAS-deals voor je volgende klus",
   preheader: "Profiteer deze week van extra voordeel op topproducten — zolang de voorraad strekt.",
   intro:
-    "Hoi klusser, we hebben weer een paar mooie deals voor je klaargezet. Pak je voordeel met de KLUSRPAS en bestel voor 19:00 — dan ligt het morgen op de mat.\n\nKlaar voor je volgende project? Onze ex-schilders kozen de scherpste aanbiedingen van deze week voor je uit.",
+    "Hoi klusser, we hebben weer een paar mooie deals voor je klaargezet. Pak je voordeel met de KLUSRPAS en bestel voor 10:00 — dan ligt het vanavond op de mat.\n\nKlaar voor je volgende project? Onze ex-schilders kozen de scherpste aanbiedingen van deze week voor je uit.",
 };
 
 /**
@@ -87,7 +87,7 @@ export async function generateNewsletterDraft(
   // Deterministische mock in exact hetzelfde formaat.
   const topTwo = labels.slice(0, 2).join(" en ");
   const mockIntro = labels.length
-    ? `Hoi klusser, deze week zetten we extra scherpe deals voor je klaar${topTwo ? ` — onder andere op ${topTwo}` : ""}. Pak je voordeel met de KLUSRPAS en bestel voor 19:00, dan ligt het morgen op de mat.\n\nKlaar voor je volgende project? Onze ex-schilders kozen de mooiste aanbiedingen voor je uit.`
+    ? `Hoi klusser, deze week zetten we extra scherpe deals voor je klaar${topTwo ? ` — onder andere op ${topTwo}` : ""}. Pak je voordeel met de KLUSRPAS en bestel voor 10:00, dan ligt het vanavond op de mat.\n\nKlaar voor je volgende project? Onze ex-schilders kozen de mooiste aanbiedingen voor je uit.`
     : DEFAULTS.intro;
   const mock =
     `Onderwerp: ${theme ? `${theme}: scherpe KLUSR-deals` : DEFAULTS.subject}\n` +

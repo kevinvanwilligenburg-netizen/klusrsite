@@ -9,38 +9,41 @@
  * we lezen/zetten uitsluitend via de lokale `getHours()/getDate()/setHours()`
  * etc., dus er is geen externe timezone-library nodig.
  *
- * Regels (bevestigd door de eigenaar):
- *  - Cutoff = 19:00.
- *  - Besteld vóór 19:00 → effectieve besteldag = vandaag; ná 19:00 → morgen.
- *  - Levering = effectieve besteldag + 1 dag.
- *  - PostNL bezorgt NIET op zondag (0) en maandag (1). Valt de leverdatum op
- *    zo/ma, dan rolt 'ie door naar de eerstvolgende bezorgdag (dinsdag).
- *    Bezorgdagen zijn dus dinsdag t/m zaterdag.
+ * Regels (DHL, bevestigd door de eigenaar — vervangt de oude PostNL-klok):
+ *  - Cutoff = 10:00.
+ *  - Besteld vóór 10:00  → nog DEZELFDE dag bezorgd (same-day).
+ *  - Besteld 10:00–23:59 → de VOLGENDE dag bezorgd.
+ *  - DHL bezorgt in de avond, door heel Nederland (geen regio-uitzondering).
  *
- * Controle-voorbeelden (kloppen met "orders van zondag worden dinsdag geleverd"):
- *  - ma 14:00 → di ("morgen")
- *  - ma 20:00 → wo ("overmorgen")
- *  - vr 14:00 → za ("morgen")
- *  - vr 20:00 → di
- *  - za (elk tijdstip) → di
- *  - zo (elk tijdstip) → di
+ * Controle-voorbeelden:
+ *  - di 09:00 → di ("vandaag", 's avonds)
+ *  - di 11:00 → wo ("morgen")
+ *  - za 09:00 → za ("vandaag")
+ *  - za 11:00 → ma (zondag wordt overgeslagen)
  */
 
-/** Cutoff-uur (lokale tijd). Vóór dit hele uur telt als "vóór 19:00". */
-export const CUTOFF_HOUR = 19;
+/** Cutoff-uur (lokale tijd). Vóór dit hele uur bezorgen we nog vandaag. */
+export const CUTOFF_HOUR = 10;
 
-/** Dagen waarop PostNL NIET bezorgt: zondag (0) en maandag (1). */
-const NON_DELIVERY_DAYS = new Set([0, 1]);
+/**
+ * Dagen waarop DHL niet bezorgt: zondag (0).
+ *
+ * Bevestig dit bij een wijziging in het DHL-contract — dit is de enige plek
+ * waar het staat. Bezorgt DHL bijvoorbeeld ook niet op maandag, voeg dan 1 toe
+ * en de hele site (beloftes, aftelling, bezorgdatum) volgt automatisch.
+ */
+const NON_DELIVERY_DAYS = new Set([0]);
 
-export type DeliveryLabel = "tomorrow" | "dayAfter" | "weekday";
+export type DeliveryLabel = "today" | "tomorrow" | "dayAfter" | "weekday";
 
 export interface DeliveryInfo {
   /** De (lokale) datum waarop bezorgd wordt, op middernacht genormaliseerd. */
   deliveryDate: Date;
-  /** Was er besteld vóór de cutoff van 19:00? */
+  /** Was er besteld vóór de cutoff van 10:00 (en dus vandaag nog bezorgd)? */
   beforeCutoff: boolean;
   /**
    * Hoe de UI de dag mag presenteren:
+   *  - "today"     → leverdatum is vandaag (same-day, 's avonds)
    *  - "tomorrow"  → leverdatum is exact vandaag + 1
    *  - "dayAfter"  → leverdatum is exact vandaag + 2
    *  - "weekday"   → anders; gebruik `deliveryDate` met
@@ -48,7 +51,7 @@ export interface DeliveryInfo {
    */
   label: DeliveryLabel;
   /**
-   * Milliseconden tot de eerstvolgende 19:00 (voor de live aftelling). Alleen
+   * Milliseconden tot de eerstvolgende 10:00 (voor de live aftelling). Alleen
    * zinvol als `beforeCutoff` true is; ná de cutoff is dit 0.
    */
   msUntilCutoff: number;
@@ -76,13 +79,10 @@ function addDays(d: Date, days: number): Date {
 export function deliveryInfo(now: Date = new Date()): DeliveryInfo {
   const beforeCutoff = now.getHours() < CUTOFF_HOUR;
 
-  // Effectieve besteldag: vóór 19:00 telt vandaag mee, anders pas morgen.
-  const orderDay = beforeCutoff ? startOfDay(now) : addDays(startOfDay(now), 1);
+  // Vóór 10:00 bezorgen we vandaag nog; daarna is morgen de eerste kans.
+  let deliveryDate = beforeCutoff ? startOfDay(now) : addDays(startOfDay(now), 1);
 
-  // Eerste poging: levering = effectieve besteldag + 1 dag.
-  let deliveryDate = addDays(orderDay, 1);
-
-  // Rol door naar de eerstvolgende bezorgdag (di–za) als het op zo/ma valt.
+  // Rol door naar de eerstvolgende bezorgdag als het op een niet-bezorgdag valt.
   while (NON_DELIVERY_DAYS.has(deliveryDate.getDay())) {
     deliveryDate = addDays(deliveryDate, 1);
   }
@@ -93,11 +93,12 @@ export function deliveryInfo(now: Date = new Date()): DeliveryInfo {
     (deliveryDate.getTime() - today.getTime()) / 86_400_000,
   );
   let label: DeliveryLabel;
-  if (dayDiff === 1) label = "tomorrow";
+  if (dayDiff === 0) label = "today";
+  else if (dayDiff === 1) label = "tomorrow";
   else if (dayDiff === 2) label = "dayAfter";
   else label = "weekday";
 
-  // ms tot de eerstvolgende 19:00 (alleen relevant vóór de cutoff).
+  // ms tot de eerstvolgende 10:00 (alleen relevant vóór de cutoff).
   let msUntilCutoff = 0;
   if (beforeCutoff) {
     const cutoff = startOfDay(now);

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const BENEFITS = [
   { icon: Percent, title: "10% ProfPas-korting", text: "Op de hele collectie verf, gereedschap en ijzerwaren — automatisch verrekend." },
   { icon: Receipt, title: "Prijzen excl. btw", text: "Zakelijke weergave excl. btw, met btw netjes gespecificeerd op je factuur." },
-  { icon: Truck, title: "Snel op de bouw", text: "Voor 19:00 besteld, morgen in huis — bezorgd door heel Nederland en België." },
+  { icon: Truck, title: "Snel op de bouw", text: "Voor 10:00 besteld, vanavond in huis — bezorgd door heel Nederland en België." },
   { icon: Headphones, title: "Vaste aanspreekpunt", text: "Persoonlijk advies van ex-schilders en hulp bij grotere projecten." },
 ];
 

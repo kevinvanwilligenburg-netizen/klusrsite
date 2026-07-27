@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     template: "%s | KLUSR",
   },
   description:
-    "KLUSR is dé verfspeciaalzaak en lichte bouwmarkt. Professionele verf op kleur gemengd, ijzerwaren, gereedschap en meer. Advies van ex-schilders. Voor 19:00 besteld, morgen in huis.",
+    "KLUSR is dé verfspeciaalzaak en lichte bouwmarkt. Professionele verf op kleur gemengd, ijzerwaren, gereedschap en meer. Advies van ex-schilders. Voor 10:00 besteld, vanavond in huis.",
   keywords: [
     "verf kopen",
     "verfwinkel",

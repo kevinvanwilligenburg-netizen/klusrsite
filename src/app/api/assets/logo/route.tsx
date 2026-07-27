@@ -77,7 +77,7 @@ export async function GET(req: Request) {
         </div>
         {banner && (
           <span style={{ marginTop: 28, fontSize: 36, color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
-            Verf · gereedschap · ijzerwaren — voor 19:00 besteld, morgen in huis
+            Verf · gereedschap · ijzerwaren — voor 10:00 besteld, vanavond in huis
           </span>
         )}
       </div>
