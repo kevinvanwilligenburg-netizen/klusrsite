@@ -10,56 +10,36 @@ versere bron dan de oude Tilroy S3-feeds of de (uitgeklede) Channable-feed.
 | Data | Endpoint (dashboard) | KLUSR-kant | Status |
 | --- | --- | --- | --- |
 | **Prijzen** (verkoop + advies) | `GET /api/prijsfeed` — publiek, CSV of `?format=json`; per product `sku` (= Tilroy-artikel-id), `ean`, `normalePrijs`, `adviesPrijs` | `scripts/backfill-prices.mjs` (snapshot) én `scripts/build-price-feed.mjs` via `PRIJSFEED_URL` (runtime-overlay) | ✅ werkt — sku matcht 1-op-1 op onze variant-ids |
-| **Voorraad** | `GET /api/stock?limit=&offset=` — publiek, JSON; per item `ean`, `description`, `qty` | `scripts/backfill-stock.mjs` (`CATALOG_SOURCE=stock` of `vdm`) | ⚠️ beperkt — zie hieronder |
+| **Voorraad** | `GET /api/voorraad/feed?limit=&offset=` (dashboardvdm PR #283) — live uit de Tilroy Stock API; per item `sku` + `shops` met álle vestigingen (0 = écht uitverkocht); `configured: false` zolang de Tilroy-keys ontbreken | `scripts/backfill-stock.mjs` (`CATALOG_SOURCE=stock` of `vdm`) — pikt `sku` en `shops["7827"]`+`["8934"]` automatisch op | 🕐 klaar aan beide kanten; wacht op merge/deploy van PR #283 + Tilroy-keys in het dashboard |
 | **Orders** (andersom) | Dashboard leest KLUSR's order-KV read-only mee (`KLUSR_KV_REST_API_URL/-TOKEN` = de KV-credentials van het klusrsite-Vercel-project) — "Webshop-orders"-pagina, dashboardvdm PR #282 | geen wijziging nodig; keys `order:<id>` + `order:index` en de Order-veldnamen zijn nu een **extern contract** (zie waarschuwing in `src/lib/store/orders.ts`) | ✅ werkt |
 
 Aanzetten op Vercel (KLUSR-project): `CATALOG_SOURCE=vdm` → elke build draait
 barcodes → prijzen → voorraad, allemaal non-destructief en fail-soft.
 
-## Wat het dashboard nog moet toevoegen (taak voor de dashboard-sessie)
+## Voorraadfeed — geïmplementeerd (dashboardvdm PR #283)
 
-De stock-API is nu nog niet bruikbaar als verkoopvoorraad voor KLUSR, om twee
-redenen:
+De eerdere spec op deze plek is uitgevoerd: het dashboard exposet
+`/api/voorraad/feed` met per item `sku` (Tilroy-artikel-id) en een
+`shops`-object waarin élke bekende vestiging een key heeft (0 = écht
+uitverkocht). De KLUSR-backfill leest Nijverdal als `shops["7827"]`
+(winkel) + `shops["8934"]` (magazijn) — dezelfde optelling die de oude Tilroy
+stock-CSV hanteerde. `VDM_STOCK_ACCEPT_TOTAL` is voor deze feed niet meer
+nodig (dat blijft alleen relevant voor het legacy `/api/stock`-endpoint).
 
-1. **Geen `sku`** — items dragen alleen een EAN. KLUSR's catalogus is op
-   Tilroy-artikel-id gebouwd (`tilroy-<id>`); EAN's zitten er alleen
-   product-niveau in (en pas na de barcode-backfill). Met een `sku`-veld matcht
-   élke variant exact, net als bij de prijsfeed. De mapping EAN ↔ sku heeft het
-   dashboard al (de prijsfeed levert beide).
-2. **Alleen bedrijfstotalen** — `qty` is de som over álle vestigingen, terwijl
-   de KLUSR-webshop uitsluitend de Nijverdal-voorraad voert en toont. Totalen
-   zouden de online voorraad overschatten. De voorraad-cron haalt per-winkel
-   data uit Tilroy (`qty.available` per shop), dus de uitsplitsing bestaat al
-   in het dashboard.
+Nog te doen vóór de eerste echte backfill:
 
-**Voorstel** — breid `/api/stock` uit (of maak `/api/stock/klusr`):
+1. **Merge/deploy PR #283** en zet de **Tilroy-keys** in het dashboard-project
+   (tot die tijd: `configured: false` → de backfill stopt netjes).
+2. **Sku-waardenruimte verifiëren**: check éénmalig of Tilroy's `sku.sourceId`
+   gelijk is aan onze `tilroy-`-gestripte ids, via
+   `/api/voorraad/skus?skus=39985524` (een bekend artikel). De backfill logt
+   bij nul matches zelf voorbeelden van beide kanten.
 
-```jsonc
-{
-  "asOf": "2026-07-27T05:00:00Z",   // uit de dagelijkse Tilroy-cron, niet de handmatige upload
-  "items": [
-    {
-      "sku": "39985524",            // Tilroy-artikel-id  ← NIEUW
-      "ean": "8711113071819",
-      "qty": 262,                    // totaal (blijft voor het dashboard zelf)
-      "nijverdal": 118               // winkel 7827 + magazijn 8934  ← NIEUW
-    }
-  ]
-}
-```
-
-- `nijverdal` = Tilroy-shops **7827** (winkel Nijverdal) + **8934**
-  (magazijn/webvoorraad) — dezelfde optelling die de oude Tilroy stock-CSV
-  hanteerde (kolom 0 + kolom 5 → nijverdal in `scripts/lib/catalog-map.mjs`).
-- Bron bij voorkeur de **dagelijkse Tilroy-cron-snapshot** (live API) in plaats
-  van de handmatige stock-upload; die laatste liep al eens 13 dagen achter.
-- Een heel `shops`-object (`{"7827": 90, "8934": 28, …}`) mag ook — de
-  KLUSR-backfill begrijpt beide vormen (zie `nijverdalQty()` in
-  `scripts/backfill-stock.mjs`).
-
-De KLUSR-consument (`backfill-stock.mjs`) pikt deze velden automatisch op zodra
-ze bestaan; tot die tijd weigert hij bedrijfstotalen (tenzij expliciet
-`VDM_STOCK_ACCEPT_TOTAL=1`).
+**Later — live beschikbaarheid in de storefront:** hetzelfde
+`/api/voorraad/skus`-endpoint (max 200 sku's per call, 30–60 s cache) kan de
+checkout/PDP van live voorraad voorzien. Dat lost de verouderde
+snapshot-voorraad én het oversell-risico bij het afrekenen structureel op —
+eerst de backfill stabiel draaien, dan dit.
 
 ## Beveiliging
 
@@ -83,3 +63,13 @@ feed-catalogus (`lib/productFeed`) plus handmatige producten
 (`/api/manual-products`). Een publieke product-feed (id, titel, merk, prijs,
 EAN, afbeelding, categorie) zou de Channable-/Tilroy-importscripts in KLUSR
 volledig kunnen vervangen. Nog niet gebouwd — eerst voorraad + prijzen stabiel.
+
+## Verzending: PostNL → DHL (aangekondigd, nog niet bouwen)
+
+Beide sites migreren van PostNL naar de **DHL API**, met nieuwe klokregels van
+Kevin: besteld **vóór 10:00 → same-day**, **10:00–23:59 → next-day**. Raakt in
+klusrsite: `src/lib/delivery.ts` (cutoff staat nu op 19:00),
+`src/lib/shipping.ts` (PostNL-tarieven) en `src/lib/postnl.ts` (Send API +
+labels). De label-flow verhuist als onderdeel van de beheer-migratie naar het
+dashboard. Afspraak: **voorlopig niets wijzigen aan de verzendcode, en géén
+nieuwe PostNL-features meer bouwen.**

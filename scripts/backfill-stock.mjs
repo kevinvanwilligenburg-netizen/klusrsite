@@ -6,12 +6,16 @@
  * titels, prijzen, overlay en de overige (referentie)winkelregels blijven
  * ongemoeid.
  *
- * Bron: GET {VDM_STOCK_URL}?limit=&offset= (default
- * https://dashboardvdm.vercel.app/api/stock) — JSON met { asOf, items: [...] }.
+ * Bron: GET {VDM_STOCK_URL}?limit=&offset= — JSON met { configured, asOf,
+ * items: [...] }. Default is de speciaal hiervoor gebouwde dashboard-feed
+ * `/api/voorraad/feed` (dashboardvdm PR #283): live uit de Tilroy Stock API,
+ * per item een `sku`-veld plus `shops` met álle bekende vestigingen
+ * (0 = écht uitverkocht). Zolang de Tilroy-keys in het dashboard ontbreken
+ * antwoordt de feed `configured: false` en stopt dit script netjes.
+ * Legacy-terugval: /api/stock (per EAN, alleen bedrijfstotalen).
  *
  * Matching (per item, in volgorde):
- *   1. `sku`-veld (Tilroy-artikel-id) → exacte variant-match. Dit veld zit nog
- *      niet in de dashboard-API — zie docs/vdm-dashboard-koppeling.md.
+ *   1. `sku`-veld (Tilroy-artikel-id) → exacte variant-match.
  *   2. `ean` → product.gtin. Alleen veilig bij producten met één variant
  *      (de gtin hoort bij het lead-artikel); multi-variant wordt geteld en
  *      overgeslagen.
@@ -21,8 +25,7 @@
  *      `shops.nijverdal` of `shops["7827"]`+`shops["8934"]` (winkel + magazijn).
  *   2. `qty` = bedrijfstotaal over alle vestigingen. Dat overschat wat er in
  *      Nijverdal ligt en wordt daarom ALLEEN gebruikt met
- *      VDM_STOCK_ACCEPT_TOTAL=1. Zonder die vlag stopt het script (exit 1) en
- *      blijft de snapshot staan.
+ *      VDM_STOCK_ACCEPT_TOTAL=1 (alleen relevant voor het legacy-endpoint).
  *
  *   node scripts/backfill-stock.mjs
  */
@@ -34,7 +37,8 @@ import { dirname, join } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAP = join(__dirname, "..", "src", "lib", "data", "feed-products.generated.json");
 
-const STOCK_URL = process.env.VDM_STOCK_URL || "https://dashboardvdm.vercel.app/api/stock";
+const STOCK_URL =
+  process.env.VDM_STOCK_URL || "https://dashboardvdm.vercel.app/api/voorraad/feed";
 const ACCEPT_TOTAL = /^(1|true|ja|yes)$/i.test(process.env.VDM_STOCK_ACCEPT_TOTAL || "");
 const PAGE = 2000; // max van de dashboard-API
 const PRIMARY_STORE_ID = "nijverdal";
@@ -73,7 +77,9 @@ async function fetchAllStock() {
   const items = [];
   let offset = 0;
   let asOf = null;
-  for (;;) {
+  let prevFirstKey = null;
+  const MAX_PAGES = 50; // vangnet tegen een bron die limit/offset negeert
+  for (let page = 0; page < MAX_PAGES; page++) {
     const u = new URL(STOCK_URL);
     u.searchParams.set("limit", String(PAGE));
     u.searchParams.set("offset", String(offset));
@@ -84,12 +90,20 @@ async function fetchAllStock() {
     if (!res.ok) throw new Error(`VDM-stock → ${res.status}`);
     const body = await res.json();
     if (body.configured === false) {
-      throw new Error("dashboard heeft nog geen stock-snapshot (configured: false)");
+      throw new Error(
+        "de dashboard-feed is nog niet geconfigureerd (configured: false) — " +
+          "zet de Tilroy-keys in het dashboard-project",
+      );
     }
     asOf = body.asOf ?? asOf;
-    const page = body.items ?? [];
-    items.push(...page);
-    if (page.length < PAGE) break;
+    const rows = body.items ?? [];
+    // Negeert de bron onze offset (zelfde eerste item als de vorige pagina),
+    // dan hebben we alles al — stoppen i.p.v. dubbel optellen.
+    const firstKey = rows.length ? String(rows[0].sku ?? rows[0].ean ?? rows[0].id ?? "") : null;
+    if (offset > 0 && firstKey != null && firstKey === prevFirstKey) break;
+    prevFirstKey = firstKey;
+    items.push(...rows);
+    if (rows.length < PAGE) break;
     offset += PAGE;
   }
   return { items, asOf };
@@ -202,9 +216,19 @@ async function main() {
   );
 
   if (matched === 0) {
+    // Diagnose: laat zien hoe de sku-waardenruimtes eruitzien, zodat een
+    // mismatch (bv. Tilroy sourceId vs. artikel-id) direct zichtbaar is.
+    // Handmatig te checken via {dashboard}/api/voorraad/skus?skus=<sku>.
+    const feedSample = [...bySku.keys()].slice(0, 3);
+    const snapSample = products
+      .slice(0, 3)
+      .map((p) => skuOf(p.variants?.[0]?.id ?? p.id));
     console.error(
-      "✗ Geen enkele match met de snapshot — draai eerst de barcode-backfill " +
-        "(EAN's) of laat het dashboard een sku-veld meegeven. Snapshot blijft ongemoeid.",
+      "✗ Geen enkele match met de snapshot — snapshot blijft ongemoeid.\n" +
+        `  Feed-sku's (voorbeeld): ${feedSample.join(", ") || "(geen)"}\n` +
+        `  Snapshot-sku's (voorbeeld): ${snapSample.join(", ")}\n` +
+        "  Matcht de sku-waardenruimte niet? Check /api/voorraad/skus?skus=<sku> " +
+        "op het dashboard. Geen sku's in de feed? Draai eerst de barcode-backfill (EAN's).",
     );
     process.exit(1);
   }
