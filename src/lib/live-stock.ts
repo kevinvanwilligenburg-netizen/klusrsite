@@ -23,7 +23,7 @@ import { getSoldMap, getAdjustMap, liveStock } from "@/lib/store/stock-ledger";
  */
 
 const SKUS_URL =
-  process.env.VDM_STOCK_SKUS_URL || "https://dashboardvdm-k-evin-s-projects.vercel.app/api/voorraad/skus";
+  process.env.VDM_STOCK_SKUS_URL || "https://dashboardvdm.vercel.app/api/voorraad/skus";
 const SKUS_PER_CALL = 200;
 const FETCH_TIMEOUT_MS = 2_500;
 const CACHE_TTL_MS = 45_000;
