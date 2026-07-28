@@ -6,6 +6,7 @@ import { triggerCartReminder } from "@/lib/mailchimp";
 import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfillment";
 import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
 import { cartItemSchema } from "@/lib/checkout-schema";
+import { deliveryTypeFor, SAME_DAY_SURCHARGE } from "@/lib/delivery";
 import type { CartItem } from "@/types";
 
 export const runtime = "nodejs";
@@ -41,6 +42,8 @@ const bodySchema = z.object({
   method: z.string().optional(),
   issuer: z.string().optional(),
   cardToken: z.string().optional(),
+  /** Wens van de klant: same-day tegen toeslag. De klok beslist of het kán. */
+  sameDay: z.boolean().optional(),
   // GA4-attributie uit de cookies (op de client opgehaald) — voor de server-side
   // `purchase` (Measurement Protocol) vanuit de webhook. Volledig optioneel.
   ga: z
@@ -78,7 +81,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Persist the order (status "open").
+    // 1. Persist the order (status "open"). De bezorgsoort leiden we hier af —
+    // niet uit wat de client stuurt — zodat een verzoek buiten de cutoff nooit
+    // een SDD-label kan afdwingen dat de rit naar het depot niet haalt.
+    const deliveryType = deliveryTypeFor(data.sameDay === true);
     const order = await createOrder({
       customer: data.customer,
       items: data.items,
@@ -88,6 +94,10 @@ export async function POST(req: Request) {
       kluspasSavings: data.kluspasSavings,
       paymentMethod: data.method,
       ga: data.ga,
+      delivery: {
+        type: deliveryType,
+        ...(deliveryType === "same-day" ? { surcharge: SAME_DAY_SURCHARGE } : {}),
+      },
     });
 
     // 2. Create the Mollie payment (or a simulated one in demo mode).

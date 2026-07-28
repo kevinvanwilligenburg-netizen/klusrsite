@@ -86,6 +86,8 @@ export interface CreateOrderInput {
   ga?: Order["ga"];
   /** Verkoopkanaal (default "web"). Zet "pos" voor een kassaverkoop. */
   channel?: Order["channel"];
+  /** Bezorgkeuze (same-day + toeslag); het dashboard stuurt hier het DHL-label op. */
+  delivery?: Order["delivery"];
   /** Kassagegevens (alleen bij channel === "pos"). */
   pos?: Order["pos"];
 }
@@ -118,6 +120,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
     paymentStatus: "open",
     paymentMethod: input.paymentMethod,
     ...(input.channel ? { channel: input.channel } : {}),
+    ...(input.delivery ? { delivery: input.delivery } : {}),
     ...(input.pos ? { pos: input.pos } : {}),
     ...(input.ga ? { ga: input.ga } : {}),
     subtotal: input.subtotal,

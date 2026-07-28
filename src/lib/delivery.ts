@@ -55,6 +55,17 @@ const NO_SAME_DAY_DAYS = new Set([6]);
 
 export type DeliveryLabel = "today" | "tomorrow" | "dayAfter" | "weekday";
 
+/**
+ * Bezorgsoort zoals die op de order wordt vastgelegd. Het VDM-dashboard leest
+ * dit veld om te bepalen of het DHL-label de SDD-optie (same day delivery)
+ * meekrijgt — zonder "same-day" krijgt de klant een gewoon label, ook al heeft
+ * hij ervoor betaald. Zelfde waarden als de VDM-site gebruikt.
+ */
+export type DeliveryType = "same-day" | "next-day" | "next-workday";
+
+/** Toeslag voor same-day bezorging (incl. btw), bovenop de normale verzendkosten. */
+export const SAME_DAY_SURCHARGE = 1.25;
+
 export interface DeliveryInfo {
   /** De (lokale) datum waarop bezorgd wordt, op middernacht genormaliseerd. */
   deliveryDate: Date;
@@ -139,4 +150,38 @@ export function deliveryInfo(now: Date = new Date()): DeliveryInfo {
   }
 
   return { deliveryDate, sameDay, label, msUntilCutoff };
+}
+
+/**
+ * Bezorgsoort voor op de order, altijd server-side af te leiden.
+ *
+ * `chosenSameDay` is de wens van de klant (de betaalde optie); of die ook
+ * ingewilligd kán worden bepaalt de klok. Zo kan een client die om 23:00
+ * `sameDay: true` meestuurt nooit een SDD-label afdwingen dat de rit naar het
+ * depot niet haalt.
+ */
+export function deliveryTypeFor(
+  chosenSameDay: boolean,
+  now: Date = new Date(),
+): DeliveryType {
+  if (chosenSameDay && deliveryInfo(now).sameDay) return "same-day";
+
+  // Zónder same-day is de eerste kans morgen — ook als het nu nog vóór de
+  // cutoff is. De klok van deliveryInfo() mikt op vandaag en zou hier dus het
+  // verkeerde antwoord geven; we rekenen daarom expliciet vanaf morgen.
+  const today = startOfDay(now);
+  let d = addDays(today, 1);
+  while (NON_DELIVERY_DAYS.has(d.getDay())) d = addDays(d, 1);
+  const dayDiff = Math.round((d.getTime() - today.getTime()) / 86_400_000);
+  return dayDiff === 1 ? "next-day" : "next-workday";
+}
+
+/**
+ * Kan same-day überhaupt aangeboden worden op dit moment? Alleen voor Nederland
+ * — DHL rijdt de avondronde binnenlands, en de webshop levert uit Nijverdal.
+ * De voorraadkant is impliciet gedekt: de catalogus voert uitsluitend de
+ * Nijverdal-voorraad, dus wat verkoopbaar is, ligt daar.
+ */
+export function sameDayAvailable(country: string, now: Date = new Date()): boolean {
+  return (country || "NL").toUpperCase() === "NL" && deliveryInfo(now).sameDay;
 }

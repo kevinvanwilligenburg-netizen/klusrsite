@@ -572,5 +572,7 @@
   "delivery.tomorrow": "jutro",
   "delivery.dayAfter": "pojutrze",
   "delivery.countdown": "jeszcze {h} godz {m} min",
-  "delivery.today": "dziś wieczorem"
+  "delivery.today": "dziś wieczorem",
+  "checkout.sameDay.title": "Dostawa dziś",
+  "checkout.sameDay.hint": "Zamówienie przed 09:00? DHL dostarczy paczkę jeszcze dziś wieczorem."
 }

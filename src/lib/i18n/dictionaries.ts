@@ -745,6 +745,8 @@ export type Messages = {
   "delivery.beforeCutoff": string; // {time} {day}
   "delivery.afterCutoff": string; // {day}
   "delivery.today": string;
+  "checkout.sameDay.title": string;
+  "checkout.sameDay.hint": string;
   "delivery.tomorrow": string;
   "delivery.dayAfter": string;
   "delivery.countdown": string; // {h} {m}
@@ -1471,6 +1473,8 @@ const nl: Messages = {
   "delivery.beforeCutoff": "Vóór {time} besteld, {day} in huis",
   "delivery.afterCutoff": "Besteld → {day} in huis",
   "delivery.today": "vanavond",
+  "checkout.sameDay.title": "Vandaag bezorgd",
+  "checkout.sameDay.hint": "Besteld vóór 09:00? Dan bezorgt DHL je pakket vanavond nog.",
   "delivery.tomorrow": "morgen",
   "delivery.dayAfter": "overmorgen",
   "delivery.countdown": "nog {h} u {m} m",
@@ -2197,6 +2201,8 @@ const en: Messages = {
   "delivery.beforeCutoff": "Order before {time}, delivered {day}",
   "delivery.afterCutoff": "Ordered → delivered {day}",
   "delivery.today": "this evening",
+  "checkout.sameDay.title": "Delivered today",
+  "checkout.sameDay.hint": "Ordered before 09:00? DHL delivers your parcel this evening.",
   "delivery.tomorrow": "tomorrow",
   "delivery.dayAfter": "the day after tomorrow",
   "delivery.countdown": "{h}h {m}m left",
@@ -2923,6 +2929,8 @@ const fr: Messages = {
   "delivery.beforeCutoff": "Commandé avant {time}, livré {day}",
   "delivery.afterCutoff": "Commandé → livré {day}",
   "delivery.today": "ce soir",
+  "checkout.sameDay.title": "Livré aujourd'hui",
+  "checkout.sameDay.hint": "Commandé avant 09:00 ? DHL livre votre colis ce soir.",
   "delivery.tomorrow": "demain",
   "delivery.dayAfter": "après-demain",
   "delivery.countdown": "encore {h} h {m} min",
@@ -3649,6 +3657,8 @@ const de: Messages = {
   "delivery.beforeCutoff": "Vor {time} bestellt, {day} geliefert",
   "delivery.afterCutoff": "Bestellt → {day} geliefert",
   "delivery.today": "heute Abend",
+  "checkout.sameDay.title": "Heute geliefert",
+  "checkout.sameDay.hint": "Vor 09:00 bestellt? Dann liefert DHL Ihr Paket noch heute Abend.",
   "delivery.tomorrow": "morgen",
   "delivery.dayAfter": "übermorgen",
   "delivery.countdown": "noch {h} Std. {m} Min.",
