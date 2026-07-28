@@ -577,8 +577,10 @@ export function ProductBuybox({
         showScarcity
         className="text-sm"
       />
-      {/* Dynamische bezorgklok (vervangt de statische "morgen in huis"-regel). */}
-      <DeliveryCountdown />
+      {/* Dynamische bezorgklok (vervangt de statische "morgen in huis"-regel).
+          Alleen tonen als het product ook echt leverbaar is: "vanavond in huis"
+          onder "Tijdelijk uitverkocht" is een belofte die we niet waarmaken. */}
+      {sellable && <DeliveryCountdown />}
       {color?.base && (
         <p className="-mt-2 text-xs text-muted-foreground">
           {t("pdp.stockForBasePre")}<strong>{color.base.label}</strong>{t("pdp.stockForBasePost")}
