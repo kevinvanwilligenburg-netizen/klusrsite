@@ -165,7 +165,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <p>
               Bij KLUSR vind je {category.title.toLowerCase()} van topmerken,
               scherp geprijsd en met deskundig advies van onze ex-schilders.
-              Voor 10:00 besteld is je bestelling vanavond in huis, en met de
+              Voor 09:00 besteld is je bestelling vanavond in huis, en met de
               gratis KLUSRPAS profiteer je altijd van extra voordeel op je hele
               klus.
             </p>

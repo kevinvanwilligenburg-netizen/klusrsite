@@ -497,7 +497,7 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
         </h1>
         <p className="mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">
           Kies je kleur, kies je verf en reken in een paar stappen af — wij mengen
-          &apos;m exact op kleur. Voor 10:00 besteld, vanavond in huis.
+          &apos;m exact op kleur. Voor 09:00 besteld, vanavond in huis.
         </p>
       </section>
 
@@ -990,7 +990,7 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
                 <span className="font-bold">Totaal (KLUSR-prijs)</span>
                 <span className="text-xl font-black">{formatPrice(grandTotal)}</span>
               </div>
-              <p className="text-xs text-muted-foreground">Incl. btw · op kleur gemengd · voor 10:00 besteld, vanavond in huis.</p>
+              <p className="text-xs text-muted-foreground">Incl. btw · op kleur gemengd · voor 09:00 besteld, vanavond in huis.</p>
 
               <Button size="lg" className="mt-1 w-full" onClick={handleCheckout}>
                 <CreditCard className="h-5 w-5" /> Direct afrekenen

@@ -50,7 +50,7 @@ export function StockStatus({
       {showDelivery && (
         <span className="inline-flex items-center gap-1 text-muted-foreground">
           <Truck className="h-3.5 w-3.5" />
-          Voor 10:00 besteld, vanavond in huis
+          Voor 09:00 besteld, vanavond in huis
         </span>
       )}
     </div>

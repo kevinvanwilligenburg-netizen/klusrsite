@@ -754,7 +754,7 @@ const nl: Messages = {
   "usp.advice": "Advies van ex-schilders",
   "usp.quality": "Professionele kwaliteit",
   "usp.everything": "Alles voor jouw klus",
-  "usp.delivery": "Voor 10:00 besteld, vanavond in huis",
+  "usp.delivery": "Voor 09:00 besteld, vanavond in huis",
 
   "nav.customerService": "Klantenservice",
   "nav.cart": "Winkelwagen",
@@ -1074,7 +1074,7 @@ const nl: Messages = {
   "service.hero.subtitle":
     "Vind hieronder snel antwoord op de meestgestelde vragen, of neem direct contact met ons op. Onze klussers staan voor je klaar.",
 
-  "service.trust.delivery": "Voor 10:00 besteld, vanavond in huis",
+  "service.trust.delivery": "Voor 09:00 besteld, vanavond in huis",
   "service.trust.returns": "14 dagen bedenktijd",
   "service.trust.payment": "Veilig betalen via Mollie",
   "service.trust.advice": "Advies van ex-schilders",
@@ -1093,7 +1093,7 @@ const nl: Messages = {
 
   "service.shipping.title": "Verzendkosten",
   "service.shipping.subtitle":
-    "Gratis verzending vanaf {amount} in Nederland en België. Voor 10:00 besteld op werkdagen? Dan ligt je pakket vanavond in huis.",
+    "Gratis verzending vanaf {amount} in Nederland en België. Voor 09:00 besteld op werkdagen? Dan ligt je pakket vanavond in huis.",
   "service.shipping.rowNl": "Nederland",
   "service.shipping.freeFrom": "· gratis vanaf {amount}",
   "service.shipping.mailbox": "Brievenbuspakje (NL)",
@@ -1104,7 +1104,7 @@ const nl: Messages = {
 
   "service.group.shipping.title": "Verzending & retour",
   "service.group.shipping.intro":
-    "Gratis verzending vanaf {free} in NL en BE, voor 10:00 besteld is vanavond in huis, en retourneren kan per post met retourlabel — de retourkosten zijn voor eigen rekening. Naar de rest van de EU vanaf {eu}.",
+    "Gratis verzending vanaf {free} in NL en BE, voor 09:00 besteld is vanavond in huis, en retourneren kan per post met retourlabel — de retourkosten zijn voor eigen rekening. Naar de rest van de EU vanaf {eu}.",
   "service.group.payment.title": "Veilig betalen",
   "service.group.payment.intro":
     "Betaal eenvoudig en veilig met iDEAL, Bancontact, creditcard of achteraf met Klarna via Mollie.",
@@ -1120,7 +1120,7 @@ const nl: Messages = {
 
   "service.faq.shipping.when.q": "Wanneer wordt mijn bestelling bezorgd?",
   "service.faq.shipping.when.a":
-    "Bestel je op werkdagen vóór 10:00? Dan ligt je bestelling vanavond in huis. Je ontvangt een track & trace-code zodra je pakket onderweg is.",
+    "Bestel je op werkdagen vóór 09:00? Dan ligt je bestelling vanavond in huis. Je ontvangt een track & trace-code zodra je pakket onderweg is.",
   "service.faq.shipping.cost.q": "Wat kost de verzending?",
   "service.faq.shipping.cost.a":
     "In Nederland en België is verzending gratis vanaf {nlFree}. Daaronder betaal je {nlPrice} in Nederland en {bePrice} in België. Kleine, platte artikelen sturen we als brievenbuspakje voor {mailbox} (alleen NL). Naar de overige EU-landen bezorgen we vanaf {eu}; daar geldt geen gratis verzending. De exacte verzendkosten zie je altijd tijdens het afrekenen.",
@@ -1225,7 +1225,7 @@ const nl: Messages = {
 
   "faq.delivery.when.q": "Wanneer is mijn bestelling in huis?",
   "faq.delivery.when.a":
-    "Voor 10:00 uur op werkdagen besteld, vanavond in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
+    "Voor 09:00 uur op werkdagen besteld, vanavond in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
   "faq.delivery.pickup.q": "Kan ik mijn bestelling afhalen?",
   "faq.delivery.pickup.aPre": "KLUSR is volledig online — we bezorgen door heel Nederland en België. Vragen over je bezorging? Onze ",
   "faq.delivery.pickup.aLink": "klantenservice",
@@ -1480,7 +1480,7 @@ const en: Messages = {
   "usp.advice": "Advice from former painters",
   "usp.quality": "Professional quality",
   "usp.everything": "Everything for your project",
-  "usp.delivery": "Order before 10:00, delivered this evening",
+  "usp.delivery": "Order before 09:00, delivered this evening",
 
   "nav.customerService": "Customer service",
   "nav.cart": "Cart",
@@ -1800,7 +1800,7 @@ const en: Messages = {
   "service.hero.subtitle":
     "Find quick answers to the most frequently asked questions below, or get in touch with us directly. Our DIYers are ready to help.",
 
-  "service.trust.delivery": "Order before 10:00, delivered this evening",
+  "service.trust.delivery": "Order before 09:00, delivered this evening",
   "service.trust.returns": "14-day right of withdrawal",
   "service.trust.payment": "Secure payment via Mollie",
   "service.trust.advice": "Advice from former painters",
@@ -1819,7 +1819,7 @@ const en: Messages = {
 
   "service.shipping.title": "Shipping costs",
   "service.shipping.subtitle":
-    "Free shipping from {amount} in the Netherlands and Belgium. Ordered before 10:00 on working days? Then your parcel will be delivered this evening.",
+    "Free shipping from {amount} in the Netherlands and Belgium. Ordered before 09:00 on working days? Then your parcel will be delivered this evening.",
   "service.shipping.rowNl": "Netherlands",
   "service.shipping.freeFrom": "· free from {amount}",
   "service.shipping.mailbox": "Letterbox parcel (NL)",
@@ -1830,7 +1830,7 @@ const en: Messages = {
 
   "service.group.shipping.title": "Shipping & returns",
   "service.group.shipping.intro":
-    "Free shipping from {free} in NL and BE, ordered before 10:00 means delivery this evening, and returns by post with a return label — return shipping is at your own expense. To the rest of the EU from {eu}.",
+    "Free shipping from {free} in NL and BE, ordered before 09:00 means delivery this evening, and returns by post with a return label — return shipping is at your own expense. To the rest of the EU from {eu}.",
   "service.group.payment.title": "Secure payment",
   "service.group.payment.intro":
     "Pay easily and securely with iDEAL, Bancontact, credit card or pay later with Klarna via Mollie.",
@@ -1846,7 +1846,7 @@ const en: Messages = {
 
   "service.faq.shipping.when.q": "When will my order be delivered?",
   "service.faq.shipping.when.a":
-    "Order before 10:00 on working days? Then your order will be delivered this evening. You'll receive a track & trace code as soon as your parcel is on its way.",
+    "Order before 09:00 on working days? Then your order will be delivered this evening. You'll receive a track & trace code as soon as your parcel is on its way.",
   "service.faq.shipping.cost.q": "How much does shipping cost?",
   "service.faq.shipping.cost.a":
     "In the Netherlands and Belgium, shipping is free from {nlFree}. Below that you pay {nlPrice} in the Netherlands and {bePrice} in Belgium. We send small, flat items as a letterbox parcel for {mailbox} (NL only). To the other EU countries we deliver from {eu}; no free shipping applies there. You'll always see the exact shipping costs during checkout.",
@@ -1951,7 +1951,7 @@ const en: Messages = {
 
   "faq.delivery.when.q": "When will my order arrive?",
   "faq.delivery.when.a":
-    "Ordered before 10:00 on working days, delivered this evening. Shipping is free from € 50, below that we charge € 4,95.",
+    "Ordered before 09:00 on working days, delivered this evening. Shipping is free from € 50, below that we charge € 4,95.",
   "faq.delivery.pickup.q": "Can I collect my order?",
   "faq.delivery.pickup.aPre": "KLUSR is fully online — we deliver throughout the Netherlands and Belgium. Questions about your delivery? Our ",
   "faq.delivery.pickup.aLink": "customer service",
@@ -2932,7 +2932,7 @@ const de: Messages = {
   "usp.advice": "Beratung von ehemaligen Malern",
   "usp.quality": "Professionelle Qualität",
   "usp.everything": "Alles für Ihr Projekt",
-  "usp.delivery": "Vor 10:00 Uhr bestellt, heute Abend geliefert",
+  "usp.delivery": "Vor 09:00 Uhr bestellt, heute Abend geliefert",
 
   "nav.customerService": "Kundenservice",
   "nav.cart": "Warenkorb",
@@ -3252,7 +3252,7 @@ const de: Messages = {
   "service.hero.subtitle":
     "Finden Sie unten schnell eine Antwort auf die häufigsten Fragen oder nehmen Sie direkt Kontakt mit uns auf. Unsere Heimwerker stehen für Sie bereit.",
 
-  "service.trust.delivery": "Vor 10:00 Uhr bestellt, heute Abend geliefert",
+  "service.trust.delivery": "Vor 09:00 Uhr bestellt, heute Abend geliefert",
   "service.trust.returns": "14 Tage Widerrufsrecht",
   "service.trust.payment": "Sicher bezahlen über Mollie",
   "service.trust.advice": "Beratung von ehemaligen Malern",
@@ -3271,7 +3271,7 @@ const de: Messages = {
 
   "service.shipping.title": "Versandkosten",
   "service.shipping.subtitle":
-    "Kostenloser Versand ab {amount} in den Niederlanden und Belgien. An Werktagen vor 10:00 Uhr bestellt? Dann ist Ihr Paket noch heute Abend bei Ihnen.",
+    "Kostenloser Versand ab {amount} in den Niederlanden und Belgien. An Werktagen vor 09:00 Uhr bestellt? Dann ist Ihr Paket noch heute Abend bei Ihnen.",
   "service.shipping.rowNl": "Niederlande",
   "service.shipping.freeFrom": "· kostenlos ab {amount}",
   "service.shipping.mailbox": "Briefkastenpaket (NL)",
@@ -3282,7 +3282,7 @@ const de: Messages = {
 
   "service.group.shipping.title": "Versand & Rückgabe",
   "service.group.shipping.intro":
-    "Kostenloser Versand ab {free} in NL und BE, vor 10:00 Uhr bestellt ist heute Abend geliefert, und Rückgabe per Post mit Rücksendeetikett möglich — die Rücksendekosten trägt der Kunde. In den Rest der EU ab {eu}.",
+    "Kostenloser Versand ab {free} in NL und BE, vor 09:00 Uhr bestellt ist heute Abend geliefert, und Rückgabe per Post mit Rücksendeetikett möglich — die Rücksendekosten trägt der Kunde. In den Rest der EU ab {eu}.",
   "service.group.payment.title": "Sicher bezahlen",
   "service.group.payment.intro":
     "Bezahlen Sie einfach und sicher mit iDEAL, Bancontact, Kreditkarte oder später mit Klarna über Mollie.",
@@ -3298,7 +3298,7 @@ const de: Messages = {
 
   "service.faq.shipping.when.q": "Wann wird meine Bestellung geliefert?",
   "service.faq.shipping.when.a":
-    "Bestellen Sie an Werktagen vor 10:00 Uhr? Dann ist Ihre Bestellung noch heute Abend bei Ihnen. Sie erhalten einen Track-&-Trace-Code, sobald Ihr Paket unterwegs ist.",
+    "Bestellen Sie an Werktagen vor 09:00 Uhr? Dann ist Ihre Bestellung noch heute Abend bei Ihnen. Sie erhalten einen Track-&-Trace-Code, sobald Ihr Paket unterwegs ist.",
   "service.faq.shipping.cost.q": "Was kostet der Versand?",
   "service.faq.shipping.cost.a":
     "In den Niederlanden und Belgien ist der Versand ab {nlFree} kostenlos. Darunter zahlen Sie {nlPrice} in den Niederlanden und {bePrice} in Belgien. Kleine, flache Artikel versenden wir als Briefkastenpaket für {mailbox} (nur NL). In die übrigen EU-Länder liefern wir ab {eu}; dort gilt kein kostenloser Versand. Die genauen Versandkosten sehen Sie immer während des Bezahlvorgangs.",
@@ -3403,7 +3403,7 @@ const de: Messages = {
 
   "faq.delivery.when.q": "Wann ist meine Bestellung bei mir?",
   "faq.delivery.when.a":
-    "An Werktagen vor 10:00 Uhr bestellt, heute Abend geliefert. Der Versand ist ab € 50 kostenlos, darunter berechnen wir € 4,95.",
+    "An Werktagen vor 09:00 Uhr bestellt, heute Abend geliefert. Der Versand ist ab € 50 kostenlos, darunter berechnen wir € 4,95.",
   "faq.delivery.pickup.q": "Kann ich meine Bestellung abholen?",
   "faq.delivery.pickup.aPre": "KLUSR ist vollständig online — wir liefern in die ganzen Niederlande und nach Belgien. Fragen zu Ihrer Lieferung? Unser ",
   "faq.delivery.pickup.aLink": "Kundenservice",

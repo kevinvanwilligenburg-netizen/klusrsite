@@ -186,7 +186,7 @@ export default async function BlogPostPage({ params }: BlogPageProps) {
           <h2 className="text-lg font-extrabold tracking-tight">Direct aan de slag</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Alles voor deze klus vind je in ons assortiment — op kleur gemengd en
-            voor 10:00 besteld, vanavond in huis.
+            voor 09:00 besteld, vanavond in huis.
           </p>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             <li>

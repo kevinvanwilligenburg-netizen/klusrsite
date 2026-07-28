@@ -325,8 +325,8 @@ function faqFor(spec: LeafSpec): { q: string; a: string }[] {
     });
   }
   base.push({
-    q: "Voor 10:00 besteld, vanavond in huis?",
-    a: "Klopt. Bestel je op werkdagen vóór 10:00, dan ligt je bestelling vanavond op de mat. We bezorgen door heel Nederland en België.",
+    q: "Voor 09:00 besteld, vanavond in huis?",
+    a: "Klopt. Bestel je op werkdagen vóór 09:00, dan ligt je bestelling vanavond op de mat. We bezorgen door heel Nederland en België.",
   });
   return [...(spec.faq ?? []), ...base];
 }
@@ -364,7 +364,7 @@ export function getVerfLeafContent(slug: string): LeafSeoContent | null {
       {
         heading: `${spec.title} kopen bij KLUSR`,
         paragraphs: [
-          `KLUSR is dé klusspecialist voor verf en schildersbenodigdheden. Je bestelt ${lower} eenvoudig online: voor 10:00 besteld is vanavond in huis, en met de gratis KLUSRPAS profiteer je altijd van de scherpste prijs. Vragen over je klus? Onze ex-schilders staan voor je klaar.`,
+          `KLUSR is dé klusspecialist voor verf en schildersbenodigdheden. Je bestelt ${lower} eenvoudig online: voor 09:00 besteld is vanavond in huis, en met de gratis KLUSRPAS profiteer je altijd van de scherpste prijs. Vragen over je klus? Onze ex-schilders staan voor je klaar.`,
         ],
       },
     ],
