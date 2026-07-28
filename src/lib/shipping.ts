@@ -9,7 +9,7 @@
  * tabel **Klein Pakket met track & trace**, gewichtsklasse **500–1000 g**,
  * omgerekend van excl. → incl. 21% btw en afgerond op €0,05. Andere
  * gewichtsklasse als basis? Pas dan alleen de `price`-waarden hieronder aan.
- * NL en BE houden hun eigen consumentprijs met gratis verzending vanaf €50.
+ * NL en BE houden hun eigen consumentprijs met gratis verzending vanaf €59.
  */
 
 export interface CountryShipping {
@@ -21,12 +21,12 @@ export interface CountryShipping {
   freeOver?: number;
 }
 
-const FREE_THRESHOLD = 50;
+const FREE_THRESHOLD = 59;
 
 export const SHIPPING_COUNTRIES: CountryShipping[] = [
-  // Gratis vanaf €50 — eigen consumentprijs (NL/BE)
+  // Gratis vanaf €59 — eigen consumentprijs (NL/BE)
   { code: "NL", name: "Nederland", price: 4.95, freeOver: FREE_THRESHOLD },
-  { code: "BE", name: "België", price: 6.95, freeOver: FREE_THRESHOLD },
+  { code: "BE", name: "België", price: 7.95, freeOver: FREE_THRESHOLD },
   // Buurlanden — PostNL Klein Pakket met T&T (500–1000 g) × btw
   { code: "DE", name: "Duitsland", price: 9.45 },
   { code: "FR", name: "Frankrijk", price: 11.2 },

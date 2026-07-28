@@ -1141,26 +1141,26 @@ export function CheckoutForm({
                     : formatPrice(shippingFor(summary.grossSubtotal))
                 }
               />
-              {/* Same-day als betaalde optie — alleen zichtbaar zolang 'ie echt
-                  haalbaar is (NL, vóór de cutoff, geen afhaalorder). */}
+              {/* Vóór de cutoff kiest de klant expliciet tussen next-day (gratis)
+                  en same-day (+ toeslag). Alleen zichtbaar zolang same-day echt
+                  haalbaar is: NL, vóór 09:00, geen afhaalorder. */}
               {canSameDay && (
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
-                  <input
-                    type="checkbox"
-                    checked={sameDay}
-                    onChange={(e) => setSameDay(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <DeliverySpeedOption
+                    active={!sameDay}
+                    onClick={() => setSameDay(false)}
+                    title={t("checkout.nextDay.title")}
+                    hint={t("checkout.nextDay.hint")}
+                    price={t("cart.free")}
                   />
-                  <span className="min-w-0 text-sm leading-snug">
-                    <span className="font-semibold">{t("checkout.sameDay.title")}</span>
-                    <span className="ml-1 font-semibold text-primary">
-                      + {formatPrice(SAME_DAY_SURCHARGE)}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">
-                      {t("checkout.sameDay.hint")}
-                    </span>
-                  </span>
-                </label>
+                  <DeliverySpeedOption
+                    active={sameDay}
+                    onClick={() => setSameDay(true)}
+                    title={t("checkout.sameDay.title")}
+                    hint={t("checkout.sameDay.hint")}
+                    price={`+ ${formatPrice(SAME_DAY_SURCHARGE)}`}
+                  />
+                </div>
               )}
               {/* Dynamische bezorgklok onder de verzendmethode. */}
               <DeliveryCountdown compact className="px-1 text-xs" />
@@ -1398,6 +1398,46 @@ function ShippingOption({
         <span className="block text-xs text-muted-foreground">{hint}</span>
       </span>
       <span className="text-sm font-bold text-klusr-stock">{price}</span>
+    </button>
+  );
+}
+
+/**
+ * Keuze tussen bezorgsnelheden (next-day gratis vs. same-day tegen toeslag).
+ * Compacter dan `ShippingOption` — die kiest de verzendmethode zelf; deze zit
+ * eronder en kiest alleen de snelheid, dus zonder icoon en met de prijs als
+ * accent (de toeslag is geen "gratis"-groen).
+ */
+function DeliverySpeedOption({
+  active,
+  onClick,
+  title,
+  hint,
+  price,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  hint: string;
+  price: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "flex w-full flex-col gap-0.5 rounded-lg border p-3 text-left transition-all",
+        active
+          ? "border-primary bg-primary/5 ring-1 ring-primary"
+          : "border-border hover:border-primary/40",
+      )}
+    >
+      <span className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-semibold">{title}</span>
+        <span className="shrink-0 text-sm font-bold text-primary">{price}</span>
+      </span>
+      <span className="text-xs leading-snug text-muted-foreground">{hint}</span>
     </button>
   );
 }

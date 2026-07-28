@@ -365,7 +365,7 @@
   "faq.order.account.a": "Nie, możesz zamawiać jako gość. Z (bezpłatnym) kontem i KLUSRPAS korzystasz jednak z dodatkowych korzyści i zachowujesz zamówienia oraz kolory.",
   "faq.order.account.text": "Nie, możesz zamawiać jako gość. Z bezpłatnym kontem i KLUSRPAS korzystasz z dodatkowych korzyści i zachowujesz zamówienia oraz kolory.",
   "faq.delivery.when.q": "Kiedy zamówienie będzie u mnie?",
-  "faq.delivery.when.a": "Zamówione w dni robocze przed 09:00, dziś wieczorem u Ciebie. Wysyłka jest darmowa od € 50, poniżej naliczamy € 4,95.",
+  "faq.delivery.when.a": "Zamówione w dni robocze przed 09:00, dziś wieczorem u Ciebie. Wysyłka jest darmowa od € 59, poniżej naliczamy € 4,95.",
   "faq.delivery.pickup.q": "Czy mogę odebrać zamówienie?",
   "faq.delivery.pickup.aPre": "KLUSR działa w pełni online — dostarczamy w całej Holandii i Belgii. Pytania o dostawę? Nasza ",
   "faq.delivery.pickup.aLink": "obsługa klienta",
@@ -536,7 +536,7 @@
   "pdp.perLiterCheaper": "większe opakowanie jest korzystniejsze za litr",
   "pdp.stockForBasePre": "Stan magazynowy pokazany dla ",
   "pdp.stockForBasePost": " — każda baza ma własny stan.",
-  "pdp.usp.freeShipping": "Darmowa wysyłka od €50",
+  "pdp.usp.freeShipping": "Darmowa wysyłka od €59",
   "pdp.usp.returns": "Zwrot w ciągu 14 dni",
   "pdp.usp.afterpay": "Możliwa płatność odroczona",
   "pdp.tab.description": "Opis",
@@ -574,5 +574,7 @@
   "delivery.countdown": "jeszcze {h} godz {m} min",
   "delivery.today": "dziś wieczorem",
   "checkout.sameDay.title": "Dostawa dziś",
-  "checkout.sameDay.hint": "Zamówienie przed 09:00? DHL dostarczy paczkę jeszcze dziś wieczorem."
+  "checkout.sameDay.hint": "Zamówienie przed 09:00? DHL dostarczy paczkę jeszcze dziś wieczorem.",
+  "checkout.nextDay.title": "Dostawa jutro",
+  "checkout.nextDay.hint": "Standard — jutro wieczorem u Ciebie, bez dopłaty."
 }
