@@ -899,7 +899,7 @@ function brandNav(): string {
  */
 function uspBar(): string {
   const usps = [
-    "Gratis verzending vanaf € 50",
+    "Gratis verzending vanaf € 59",
     "Vóór 09:00 besteld, vanavond in huis",
     "30.000 kleuren op maat gemengd",
     "Advies van ex-schilders",
@@ -1264,7 +1264,7 @@ export function newsletterEmail({
     (intro || "").trim(),
     "",
     `Klantbeoordelingen: ${formatAverage(testimonialStats.average)} sterren (${formatCount(testimonialStats.count)} reviews)`,
-    "Gratis verzending vanaf 50 euro | Voor 09:00 besteld, vanavond in huis | 30.000 kleuren op maat gemengd | Advies van ex-schilders | 5% met KLUSRPAS",
+    "Gratis verzending vanaf 59 euro | Voor 09:00 besteld, vanavond in huis | 30.000 kleuren op maat gemengd | Advies van ex-schilders | 5% met KLUSRPAS",
     "",
     ...(featured.length
       ? [

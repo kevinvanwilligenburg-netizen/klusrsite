@@ -35,7 +35,7 @@ const SAFETY_STOCK = Number(process.env.SAFETY_STOCK) || DEFAULT_SAFETY_STOCK;
 
 const JUNK_BRANDS = new Set(["", "onbekend", "merk", "overig", "overige"]);
 
-// Verzendkosten (gespiegeld vanuit de winkelwagen): gratis vanaf €50, anders €4,95.
+// Verzendkosten (gespiegeld vanuit de winkelwagen): gratis vanaf €59, anders €4,95.
 const shippingFor = (subtotal: number): number =>
   subtotal <= 0 || subtotal >= 50 ? 0 : 4.95;
 

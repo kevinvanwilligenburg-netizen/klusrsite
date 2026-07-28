@@ -745,6 +745,8 @@ export type Messages = {
   "delivery.beforeCutoff": string; // {time} {day}
   "delivery.afterCutoff": string; // {day}
   "delivery.today": string;
+  "checkout.nextDay.title": string;
+  "checkout.nextDay.hint": string;
   "checkout.sameDay.title": string;
   "checkout.sameDay.hint": string;
   "delivery.tomorrow": string;
@@ -1227,7 +1229,7 @@ const nl: Messages = {
 
   "faq.delivery.when.q": "Wanneer is mijn bestelling in huis?",
   "faq.delivery.when.a":
-    "Voor 09:00 uur op werkdagen besteld, vanavond in huis. Verzending is gratis vanaf € 50, daaronder rekenen we € 4,95.",
+    "Voor 09:00 uur op werkdagen besteld, vanavond in huis. Verzending is gratis vanaf € 59, daaronder rekenen we € 4,95.",
   "faq.delivery.pickup.q": "Kan ik mijn bestelling afhalen?",
   "faq.delivery.pickup.aPre": "KLUSR is volledig online — we bezorgen door heel Nederland en België. Vragen over je bezorging? Onze ",
   "faq.delivery.pickup.aLink": "klantenservice",
@@ -1435,7 +1437,7 @@ const nl: Messages = {
   "pdp.stockForBasePre": "Voorraad getoond voor ",
   "pdp.stockForBasePost": " — elke basis heeft een eigen voorraad.",
 
-  "pdp.usp.freeShipping": "Gratis verzending vanaf €50",
+  "pdp.usp.freeShipping": "Gratis verzending vanaf €59",
   "pdp.usp.returns": "Retourneren binnen 14 dagen",
   "pdp.usp.afterpay": "Achteraf betalen mogelijk",
 
@@ -1473,6 +1475,8 @@ const nl: Messages = {
   "delivery.beforeCutoff": "Vóór {time} besteld, {day} in huis",
   "delivery.afterCutoff": "Besteld → {day} in huis",
   "delivery.today": "vanavond",
+  "checkout.nextDay.title": "Morgen bezorgd",
+  "checkout.nextDay.hint": "Standaard — morgenavond in huis, zonder toeslag.",
   "checkout.sameDay.title": "Vandaag bezorgd",
   "checkout.sameDay.hint": "Besteld vóór 09:00? Dan bezorgt DHL je pakket vanavond nog.",
   "delivery.tomorrow": "morgen",
@@ -1955,7 +1959,7 @@ const en: Messages = {
 
   "faq.delivery.when.q": "When will my order arrive?",
   "faq.delivery.when.a":
-    "Ordered before 09:00 on working days, delivered this evening. Shipping is free from € 50, below that we charge € 4,95.",
+    "Ordered before 09:00 on working days, delivered this evening. Shipping is free from € 59, below that we charge € 4,95.",
   "faq.delivery.pickup.q": "Can I collect my order?",
   "faq.delivery.pickup.aPre": "KLUSR is fully online — we deliver throughout the Netherlands and Belgium. Questions about your delivery? Our ",
   "faq.delivery.pickup.aLink": "customer service",
@@ -2163,7 +2167,7 @@ const en: Messages = {
   "pdp.stockForBasePre": "Stock shown for ",
   "pdp.stockForBasePost": " — each base has its own stock.",
 
-  "pdp.usp.freeShipping": "Free shipping from €50",
+  "pdp.usp.freeShipping": "Free shipping from €59",
   "pdp.usp.returns": "Returns within 14 days",
   "pdp.usp.afterpay": "Pay later available",
 
@@ -2201,6 +2205,8 @@ const en: Messages = {
   "delivery.beforeCutoff": "Order before {time}, delivered {day}",
   "delivery.afterCutoff": "Ordered → delivered {day}",
   "delivery.today": "this evening",
+  "checkout.nextDay.title": "Delivered tomorrow",
+  "checkout.nextDay.hint": "Standard — at your door tomorrow evening, no surcharge.",
   "checkout.sameDay.title": "Delivered today",
   "checkout.sameDay.hint": "Ordered before 09:00? DHL delivers your parcel this evening.",
   "delivery.tomorrow": "tomorrow",
@@ -2683,7 +2689,7 @@ const fr: Messages = {
 
   "faq.delivery.when.q": "Quand ma commande sera-t-elle chez moi ?",
   "faq.delivery.when.a":
-    "Commandé avant 19h les jours ouvrés, livré demain. La livraison est gratuite à partir de € 50, en dessous nous facturons € 4,95.",
+    "Commandé avant 19h les jours ouvrés, livré demain. La livraison est gratuite à partir de € 59, en dessous nous facturons € 4,95.",
   "faq.delivery.pickup.q": "Puis-je retirer ma commande ?",
   "faq.delivery.pickup.aPre": "KLUSR est entièrement en ligne — nous livrons partout aux Pays-Bas et en Belgique. Des questions sur votre livraison ? Notre ",
   "faq.delivery.pickup.aLink": "service client",
@@ -2891,7 +2897,7 @@ const fr: Messages = {
   "pdp.stockForBasePre": "Stock affiché pour ",
   "pdp.stockForBasePost": " — chaque base a son propre stock.",
 
-  "pdp.usp.freeShipping": "Livraison gratuite dès €50",
+  "pdp.usp.freeShipping": "Livraison gratuite dès €59",
   "pdp.usp.returns": "Retours sous 14 jours",
   "pdp.usp.afterpay": "Paiement différé possible",
 
@@ -2929,6 +2935,8 @@ const fr: Messages = {
   "delivery.beforeCutoff": "Commandé avant {time}, livré {day}",
   "delivery.afterCutoff": "Commandé → livré {day}",
   "delivery.today": "ce soir",
+  "checkout.nextDay.title": "Livré demain",
+  "checkout.nextDay.hint": "Standard — chez vous demain soir, sans supplément.",
   "checkout.sameDay.title": "Livré aujourd'hui",
   "checkout.sameDay.hint": "Commandé avant 09:00 ? DHL livre votre colis ce soir.",
   "delivery.tomorrow": "demain",
@@ -3411,7 +3419,7 @@ const de: Messages = {
 
   "faq.delivery.when.q": "Wann ist meine Bestellung bei mir?",
   "faq.delivery.when.a":
-    "An Werktagen vor 09:00 Uhr bestellt, heute Abend geliefert. Der Versand ist ab € 50 kostenlos, darunter berechnen wir € 4,95.",
+    "An Werktagen vor 09:00 Uhr bestellt, heute Abend geliefert. Der Versand ist ab € 59 kostenlos, darunter berechnen wir € 4,95.",
   "faq.delivery.pickup.q": "Kann ich meine Bestellung abholen?",
   "faq.delivery.pickup.aPre": "KLUSR ist vollständig online — wir liefern in die ganzen Niederlande und nach Belgien. Fragen zu Ihrer Lieferung? Unser ",
   "faq.delivery.pickup.aLink": "Kundenservice",
@@ -3619,7 +3627,7 @@ const de: Messages = {
   "pdp.stockForBasePre": "Bestand angezeigt für ",
   "pdp.stockForBasePost": " — jede Basis hat einen eigenen Bestand.",
 
-  "pdp.usp.freeShipping": "Kostenloser Versand ab €50",
+  "pdp.usp.freeShipping": "Kostenloser Versand ab €59",
   "pdp.usp.returns": "Rückgabe innerhalb von 14 Tagen",
   "pdp.usp.afterpay": "Kauf auf Rechnung möglich",
 
@@ -3657,6 +3665,8 @@ const de: Messages = {
   "delivery.beforeCutoff": "Vor {time} bestellt, {day} geliefert",
   "delivery.afterCutoff": "Bestellt → {day} geliefert",
   "delivery.today": "heute Abend",
+  "checkout.nextDay.title": "Morgen geliefert",
+  "checkout.nextDay.hint": "Standard — morgen Abend bei Ihnen, ohne Aufschlag.",
   "checkout.sameDay.title": "Heute geliefert",
   "checkout.sameDay.hint": "Vor 09:00 bestellt? Dann liefert DHL Ihr Paket noch heute Abend.",
   "delivery.tomorrow": "morgen",
