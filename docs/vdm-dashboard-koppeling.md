@@ -156,7 +156,23 @@ tonen naar een deadline die de bezorgdag toch niet vervroegt. Alle beloftes in d
 de vijf talen zijn meegegaan, en de vervoerder-badge in winkelwagen/footer toont
 DHL in plaats van PostNL.
 
+**Same-day als betaalde optie (gelijk aan de VDM-site):** de klant kiest in de
+checkout voor bezorging vandaag tegen **€ 1,25** toeslag. Die toeslag zit in
+het `shipping`-veld van de order (zodat de omzetoverzichten kloppen) en de
+order draagt `delivery: { type, surcharge }` met type `same-day` /
+`next-day` / `next-workday`. Het dashboard bepaalt daarmee of het DHL-label de
+**SDD**-optie meekrijgt. Het type wordt **server-side** afgeleid uit de klok:
+een client die buiten de cutoff `sameDay: true` meestuurt krijgt gewoon
+`next-day`.
+
 **Nog open aan de webshop-kant:**
+- Vrijdag ná 09:00 levert `next-day` op, terwijl wij die zaterdagrit **zelf**
+  rijden. Als het dashboard daar een DHL-label voor aanmaakt, klopt dat niet —
+  afstemmen of daar een aparte behandeling voor nodig is.
+- De same-day-eis "voorraad in Tilroy-vestiging **7827**" is bij ons impliciet:
+  de webshopvoorraad is gedefinieerd als 7827 **+ 8934** (magazijn/webshop).
+  Ligt een artikel alleen in 8934 en is dat fysiek niet Nijverdal, dan bieden we
+  same-day aan waar het niet kan — bevestigen of 8934 op dezelfde locatie zit.
 - Het officiële DHL-logo ontbreekt in `/public`; de badge is nu tekst.
   Zodra het bestand er is, kan `CarrierBadge` weer een `<img>` worden.
 - `src/lib/postnl.ts` en de PostNL-labelknop in `/admin` bestaan nog naast de
