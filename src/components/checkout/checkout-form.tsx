@@ -25,6 +25,7 @@ import { PaymentMethods } from "./payment-methods";
 import { MollieCard, type MollieCardHandle } from "./mollie-card";
 import { CheckoutTrust } from "./checkout-trust";
 import { DeliveryCountdown } from "@/components/shared/delivery-countdown";
+import { sameDayAvailable, SAME_DAY_SURCHARGE } from "@/lib/delivery";
 import type { PaymentMethodInfo } from "@/types";
 import type { CustomerProfile } from "@/lib/store/profile";
 import {
@@ -265,6 +266,8 @@ export function CheckoutForm({
   // 15-min nabestelvenster → geen extra verzendkosten.
   const { active: reorderFree } = useReorderActive();
   const [shippingMethod, setShippingMethod] = useState<"standard" | "pickup">("standard");
+  /** Betaalde same-day-optie (€ 1,25) — alleen zichtbaar als 'ie haalbaar is. */
+  const [sameDay, setSameDay] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lookingUp, setLookingUp] = useState(false);
@@ -521,10 +524,19 @@ export function CheckoutForm({
   // venster = 0.
   const grossSubtotalForShipping = cartSummary(items, mode, kluspasActive).grossSubtotal;
   const brievenbus = isBrievenbusOrder(items);
-  const shippingOverride =
+  const baseShipping =
     shippingMethod === "pickup" || reorderFree
       ? 0
       : shippingForCountry(grossSubtotalForShipping, country, { brievenbus });
+
+  // Same-day is een betaalde optie: alleen aanbieden binnen NL, vóór de cutoff
+  // en niet bij afhalen. `mounted` houdt de server-render tijdloos, anders zou
+  // de knop tijdens hydratie kunnen verspringen. De toeslag gaat bewust in de
+  // verzendkosten, zodat de omzetoverzichten in het dashboard blijven kloppen.
+  const canSameDay =
+    mounted && shippingMethod !== "pickup" && sameDayAvailable(country);
+  const wantsSameDay = canSameDay && sameDay;
+  const shippingOverride = wantsSameDay ? baseShipping + SAME_DAY_SURCHARGE : baseShipping;
   const summary = cartSummary(items, mode, kluspasActive, shippingOverride);
 
   // Login-nudge voor gasten: de KLUSRPAS-prijs is een ingelogd voordeel. Inloggen
@@ -795,6 +807,9 @@ export function CheckoutForm({
           shipping: summary.grossShipping,
           total: summary.total,
           kluspasSavings: summary.savings,
+          // Wens voor same-day; de server toetst 'm nog aan de klok voordat het
+          // als "same-day" op de order (en dus op het DHL-label) belandt.
+          ...(wantsSameDay ? { sameDay: true } : {}),
           // Interne checkout: stuur de gekozen methode (+ evt. card-token) mee. In
           // de hosted-modus blijft dit weg → het body is identiek aan voorheen.
           ...(expressMode && method ? { method } : {}),
@@ -1126,6 +1141,27 @@ export function CheckoutForm({
                     : formatPrice(shippingFor(summary.grossSubtotal))
                 }
               />
+              {/* Same-day als betaalde optie — alleen zichtbaar zolang 'ie echt
+                  haalbaar is (NL, vóór de cutoff, geen afhaalorder). */}
+              {canSameDay && (
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <input
+                    type="checkbox"
+                    checked={sameDay}
+                    onChange={(e) => setSameDay(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                  />
+                  <span className="min-w-0 text-sm leading-snug">
+                    <span className="font-semibold">{t("checkout.sameDay.title")}</span>
+                    <span className="ml-1 font-semibold text-primary">
+                      + {formatPrice(SAME_DAY_SURCHARGE)}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {t("checkout.sameDay.hint")}
+                    </span>
+                  </span>
+                </label>
+              )}
               {/* Dynamische bezorgklok onder de verzendmethode. */}
               <DeliveryCountdown compact className="px-1 text-xs" />
             </div>

@@ -3,6 +3,10 @@
  * These model the webshop data described in the project brief.
  */
 
+import type { DeliveryType } from "@/lib/delivery";
+
+export type { DeliveryType };
+
 export type AiContentStatus = "complete" | "missing" | "suggested" | "approved";
 
 export interface StoreStock {
@@ -267,9 +271,19 @@ export interface Order {
     consent?: boolean;
   };
   subtotal: number;
+  /** Verzendkosten incl. een eventuele same-day-toeslag (zie `delivery`). */
   shipping: number;
   total: number;
   kluspasSavings: number;
+  /**
+   * Bezorgkeuze. Het VDM-dashboard leest `type` om te bepalen of het DHL-label
+   * de SDD-optie (same day delivery) meekrijgt; `surcharge` is het deel van
+   * `shipping` dat de klant extra voor same-day betaalde.
+   */
+  delivery?: {
+    type: DeliveryType;
+    surcharge?: number;
+  };
   createdAt: string;
   estimatedDelivery?: string;
   /** Fulfilment via Channable → Tilroy. */
