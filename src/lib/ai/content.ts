@@ -110,7 +110,7 @@ export function buildContentPrompt(
       return {
         system: CONTENT_SYSTEM_PROMPT,
         prompt: `${context}\n\nGenereer SEO-content voor de productpagina van "${label}". Lever exact dit formaat:\nMeta titel: <max 60 tekens, met merk indien beschikbaar>\nMeta beschrijving: <140-155 tekens, wervend, met een reden om bij KLUSR te kopen>\nSEO-tekst: <1 alinea van 40-70 woorden met relevante zoekwoorden, natuurlijk geschreven>\nGeen prijzen of voorraadinformatie.`,
-        mock: `Meta titel: ${truncate(`${label} kopen`, 57)} | KLUSR\nMeta beschrijving: ${label} eenvoudig online kopen bij KLUSR. Professionele kwaliteit, advies van ex-schilders en voor 10:00 besteld is vanavond in huis.\nSEO-tekst: Op zoek naar ${label}? Bij KLUSR vind je een ruim assortiment${brand ? ` van ${brand}` : ""} voor een professioneel klusresultaat. Profiteer van deskundig advies van ex-schilders, scherpe KLUSRPAS-voordelen en snelle levering. Bestel vandaag en klus als een pro.`,
+        mock: `Meta titel: ${truncate(`${label} kopen`, 57)} | KLUSR\nMeta beschrijving: ${label} eenvoudig online kopen bij KLUSR. Professionele kwaliteit, advies van ex-schilders en voor 09:00 besteld is vanavond in huis.\nSEO-tekst: Op zoek naar ${label}? Bij KLUSR vind je een ruim assortiment${brand ? ` van ${brand}` : ""} voor een professioneel klusresultaat. Profiteer van deskundig advies van ex-schilders, scherpe KLUSRPAS-voordelen en snelle levering. Bestel vandaag en klus als een pro.`,
       };
   }
 }

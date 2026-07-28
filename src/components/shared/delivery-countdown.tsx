@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * Bezorgklok met live aftelling.
  *
  * Toont WANNEER een bestelling geleverd wordt (zie `@/lib/delivery`):
- *  - Vóór de cutoff (10:00): "Vóór 10:00 besteld, ‹vanavond› in huis" + een
+ *  - Vóór de cutoff (09:00): "Vóór 09:00 besteld, ‹vanavond› in huis" + een
  *    live aftelling "nog 3 u 12 m" — DHL bezorgt dan nog dezelfde avond.
  *  - Ná de cutoff: "Besteld → ‹morgen/weekdag› in huis" (geen aftelling).
  *
@@ -95,7 +95,7 @@ function countdownParts(ms: number): { h: number; m: number } {
   return { h: Math.floor(totalMinutes / 60), m: totalMinutes % 60 };
 }
 
-/** Cutoff-tijd netjes geformatteerd (bv. "10:00") in de actieve locale. */
+/** Cutoff-tijd netjes geformatteerd (bv. "09:00") in de actieve locale. */
 function formatCutoff(locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",

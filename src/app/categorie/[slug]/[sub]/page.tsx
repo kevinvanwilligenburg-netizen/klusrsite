@@ -91,7 +91,7 @@ export default function SubCategoryPage({ params }: SubPageProps) {
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           {seo?.intro ??
-            `${subCategory.title} van topmerken bij KLUSR — met deskundig advies en voor 10:00 besteld vanavond in huis.`}
+            `${subCategory.title} van topmerken bij KLUSR — met deskundig advies en voor 09:00 besteld vanavond in huis.`}
         </p>
       </section>
 

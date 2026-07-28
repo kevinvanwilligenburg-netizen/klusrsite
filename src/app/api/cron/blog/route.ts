@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 
   const topic = TOPICS[Math.floor(Date.now() / 86_400_000) % TOPICS.length];
   const system =
-    "Je bent een ervaren ex-schilder die SEO-blogs schrijft voor KLUSR, een Nederlandse verf- en klusspecialist. Schrijf in het Nederlands, praktisch, vriendelijk en concreet. Verzin geen prijzen. Noem waar logisch KLUSR-troeven (advies van ex-schilders, op kleur gemengde verf, voor 10:00 besteld vanavond in huis).";
+    "Je bent een ervaren ex-schilder die SEO-blogs schrijft voor KLUSR, een Nederlandse verf- en klusspecialist. Schrijf in het Nederlands, praktisch, vriendelijk en concreet. Verzin geen prijzen. Noem waar logisch KLUSR-troeven (advies van ex-schilders, op kleur gemengde verf, voor 09:00 besteld vanavond in huis).";
   const prompt = `Schrijf een origineel blogartikel over: "${topic}".
 Formaat:
 - Regel 1: een pakkende titel (zonder "Titel:" ervoor).

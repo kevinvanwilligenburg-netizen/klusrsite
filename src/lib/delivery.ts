@@ -10,26 +10,33 @@
  * etc., dus er is geen externe timezone-library nodig.
  *
  * Regels (DHL, bevestigd door de eigenaar — vervangt de oude PostNL-klok):
- *  - Cutoff = 10:00.
- *  - Besteld vóór 10:00  → nog DEZELFDE dag bezorgd (same-day).
- *  - Besteld 10:00–23:59 → de VOLGENDE dag bezorgd.
+ *  - Cutoff = 09:00.
+ *  - Besteld vóór 09:00  → nog DEZELFDE dag bezorgd (same-day).
+ *  - Besteld 09:00–23:59 → de VOLGENDE dag bezorgd.
  *  - DHL bezorgt in de avond, door heel Nederland (geen regio-uitzondering).
  *  - Zaterdag rijden we de vrijdagorders zélf uit (dus niet via DHL). Zaterdag
  *    is daarmee wél een bezorgdag, maar géén dag waarop same-day kan: een
  *    bestelling die op zaterdag binnenkomt gaat mee met maandag.
  *  - Zondag wordt niet bezorgd.
  *
- * Controle-voorbeelden:
- *  - di 09:00 → di ("vandaag", 's avonds)
- *  - di 11:00 → wo ("morgen")
- *  - vr 09:00 → vr ("vandaag")
+ * Controle-voorbeelden (let op: 09:00 zelf is al té laat):
+ *  - di 08:00 → di ("vandaag", 's avonds)
+ *  - di 09:00 → wo ("morgen")
+ *  - vr 08:00 → vr ("vandaag")
  *  - vr 11:00 → za (wij bezorgen zelf)
  *  - za (elk tijdstip) → ma
  *  - zo (elk tijdstip) → ma
  */
 
-/** Cutoff-uur (lokale tijd). Vóór dit hele uur bezorgen we nog vandaag. */
-export const CUTOFF_HOUR = 10;
+/**
+ * Cutoff-uur (lokale tijd). Vóór dit hele uur bezorgen we nog vandaag.
+ *
+ * Staat bewust op 09:00 en niet op 10:00: wíj moeten de pakketten vóór 10:00
+ * bij het DHL-depot in Hengelo inleveren, dus de klant heeft tot 09:00 om te
+ * bestellen. Zou hier 10:00 staan, dan beloven we same-day aan orders die de
+ * rit naar het depot niet meer halen.
+ */
+export const CUTOFF_HOUR = 9;
 
 /**
  * Dagen waarop niemand bezorgt: zondag (0). Maandag is met DHL wél een
@@ -41,7 +48,7 @@ const NON_DELIVERY_DAYS = new Set([0]);
 /**
  * Dagen waarop géén same-day mogelijk is: zaterdag (6). We rijden zaterdag wel,
  * maar alleen met de orders van vrijdag; wat op zaterdag zelf binnenkomt gaat
- * mee met maandag. Een zaterdagbestelling vóór 10:00 valt dus terug op de
+ * mee met maandag. Een zaterdagbestelling vóór 09:00 valt dus terug op de
  * normale "volgende bezorgdag"-regel.
  */
 const NO_SAME_DAY_DAYS = new Set([6]);
@@ -53,8 +60,8 @@ export interface DeliveryInfo {
   deliveryDate: Date;
   /**
    * Haalt deze bestelling nog de bezorging van vandaag? Dat vraagt méér dan
-   * "vóór 10:00": op zaterdag rijden we alleen de vrijdagorders uit, dus dan is
-   * same-day niet mogelijk ook al is het 09:00.
+   * "vóór 09:00": op zaterdag rijden we alleen de vrijdagorders uit, dus dan is
+   * same-day niet mogelijk ook al is het 08:00.
    */
   sameDay: boolean;
   /**
@@ -67,7 +74,7 @@ export interface DeliveryInfo {
    */
   label: DeliveryLabel;
   /**
-   * Milliseconden tot de eerstvolgende 10:00 (voor de live aftelling). Alleen
+   * Milliseconden tot de eerstvolgende 09:00 (voor de live aftelling). Alleen
    * zinvol als `sameDay` true is; anders 0 — aftellen naar een deadline die de
    * bezorgdag toch niet vervroegt zou de klant misleiden.
    */
@@ -99,7 +106,7 @@ export function deliveryInfo(now: Date = new Date()): DeliveryInfo {
   const aimToday =
     now.getHours() < CUTOFF_HOUR && !NO_SAME_DAY_DAYS.has(now.getDay());
 
-  // Vóór 10:00 bezorgen we vandaag nog; daarna is morgen de eerste kans.
+  // Vóór 09:00 bezorgen we vandaag nog; daarna is morgen de eerste kans.
   let deliveryDate = aimToday ? startOfDay(now) : addDays(startOfDay(now), 1);
 
   // Rol door naar de eerstvolgende bezorgdag als het op een niet-bezorgdag valt.
@@ -119,11 +126,11 @@ export function deliveryInfo(now: Date = new Date()): DeliveryInfo {
   else label = "weekday";
 
   // Same-day leiden we af uit de uitkomst, niet uit de klok: op zondagochtend
-  // is het wél vóór 10:00, maar bezorgen we pas maandag. Zo kan er nooit een
+  // is het wél vóór 09:00, maar bezorgen we pas maandag. Zo kan er nooit een
   // aftelling verschijnen die de bezorgdag toch niet vervroegt.
   const sameDay = dayDiff === 0;
 
-  // ms tot de eerstvolgende 10:00 (alleen relevant als same-day nog kan).
+  // ms tot de eerstvolgende 09:00 (alleen relevant als same-day nog kan).
   let msUntilCutoff = 0;
   if (sameDay) {
     const cutoff = startOfDay(now);

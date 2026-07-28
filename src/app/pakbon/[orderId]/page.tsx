@@ -113,7 +113,7 @@ export default async function PakbonPage({ params }: { params: { orderId: string
                   Nog niet verzonden
                   <br />
                   <span className="text-xs text-neutral-600">
-                    Voor 10:00 besteld, vanavond in huis
+                    Voor 09:00 besteld, vanavond in huis
                   </span>
                 </>
               )}
