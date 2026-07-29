@@ -46,6 +46,23 @@ interface StockedProduct {
 }
 
 /**
+ * Goedkoopste variant die ook écht leverbaar is; `undefined` als geen enkele
+ * variant dat is.
+ *
+ * "Snel toevoegen" op een kaart of listing-rij toont de goedkoopste variant,
+ * maar die is niet altijd op voorraad — de kaart zelf kijkt naar de best
+ * leverbare variant. Zonder deze filtering belandt er een onbestelbaar artikel
+ * in de winkelwagen en loopt de klant pas in de checkout tegen een blokkade aan.
+ */
+export function cheapestSellableVariant<
+  T extends { kluspasPrice: number; stockByStore?: StoreStock[] },
+>(variants: T[] | undefined, safety: number = DEFAULT_SAFETY_STOCK): T | undefined {
+  const leverbaar = (variants ?? []).filter((v) => inStockOnline(v.stockByStore, safety));
+  if (!leverbaar.length) return undefined;
+  return leverbaar.reduce((a, b) => (b.kluspasPrice < a.kluspasPrice ? b : a));
+}
+
+/**
  * Voorraad van de best leverbare variant van een product.
  *
  * Een product is verkoopbaar zolang één maat of kleur nog op voorraad ligt: de

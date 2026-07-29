@@ -17,7 +17,7 @@ import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { productKindLabel } from "@/lib/product-kind";
-import { bestVariantStock } from "@/lib/stock";
+import { bestVariantStock, cheapestSellableVariant } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 
@@ -36,15 +36,23 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
   const mounted = useMounted();
   const isFavorite = mounted && favoriteIds.includes(product.id);
 
-  // Toon altijd de goedkoopste variant (laagste KLUSRPAS-prijs) → meer clicks.
-  const cheapest = product.variants.reduce(
-    (a, b) => (b.kluspasPrice < a.kluspasPrice ? b : a),
-    product.variants[0],
-  );
+  // Toon de goedkoopste variant die ook leverbaar is (laagste KLUSRPAS-prijs) →
+  // meer clicks, zonder dat "snel toevoegen" een onbestelbaar blik in de wagen
+  // legt. Is er niets leverbaar, dan valt 'ie terug op de goedkoopste voor de
+  // prijsweergave; de knop verdwijnt dan (zie `canAdd` hieronder).
+  const sellableCheapest = cheapestSellableVariant(product.variants);
+  const cheapest =
+    sellableCheapest ??
+    product.variants.reduce(
+      (a, b) => (b.kluspasPrice < a.kluspasPrice ? b : a),
+      product.variants[0],
+    );
+  const canAdd = Boolean(sellableCheapest);
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
-    addItem({ product, variant: cheapest, quantity: 1 });
+    if (!sellableCheapest) return;
+    addItem({ product, variant: sellableCheapest, quantity: 1 });
     trackEvent("add_to_cart", {
       value: cheapest.kluspasPrice,
       items: [
@@ -159,10 +167,12 @@ export function ProductCard({ product, listName, className }: ProductCardProps) 
             from={product.variants.length > 1}
           />
           <StockStatus stockByStore={bestVariantStock(product)} showScarcity />
-          <Button onClick={handleAdd} className="w-full" size="sm">
-            <ShoppingCart className="h-4 w-4" />
-            {t("pdp.addToCart")}
-          </Button>
+          {canAdd && (
+            <Button onClick={handleAdd} className="w-full" size="sm">
+              <ShoppingCart className="h-4 w-4" />
+              {t("pdp.addToCart")}
+            </Button>
+          )}
         </div>
       </div>
     </div>

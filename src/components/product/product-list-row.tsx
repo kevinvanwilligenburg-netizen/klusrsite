@@ -17,7 +17,7 @@ import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
 import { productKindLabel } from "@/lib/product-kind";
-import { bestVariantStock } from "@/lib/stock";
+import { bestVariantStock, cheapestSellableVariant } from "@/lib/stock";
 import { cn } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 
@@ -52,15 +52,21 @@ export function ProductListRow({
   const mounted = useMounted();
   const isFavorite = mounted && favoriteIds.includes(product.id);
 
-  // Toon altijd de goedkoopste variant (laagste KLUSRPAS-prijs) → meer clicks.
-  const cheapest = product.variants.reduce(
-    (a, b) => (b.kluspasPrice < a.kluspasPrice ? b : a),
-    product.variants[0],
-  );
+  // Goedkoopste variant die ook leverbaar is — anders legt "snel toevoegen" een
+  // onbestelbaar artikel in de wagen (zie cheapestSellableVariant).
+  const sellableCheapest = cheapestSellableVariant(product.variants);
+  const cheapest =
+    sellableCheapest ??
+    product.variants.reduce(
+      (a, b) => (b.kluspasPrice < a.kluspasPrice ? b : a),
+      product.variants[0],
+    );
+  const canAdd = Boolean(sellableCheapest);
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
-    addItem({ product, variant: cheapest, quantity: 1 });
+    if (!sellableCheapest) return;
+    addItem({ product, variant: sellableCheapest, quantity: 1 });
     trackEvent("add_to_cart", {
       value: cheapest.kluspasPrice,
       items: [
@@ -178,10 +184,12 @@ export function ProductListRow({
           >
             <Heart className={cn("h-4 w-4", isFavorite && "fill-primary text-primary")} />
           </button>
-          <Button onClick={handleAdd} className="flex-1" size="sm">
-            <ShoppingCart className="h-4 w-4" />
-            {t("pdp.addToCart")}
-          </Button>
+          {canAdd && (
+            <Button onClick={handleAdd} className="flex-1" size="sm">
+              <ShoppingCart className="h-4 w-4" />
+              {t("pdp.addToCart")}
+            </Button>
+          )}
         </div>
         <CompareButton productId={product.id} variant="labeled" className="pt-0.5 sm:self-end" />
       </div>
