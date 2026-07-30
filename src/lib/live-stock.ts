@@ -158,15 +158,18 @@ export async function liveAvailability(variantIds: string[]): Promise<Map<string
 }
 
 /**
- * Voorraad van één tinting-basis. Mengverf wordt per basis (wit/medium/deep)
- * uit een eigen blik geschept; de productpagina toont daarom een deel van de
- * variantvoorraad. Zonder deze correctie zou de guard méér doorlaten dan de
- * klant beschikbaar zag.
+ * Voorraad van één tinting-basis.
+ *
+ * Elke basis is bij Tilroy een eigen artikel met een eigen voorraadstand, maar
+ * die stand kennen wij niet: onze import vouwt de basissen samen tot één
+ * variant per maat. Eerder stond hier een geschatte factor (deep = 35% van de
+ * variantvoorraad); die blokkeerde 67% van de mengverf voor donkere kleuren
+ * terwijl de winkel gewoon kon leveren. Liever niets aftrekken dan een gok die
+ * bestellingen weigert — de guard rekent daarom met de volle variantvoorraad
+ * tot we de echte per-basis-stand hebben.
  */
-function forBase(qty: number, base?: PaintBaseSelection | null): number {
-  if (!base) return qty;
-  const factor = paintBases[base.id]?.stockFactor;
-  return factor == null ? qty : Math.max(0, Math.floor(qty * factor));
+function forBase(qty: number, _base?: PaintBaseSelection | null): number {
+  return qty;
 }
 
 /**

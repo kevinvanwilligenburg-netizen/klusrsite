@@ -281,7 +281,7 @@ export function ProductBuybox({
       : variant.stockByStore;
   const effectiveStock =
     color?.base && product.colorMatchable
-      ? baseStockByStore(baseStock, color.base.id)
+      ? baseStockByStore(baseStock)
       : baseStock;
   // Online verkoopbaar = Nijverdal-voorraad ≥ veiligheidsvoorraad.
   const sellable = onlineStock(effectiveStock, safetyStock) > 0;
