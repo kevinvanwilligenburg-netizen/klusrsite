@@ -4,6 +4,8 @@ import { createOrder, setMolliePaymentId } from "@/lib/store/orders";
 import { createPayment } from "@/lib/payments";
 import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
 import { verifyOrderTotal } from "@/lib/checkout-pricing";
+import { resolveCartColors } from "@/lib/paint-color-resolve";
+import { resolveBaseSkus } from "@/lib/mengverf";
 import { cartItemSchema } from "@/lib/checkout-schema";
 import type { CartItem, OrderCustomer } from "@/types";
 
@@ -47,10 +49,23 @@ export async function POST(req: Request) {
     }
     const data = parsed.data;
 
+    // Kleurcontrole: de kleur op de regel bepaalt wat de winkel mengt en komt
+    // van de client, dus we zoeken 'm opnieuw op. Dit stond alleen in
+    // create-payment, terwijl Apple Pay net zo goed een echte order aanmaakt —
+    // een gemanipuleerde of verouderde regel kwam er hier dus ongezien door.
+    // Zie lib/paint-color-resolve.ts.
+    const kleuren = await resolveCartColors(data.items as CartItem[]);
+    if (kleuren.fout) {
+      return NextResponse.json({ ok: false, error: kleuren.fout }, { status: 409 });
+    }
+    // Mengverf: boek af van het basisartikel dat er écht in gaat, niet van de
+    // variant waarop de klant klikte. Zie lib/mengverf.ts.
+    const items = (await resolveBaseSkus(kleuren.items)).items;
+
     // Prijscontrole: het client-totaal is manipuleerbaar en veroudert met de
     // winkelwagen; zie lib/checkout-pricing.ts.
     const prijs = verifyOrderTotal({
-      items: data.items as CartItem[],
+      items,
       total: data.total,
       freeShipping: data.shipping === 0,
     });
@@ -59,7 +74,7 @@ export async function POST(req: Request) {
     }
 
     // 0. Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
-    const shortages = await checkStockForItems(data.items as CartItem[]);
+    const shortages = await checkStockForItems(items);
     if (shortages.length) {
       return NextResponse.json(
         { ok: false, error: shortageMessage(shortages), shortages },
@@ -92,7 +107,8 @@ export async function POST(req: Request) {
     // 2. Order vastleggen uit de meegestuurde winkelwagen (status "open").
     const order = await createOrder({
       customer,
-      items: data.items as CartItem[],
+      // De opgezochte regels: de kleur op de order is onze eigen versie.
+      items,
       subtotal: data.subtotal,
       shipping: data.shipping,
       total: data.total,

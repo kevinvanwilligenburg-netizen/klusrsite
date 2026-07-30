@@ -150,10 +150,9 @@ bestelling in plaats van een weergavefoutje.
 
 **Gecorrigeerd (2026-07-30):** toeslag en voorraadfactor staan op 0 resp. 1.
 
-**Nog te doen — vraagt `SITE_API_KEY`.** Het dashboard levert nu
-`GET /api/mengverf` met per verflijn + maat de basissen die echt bestaan:
-sku, basiscode (N00/W05/LN/ZX…), label, prijs, kluspasprijs en voorraad per
-vestiging, plus `zelfdePrijs`, `voorraadSamen` en `perWinkelSamen`.
+Het dashboard levert `GET /api/mengverf` met per verflijn + maat de basissen die
+echt bestaan: sku, basiscode (N00/W05/LN/ZX…), label, prijs, kluspasprijs en
+voorraad per vestiging, plus `zelfdePrijs`, `voorraadSamen` en `perWinkelSamen`.
 
 Drie afspraken bij het aansluiten:
 1. **Toon de prijs van het basisartikel, tel niets bij.** Bij
@@ -168,6 +167,25 @@ Drie afspraken bij het aansluiten:
    het dashboard neemt die sku één-op-één over naar Tilroy, dus een verkeerde
    sku laat de voorraad daar scheeflopen — en dat zie je pas maanden later
    terug in de inkoop.
+
+**Afspraak 3 is gedaan (2026-07-30):** `src/lib/mengverf.ts` zoekt bij het
+afrekenen het basisartikel op en zet die sku in `items[].baseSku`; `createOrder`
+gebruikt 'm als sku van de regel. Alle vier de routes die een order aanmaken
+(create-payment, express, applepay-cart, applepay-pay) doen dat nu, en die
+laatste drie deden ook de kleurcontrole nog niet — daar kwam de kleur van de
+client ongezien op de order. Wij kennen drie basisniveaus (wit/medium/deep),
+Tilroy meestal twee; bestaat ons niveau niet, dan pakken we de eerstvolgende
+**donkerdere** basis: te licht draagt het pigment niet, te donker kost hooguit
+wat meer colorant. Fail-safe: geen sleutel, geen bron of geen herkenbare basis →
+de regel houdt de variant-sku die hij vandaag ook heeft.
+
+**Afspraak 1 en 2 staan nog open.** Die raken de getoonde prijs, en dus ook
+`verifyOrderTotal`: toont de productpagina straks de prijs van het basisartikel,
+dan moet de servercontrole dezelfde bron gebruiken — anders weigert de checkout
+bestellingen zodra `/api/mengverf` even hapert. Dat vraagt een prijsval die
+niet fail-open mag zijn, en die keuze is groter dan een weergavewijziging. Tot
+die tijd rekenen we de variantprijs, wat op lijnen met `zelfdePrijs: false`
+(Alphadur 2,5 L: 24,95 om 31,95) te weinig is.
 
 ⚠️ **Niet hard blokkeren op nul voor mengverf.** De voorraadadministratie klopt
 niet op de hardlopers: van de vijftien best verkopende artikelen staat Deventer
