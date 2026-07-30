@@ -181,6 +181,15 @@ Tilroy meestal twee; bestaat ons niveau niet, dan pakken we de eerstvolgende
 wat meer colorant. Fail-safe: geen sleutel, geen bron of geen herkenbare basis →
 de regel houdt de variant-sku die hij vandaag ook heeft.
 
+**Sku-ruimte nagemeten (2026-07-30).** De koppeling matcht op het kale
+artikelnummer: wij schrijven `tilroy-39973076`, het dashboard `feed-39973076`,
+de prijsfeed `39973076`. Zou dat niet samenvallen, dan werd `baseSku` stil nooit
+gezet en faalde de hele koppeling geruisloos. Getoetst tegen de 6.132 sku's uit
+`/api/prijsfeed`: **4.088 van onze 4.119 varianten (99,2%)** zijn daar bekend
+onder hetzelfde nummer, en bij mengbare verf **316 van 318 (99,4%)**. De 31 die
+ontbreken hebben állemaal voorraad 0 — uitgelopen artikelen die onze snapshot
+nog draagt, niet verkoopbaar en dus onbereikbaar voor een order.
+
 **Afspraak 1 en 2 staan nog open.** Die raken de getoonde prijs, en dus ook
 `verifyOrderTotal`: toont de productpagina straks de prijs van het basisartikel,
 dan moet de servercontrole dezelfde bron gebruiken — anders weigert de checkout
