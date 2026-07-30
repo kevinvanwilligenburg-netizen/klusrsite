@@ -8,6 +8,7 @@ import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
 import { cartItemSchema } from "@/lib/checkout-schema";
 import { deliveryTypeFor, SAME_DAY_SURCHARGE } from "@/lib/delivery";
 import { verifyOrderTotal } from "@/lib/checkout-pricing";
+import { resolveCartColors } from "@/lib/paint-color-resolve";
 import type { CartItem } from "@/types";
 
 export const runtime = "nodejs";
@@ -71,13 +72,23 @@ export async function POST(req: Request) {
 
     const data = parsed.data;
 
-    // 0a. Prijscontrole: het totaal komt uit de browser en is dus zowel te
+    // 0a. Kleurcontrole: de kiezer draait in de browser, dus naam/code/hex en de
+    // mengbasis komen van de client. Die bepalen wat de winkel mengt, dus we
+    // zoeken ze opnieuw op in onze eigen bron en rekenen verder met díé waarden.
+    const kleuren = await resolveCartColors(data.items as CartItem[]);
+    if (kleuren.fout) {
+      return NextResponse.json({ error: kleuren.fout }, { status: 409 });
+    }
+    const items = kleuren.items;
+
+    // 0b. Prijscontrole: het totaal komt uit de browser en is dus zowel te
     // manipuleren als te verouderen (de winkelwagen bewaart een
     // prijsmomentopname). We leiden het opnieuw af uit de catalogus en weigeren
     // bij afwijking, in plaats van een ander bedrag af te schrijven dan de klant
-    // op zijn scherm zag.
+    // op zijn scherm zag. Op de opgezochte kleuren, zodat ook de basistoeslag
+    // uit onze eigen tabel komt.
     const prijs = verifyOrderTotal({
-      items: data.items as CartItem[],
+      items,
       total: data.total,
       country: data.customer.country,
       sameDay: data.sameDay === true,
@@ -90,10 +101,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: prijs.message }, { status: 409 });
     }
 
-    // 0b. Voorraad-guard (Nijverdal, grootboek + live dashboard): voorkom dat
+    // 0c. Voorraad-guard (Nijverdal, grootboek + live dashboard): voorkom dat
     // er wordt afgerekend voor meer dan we kunnen leveren. Fail-open bij
     // storingen — blokkeert alleen op een aantoonbaar tekort.
-    const shortages = await checkStockForItems(data.items as CartItem[]);
+    const shortages = await checkStockForItems(items);
     if (shortages.length) {
       return NextResponse.json(
         { error: shortageMessage(shortages), shortages },
@@ -107,7 +118,9 @@ export async function POST(req: Request) {
     const deliveryType = deliveryTypeFor(data.sameDay === true);
     const order = await createOrder({
       customer: data.customer,
-      items: data.items,
+      // De opgezochte regels: de kleur op de order is onze eigen versie, niet
+      // wat de browser aanleverde.
+      items,
       subtotal: data.subtotal,
       shipping: data.shipping,
       total: data.total,
