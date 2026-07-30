@@ -205,10 +205,14 @@ export function ProductBuybox({
   product,
   glansVariants = [],
   safetyStock = DEFAULT_SAFETY_STOCK,
+  brandSlug,
 }: {
   product: Product;
   glansVariants?: GlansVariant[];
   safetyStock?: number;
+  /** Slug van de merkpagina, of undefined als dit merk er geen heeft. Wordt
+   *  server-side bepaald zodat de catalogus niet in de browser-bundle belandt. */
+  brandSlug?: string;
 }) {
   const t = useT();
   const [variant, setVariant] = useState<ProductVariant>(product.variants[0]);
@@ -474,8 +478,16 @@ export function ProductBuybox({
   return (
     <div className="flex flex-col gap-4">
       <div>
+        {/* Merknaam linkt door naar de merkpagina wanneer die bestaat — goed
+            voor de bezoeker (alles van dit merk) én voor de interne SEO-links. */}
         <p className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-          {product.brand}
+          {brandSlug ? (
+            <Link href={`/merk/${brandSlug}`} className="hover:text-primary hover:underline">
+              {product.brand}
+            </Link>
+          ) : (
+            product.brand
+          )}
         </p>
         <h1 className="mt-1 text-2xl font-extrabold leading-tight sm:text-3xl">
           {product.title}
