@@ -6,6 +6,7 @@ import {
   articles,
   klushulpTasks,
 } from "@/lib/data";
+import { brands } from "@/lib/data/brands";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
@@ -61,9 +62,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry(`/klushulp/${t.slug}`, { priority: 0.5 }),
   );
 
+  // Merkpagina's: sterke landingspagina's voor merk-zoekopdrachten
+  // ("sikkens rubbol kopen"), daarom net onder de categorieën geprioriteerd.
+  const brandPages: MetadataRoute.Sitemap = [
+    entry("/merken", { priority: 0.6 }),
+    ...brands.map((b) => entry(`/merk/${b.slug}`, { priority: 0.7 })),
+  ];
+
   return [
     ...staticPages,
     ...categoryPages,
+    ...brandPages,
     ...productPages,
     ...articlePages,
     ...klusPages,

@@ -14,6 +14,7 @@ import { Breadcrumb, BreadcrumbJsonLd } from "@/components/plp/breadcrumb";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductBuybox } from "@/components/product/product-buybox";
 import { onlineStock, bestVariantStock } from "@/lib/stock";
+import { brandSlugFor } from "@/lib/data/brands";
 import { getSafetyStock } from "@/lib/store/settings";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
@@ -205,7 +206,12 @@ export default async function ProductPage({ params }: { params: { slug: string }
       {/* Main: gallery + buybox */}
       <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
         <ProductGallery images={product.images} title={product.title} badges={product.badges} />
-        <ProductBuybox product={product} glansVariants={glansVariants} safetyStock={safetyStock} />
+        <ProductBuybox
+          product={product}
+          glansVariants={glansVariants}
+          safetyStock={safetyStock}
+          brandSlug={brandSlugFor(product.brand)}
+        />
       </div>
 
       {/* Tabs */}
