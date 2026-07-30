@@ -1,0 +1,45 @@
+{
+  "opgehaald": "2026-07-30T20:07:14.350Z",
+  "regels": [
+    {
+      "patroon": "verf en beits|^verf$",
+      "pad": "Hardware > Paint & Wall Covering > Paint",
+      "id": "503734"
+    },
+    {
+      "patroon": "verfbenodigdheden",
+      "pad": "Hardware > Tools > Painting & Wallpapering Tools",
+      "id": "503739"
+    },
+    {
+      "patroon": "behang",
+      "pad": "Hardware > Paint & Wall Covering > Wallpaper",
+      "id": "503742"
+    },
+    {
+      "patroon": "lijmen en kitten",
+      "pad": "Hardware > Building Consumables > Chemicals > Adhesives & Sealants",
+      "id": "505382"
+    },
+    {
+      "patroon": "gereedschap",
+      "pad": "Hardware > Tools",
+      "id": "632"
+    },
+    {
+      "patroon": "ijzerwaren",
+      "pad": "Hardware > Hardware Accessories",
+      "id": "1974"
+    },
+    {
+      "patroon": "vloeren",
+      "pad": "Hardware > Building Materials > Flooring & Carpet",
+      "id": "503751"
+    },
+    {
+      "patroon": "verlichting|elektra",
+      "pad": "Hardware > Lighting",
+      "id": "594"
+    }
+  ]
+}

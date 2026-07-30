@@ -1,7 +1,9 @@
 import { products, categories } from "@/lib/data";
+import GEDEELDE_TAXONOMIE from "@/lib/data/google-categories.generated.json";
 import type { Product, ProductVariant } from "@/types";
 import { localePrefix, type Locale } from "@/lib/i18n/config";
 import { onlineStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
+import { shippingForCountry } from "@/lib/shipping";
 import enOverlay from "@/lib/data/i18n/products.en.json";
 import frOverlay from "@/lib/data/i18n/products.fr.json";
 import deOverlay from "@/lib/data/i18n/products.de.json";
@@ -18,8 +20,8 @@ import deOverlay from "@/lib/data/i18n/products.de.json";
  *    Google op de juiste, gelokaliseerde landingspagina uitkomt.
  *
  * Prijzen staan in EUR (NL/BE/FR/DE delen die munt). De verzendregel krijgt het
- * doelland mee met het standaardtarief (gratis vanaf €50, anders €4,95). Stel
- * échte cross-border tarieven en btw in Merchant Center in, en koppel een feed
+ * tarief van het doelland uit lib/shipping.ts — dezelfde tabel als het
+ * afrekenen. Stel de btw per land in Merchant Center in, en koppel een feed
  * alleen aan landen waar je daadwerkelijk naartoe verzendt.
  *
  * LET OP: de taalpagina's (/fr, /de, ...) renderen alleen wanneer de i18n-laag
@@ -35,9 +37,11 @@ const SAFETY_STOCK = Number(process.env.SAFETY_STOCK) || DEFAULT_SAFETY_STOCK;
 
 const JUNK_BRANDS = new Set(["", "onbekend", "merk", "overig", "overige"]);
 
-// Verzendkosten (gespiegeld vanuit de winkelwagen): gratis vanaf €59, anders €4,95.
-const shippingFor = (subtotal: number): number =>
-  subtotal <= 0 || subtotal >= 50 ? 0 : 4.95;
+// Verzendkosten: rechtstreeks uit lib/shipping.ts, dezelfde functie als de
+// winkelwagen. Stond hier eerder als eigen kopie met een vaste €4,95 en drempel
+// €50 — die liep achter (de drempel is €59) én gaf élk land het NL-tarief,
+// terwijl de Duitse en Franse feed duurder zijn. Merchant Center rekent je af op
+// verzendkosten die lager zijn dan bij het afrekenen.
 
 // Categorie → officiële Google-producttaxonomie (verbetert matching/zichtbaarheid).
 /**
@@ -60,6 +64,31 @@ const GOOGLE_CATEGORY: Record<string, string> = {
   behang: "Hardware > Paint & Wall Covering > Wallpaper",
   reiniging: "Home & Garden > Household Supplies > Household Cleaning Supplies",
 };
+
+/**
+ * Google-categorie voor een KLUSR-categorie.
+ *
+ * Onze eigen tabel wint; de gedeelde taxonomie van het dashboard
+ * (`scripts/sync-google-categories.mjs`) vult alleen categorieën aan die wij
+ * nog niet kennen. Blind overnemen zou een verslechtering zijn: hun patroon
+ * `verlichting|elektra` zet elektra onder Lighting, terwijl stopcontacten en
+ * kabel bij ons onder Power & Electrical Supplies horen.
+ *
+ * De tabel staat lokaal in een gegenereerd bestand, zodat de feed blijft
+ * werken als het dashboard onbereikbaar is.
+ */
+function googleCategoryFor(slug: string): string | undefined {
+  const eigen = GOOGLE_CATEGORY[slug];
+  if (eigen) return eigen;
+  for (const regel of GEDEELDE_TAXONOMIE.regels ?? []) {
+    try {
+      if (new RegExp(regel.patroon, "i").test(slug)) return regel.pad || undefined;
+    } catch {
+      /* onbruikbaar patroon overslaan */
+    }
+  }
+  return undefined;
+}
 
 // slug → titel, voor het product_type-pad (bv. "Verf > Binnenlak").
 const catTitle = new Map<string, string>();
@@ -156,7 +185,7 @@ function buildItems(locale: Locale, country: string): string {
     const link = `${BASE}${prefix}/product/${p.slug}`;
     const description = clean(p.description || p.title).slice(0, 4900);
     const pType = productType(p);
-    const googleCat = GOOGLE_CATEGORY[p.category];
+    const googleCat = googleCategoryFor(p.category);
     const gtin = gtinFor(p);
     const glans = specVal(p, "Glansgraad");
     const colorAttr = specVal(p, "Kleur");
@@ -204,7 +233,7 @@ function buildItems(locale: Locale, country: string): string {
           .join(" "),
       ).slice(0, 150);
       const inStock = variantStock(v) > 0;
-      const shipCost = shippingFor(feedPrice);
+      const shipCost = shippingForCountry(feedPrice, country.toUpperCase());
 
       const fields = [
         `<g:id>${xml(id)}</g:id>`,
