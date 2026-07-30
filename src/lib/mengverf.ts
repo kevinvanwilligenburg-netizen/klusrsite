@@ -79,10 +79,20 @@ function kaal(sku: string | undefined): string {
  *
  * Wij kennen drie niveaus (wit/medium/deep), Tilroy meestal maar twee (light en
  * dark; alleen Fitex/Drenth/Pastolex hebben er een medium tussen). Bestaat ons
- * niveau niet, dan pakken we de eerstvolgende **donkerdere** basis. Die kant op
- * en niet andersom: een te lichte basis kan het pigment niet dragen en levert
- * een kleur die niet klopt, terwijl een donkerdere basis hooguit wat meer
- * colorant kost.
+ * niveau niet, dan pakken we de eerstvolgende **donkerdere** basis.
+ *
+ * ⚠️ Die richting is een aanname, geen vaststaand feit. Er stond hier eerst dat
+ * een donkerdere basis "hooguit wat meer colorant kost"; dat is onjuist. Beide
+ * kanten kunnen misgaan: een lichte kleur in een donkere basis mist wit en dekt
+ * daardoor slecht, en een donkere kleur in een lichte basis haalt de kleur niet.
+ * Welke van de twee de winkel pakt als een kleur er tussenin valt, is vakkennis
+ * van de mensen achter de mengmachine — die vraag staat uit.
+ *
+ * Wat we hier kiezen bepaalt overigens **niet** wat er fysiek gemengd wordt: de
+ * winkel ziet de kleur en beslist zelf. Het bepaalt van welk artikel Tilroy
+ * afboekt. Een systematische voorspelling is daarvoor beter dan de willekeurige
+ * basis die onze import toevallig in de variant vouwde — maar zodra het antwoord
+ * er is, hoort deze tabel eraan aangepast te worden.
  */
 const VOORKEUR: Record<PaintBaseSelection["id"], string[]> = {
   wit: ["light", "medium", "dark"],
