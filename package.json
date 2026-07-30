@@ -8,13 +8,14 @@
     "feed:tilroy": "node scripts/build-tilroy-catalog.mjs",
     "translate:catalog": "node scripts/translate-catalog.mjs",
     "barcodes:backfill": "node scripts/backfill-barcodes.mjs",
-    "build": "node scripts/feed-prebuild.mjs && node scripts/build-catalog-overrides.mjs && node scripts/seed-review-distribution.mjs && node scripts/generate-images.mjs && next build",
+    "build": "node scripts/feed-prebuild.mjs && node scripts/build-catalog-overrides.mjs && node scripts/seed-review-distribution.mjs && node scripts/generate-images.mjs && next build && node scripts/post-feed-links.mjs --soft",
     "images:generate": "node scripts/generate-images.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "prices:backfill": "node scripts/backfill-prices.mjs",
-    "stock:backfill": "node scripts/backfill-stock.mjs"
+    "stock:backfill": "node scripts/backfill-stock.mjs",
+    "feed:links": "node scripts/post-feed-links.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
