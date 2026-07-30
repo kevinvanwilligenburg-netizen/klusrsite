@@ -7,6 +7,7 @@ import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfil
 import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
 import { cartItemSchema } from "@/lib/checkout-schema";
 import { deliveryTypeFor, SAME_DAY_SURCHARGE } from "@/lib/delivery";
+import { verifyOrderTotal } from "@/lib/checkout-pricing";
 import type { CartItem } from "@/types";
 
 export const runtime = "nodejs";
@@ -70,7 +71,26 @@ export async function POST(req: Request) {
 
     const data = parsed.data;
 
-    // 0. Voorraad-guard (Nijverdal, grootboek + live dashboard): voorkom dat
+    // 0a. Prijscontrole: het totaal komt uit de browser en is dus zowel te
+    // manipuleren als te verouderen (de winkelwagen bewaart een
+    // prijsmomentopname). We leiden het opnieuw af uit de catalogus en weigeren
+    // bij afwijking, in plaats van een ander bedrag af te schrijven dan de klant
+    // op zijn scherm zag.
+    const prijs = verifyOrderTotal({
+      items: data.items as CartItem[],
+      total: data.total,
+      country: data.customer.country,
+      sameDay: data.sameDay === true,
+      freeShipping: data.shipping === 0,
+    });
+    if (!prijs.ok) {
+      console.warn(
+        `[checkout] totaal geweigerd: client € ${prijs.received}, catalogus € ${prijs.expected}`,
+      );
+      return NextResponse.json({ error: prijs.message }, { status: 409 });
+    }
+
+    // 0b. Voorraad-guard (Nijverdal, grootboek + live dashboard): voorkom dat
     // er wordt afgerekend voor meer dan we kunnen leveren. Fail-open bij
     // storingen — blokkeert alleen op een aantoonbaar tekort.
     const shortages = await checkStockForItems(data.items as CartItem[]);

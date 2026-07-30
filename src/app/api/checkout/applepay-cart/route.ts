@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createOrder, setMolliePaymentId } from "@/lib/store/orders";
 import { createPayment } from "@/lib/payments";
 import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
+import { verifyOrderTotal } from "@/lib/checkout-pricing";
 import { cartItemSchema } from "@/lib/checkout-schema";
 import type { CartItem, OrderCustomer } from "@/types";
 
@@ -45,6 +46,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Ongeldige Apple Pay-gegevens" }, { status: 400 });
     }
     const data = parsed.data;
+
+    // Prijscontrole: het client-totaal is manipuleerbaar en veroudert met de
+    // winkelwagen; zie lib/checkout-pricing.ts.
+    const prijs = verifyOrderTotal({
+      items: data.items as CartItem[],
+      total: data.total,
+      freeShipping: data.shipping === 0,
+    });
+    if (!prijs.ok) {
+      return NextResponse.json({ ok: false, error: prijs.message }, { status: 409 });
+    }
 
     // 0. Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
     const shortages = await checkStockForItems(data.items as CartItem[]);

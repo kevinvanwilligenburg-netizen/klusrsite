@@ -6,10 +6,14 @@ import type { CartItem, Product, ProductVariant, SelectedColor } from "@/types";
 import { exVat, profGrossPrice } from "@/lib/pricing";
 import type { PricingMode } from "@/lib/store/pricing-mode";
 import { isBrievenbusOrder } from "@/lib/brievenbus";
-import { BRIEVENBUS_PRICE } from "@/lib/shipping";
+import { BRIEVENBUS_PRICE, SHIPPING_COUNTRY_MAP, DEFAULT_COUNTRY } from "@/lib/shipping";
 
-const FREE_SHIPPING_THRESHOLD = 50;
-const SHIPPING_COST = 4.95;
+// Eén bron voor de NL-tarieven: lib/shipping.ts. Stond hier eerder los
+// hardgecodeerd, waardoor de winkelwagen na een tariefwijziging een andere
+// gratis-verzendgrens toonde dan de checkout rekende.
+const NL = SHIPPING_COUNTRY_MAP[DEFAULT_COUNTRY];
+const FREE_SHIPPING_THRESHOLD = NL.freeOver ?? 59;
+const SHIPPING_COST = NL.price;
 
 interface AddArgs {
   product: Product;
