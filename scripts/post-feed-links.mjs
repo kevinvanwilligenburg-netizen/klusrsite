@@ -31,7 +31,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAP = join(__dirname, "..", "src", "lib", "data", "feed-products.generated.json");
 
 const API =
-  process.env.VDM_FEED_LINKS_URL || "https://dashboardvdm.vercel.app/api/feed-links";
+  // Canoniek projectdomein, niet de kale alias: die hangt vast op een oude
+  // deployment waar /api/feed-links nog niet bestaat, dus daar zou de POST een
+  // 404 opleveren in plaats van een opgeslagen lijst. Zie src/lib/vdm-dashboard.ts.
+  process.env.VDM_FEED_LINKS_URL ||
+  "https://dashboardvdm-k-evin-s-projects.vercel.app/api/feed-links";
 const KEY = process.env.SITE_API_KEY;
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 const DRY = process.argv.includes("--dry");

@@ -100,6 +100,11 @@ export interface CreateOrderInput {
  * artikel (bij multi-maat-producten wijkt die af van productId).
  */
 function lineSku(it: CartItem): string {
+  // Mengverf: elke tinting-basis is in Tilroy een eigen artikel met een eigen
+  // voorraad. Is de basis server-side opgezocht (lib/mengverf), dan boeken we
+  // van dát artikel af — anders loopt de lichte basis leeg terwijl de klant een
+  // donkere kleur kocht. Zonder treffer blijft het variant-id leidend.
+  if (it.baseSku) return it.baseSku;
   return (it.variantId || it.productId).replace(/^(?:tilroy|channable|feed)-/, "");
 }
 

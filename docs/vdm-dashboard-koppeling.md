@@ -1,7 +1,9 @@
 # KLUSR ⇄ VDM-dashboard — datakoppeling
 
 KLUSR leest productdata uit het interne VDM-dashboard (repo `dashboardvdm`,
-live: `https://dashboardvdm.vercel.app`). Het dashboard praat zelf live met de
+live: `https://dashboardvdm-k-evin-s-projects.vercel.app` — het canonieke
+projectdomein; de kale alias `dashboardvdm.vercel.app` hangt vast op een
+deployment van elf versies terug, zie `src/lib/vdm-dashboard.ts`). Het dashboard praat zelf live met de
 Tilroy-API (dagelijkse voorraad-cron om 05:00 UTC) en is daarmee een véél
 versere bron dan de oude Tilroy S3-feeds of de (uitgeklede) Channable-feed.
 
@@ -150,10 +152,9 @@ bestelling in plaats van een weergavefoutje.
 
 **Gecorrigeerd (2026-07-30):** toeslag en voorraadfactor staan op 0 resp. 1.
 
-**Nog te doen — vraagt `SITE_API_KEY`.** Het dashboard levert nu
-`GET /api/mengverf` met per verflijn + maat de basissen die echt bestaan:
-sku, basiscode (N00/W05/LN/ZX…), label, prijs, kluspasprijs en voorraad per
-vestiging, plus `zelfdePrijs`, `voorraadSamen` en `perWinkelSamen`.
+Het dashboard levert `GET /api/mengverf` met per verflijn + maat de basissen die
+echt bestaan: sku, basiscode (N00/W05/LN/ZX…), label, prijs, kluspasprijs en
+voorraad per vestiging, plus `zelfdePrijs`, `voorraadSamen` en `perWinkelSamen`.
 
 Drie afspraken bij het aansluiten:
 1. **Toon de prijs van het basisartikel, tel niets bij.** Bij
@@ -169,11 +170,71 @@ Drie afspraken bij het aansluiten:
    sku laat de voorraad daar scheeflopen — en dat zie je pas maanden later
    terug in de inkoop.
 
+**Afspraak 3 is gedaan (2026-07-30):** `src/lib/mengverf.ts` zoekt bij het
+afrekenen het basisartikel op en zet die sku in `items[].baseSku`; `createOrder`
+gebruikt 'm als sku van de regel. Alle vier de routes die een order aanmaken
+(create-payment, express, applepay-cart, applepay-pay) doen dat nu, en die
+laatste drie deden ook de kleurcontrole nog niet — daar kwam de kleur van de
+client ongezien op de order. Wij kennen drie basisniveaus (wit/medium/deep),
+Tilroy meestal twee; bestaat ons niveau niet, dan pakken we de eerstvolgende
+**donkerdere** basis: te licht draagt het pigment niet, te donker kost hooguit
+wat meer colorant. Fail-safe: geen sleutel, geen bron of geen herkenbare basis →
+de regel houdt de variant-sku die hij vandaag ook heeft.
+
+**Sku-ruimte nagemeten (2026-07-30).** De koppeling matcht op het kale
+artikelnummer: wij schrijven `tilroy-39973076`, het dashboard `feed-39973076`,
+de prijsfeed `39973076`. Zou dat niet samenvallen, dan werd `baseSku` stil nooit
+gezet en faalde de hele koppeling geruisloos. Getoetst tegen de 6.132 sku's uit
+`/api/prijsfeed`: **4.088 van onze 4.119 varianten (99,2%)** zijn daar bekend
+onder hetzelfde nummer, en bij mengbare verf **316 van 318 (99,4%)**. De 31 die
+ontbreken hebben állemaal voorraad 0 — uitgelopen artikelen die onze snapshot
+nog draagt, niet verkoopbaar en dus onbereikbaar voor een order.
+
+**Afspraak 1 en 2 staan nog open.** Die raken de getoonde prijs, en dus ook
+`verifyOrderTotal`: toont de productpagina straks de prijs van het basisartikel,
+dan moet de servercontrole dezelfde bron gebruiken — anders weigert de checkout
+bestellingen zodra `/api/mengverf` even hapert. Dat vraagt een prijsval die
+niet fail-open mag zijn, en die keuze is groter dan een weergavewijziging. Tot
+die tijd rekenen we de variantprijs, wat op lijnen met `zelfdePrijs: false`
+(Alphadur 2,5 L: 24,95 om 31,95) te weinig is.
+
 ⚠️ **Niet hard blokkeren op nul voor mengverf.** De voorraadadministratie klopt
 niet op de hardlopers: van de vijftien best verkopende artikelen staat Deventer
 er op tien negatief, en de webshopvestiging op vijf. `voorraadSamen` valt
 daardoor lager uit dan wat er fysiek ligt. Blokkeer pas bij een duidelijk
 tekort over álle vestigingen samen, tot die telling is rechtgezet.
+
+## Google-categorieën: nummers, geen paden
+
+Het dashboard deelt zijn categorie-mapping via `/api/google/categorie-mapping`.
+`scripts/sync-google-categories.mjs` haalt die op bij de import en legt 'm
+lokaal vast (meegecommit), zodat onze feed blijft werken als het dashboard
+hapert.
+
+**We sturen het nummer, niet het pad.** Google accepteert allebei, maar een pad
+is een letterlijke tekst die exact moet matchen — en een waarde die Google niet
+kent, wordt stílzwijgend genegeerd. Merchant Center gaat dan alsnog zelf raden
+en je ziet nergens dat je categorie is weggegooid.
+
+Dat gebeurde hier ook, aan beide kanten. In onze eigen tabel stonden drie paden
+die niet bestaan: `Hardware > Paint & Wall Covering > Paint`, `… > Wallpaper` en
+`Hardware > Fasteners` — samen 40% van de feed, met verf als grootste categorie.
+In de gedeelde mapping bestonden vijf van de twaalf paden niet, en wezen vier
+nummers naar iets heel anders dan het pad ernaast (`elektra` → 2422 =
+espressomachines, `vloeren` → 503751 = zwembadfolie, `ijzerwaren` → 1974 =
+Locks & Keys, `gereedschap` → 632 = de hoofdcategorie Hardware).
+
+Daarom:
+
+- het syncscript zoekt bij elk **pad** zélf het juiste nummer op in Google's
+  officiële taxonomiebestand, en negeert het meegeleverde nummer;
+- regels die het niet kan thuisbrengen worden zónder nummer opgeslagen; de feed
+  slaat die over — liever geen categorie dan een verkeerde;
+- `scripts/check-google-categories.mjs` toetst zowel onze eigen tabel als de
+  gedeelde mapping en geeft exit 1 bij een fout, zodat dit in CI kan.
+
+Onze eigen tabel in `src/lib/google-feed.ts` blijft leidend; de gedeelde mapping
+is het vangnet voor hoofdgroepen die wij nog niet kennen.
 
 ## Verzending: PostNL → DHL (webshop-kant af)
 

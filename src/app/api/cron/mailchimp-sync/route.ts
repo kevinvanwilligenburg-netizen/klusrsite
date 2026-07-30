@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { addNewsletterSubscriber } from "@/lib/email/audiences";
 import { isKvEnabled, kvSAdd, kvSMembers } from "@/lib/store/kv";
+import { VDM_DASHBOARD_BASE } from "@/lib/vdm-dashboard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,8 +32,7 @@ const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD;
 
 // We pakken dagen=2 (kleine overlap zodat er tussen dagelijkse runs niets wegvalt)
 // en leunen voor de dubbele inschrijvingen op de KV-dedupe hieronder.
-const VDM_ENDPOINT =
-  "https://dashboardvdm.vercel.app/api/mailchimp/klanten?format=json&nieuw=1&dagen=2";
+const VDM_ENDPOINT = `${VDM_DASHBOARD_BASE}/api/mailchimp/klanten?format=json&nieuw=1&dagen=2`;
 
 // Set-key met reeds gesyncte e-mailadressen (dedupe over runs heen).
 const SYNCED_SET_KEY = "mailchimp-sync:synced";

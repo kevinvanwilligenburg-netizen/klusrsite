@@ -145,6 +145,14 @@ export interface CartItem {
    * gebruikt dit veld om webshop-orders in Tilroy in te schieten.
    */
   sku?: string;
+  /**
+   * Kale sku van het mengbasis-artikel, als de basis server-side is opgezocht
+   * (lib/mengverf). In Tilroy is elke basis een eigen artikel met eigen
+   * voorraad, dus hierop moet worden afgeboekt — niet op de variant waarop de
+   * klant klikte. Wordt nooit van de client overgenomen: het checkout-schema
+   * kent dit veld niet, dus Zod strijkt een meegestuurde waarde weg.
+   */
+  baseSku?: string;
   quantity: number;
   price: number;
   kluspasPrice: number;

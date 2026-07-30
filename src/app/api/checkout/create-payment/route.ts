@@ -9,6 +9,7 @@ import { cartItemSchema } from "@/lib/checkout-schema";
 import { deliveryTypeFor, SAME_DAY_SURCHARGE } from "@/lib/delivery";
 import { verifyOrderTotal } from "@/lib/checkout-pricing";
 import { resolveCartColors } from "@/lib/paint-color-resolve";
+import { resolveBaseSkus } from "@/lib/mengverf";
 import type { CartItem } from "@/types";
 
 export const runtime = "nodejs";
@@ -79,7 +80,17 @@ export async function POST(req: Request) {
     if (kleuren.fout) {
       return NextResponse.json({ error: kleuren.fout }, { status: 409 });
     }
-    const items = kleuren.items;
+    // 0a-bis. Mengverf: elke tinting-basis is in Tilroy een eigen artikel met
+    // een eigen voorraad, maar onze import vouwt ze samen tot één variant per
+    // maat. Zoek daarom op wélk basisartikel er gemengd wordt en zet díé sku op
+    // de regel — anders boekt Tilroy van de lichte basis af terwijl de klant een
+    // donkere kleur kocht. Kan pas hier: de basis volgt uit de zojuist
+    // opgezochte kleur. Fail-safe: zonder treffer blijft de bestaande sku staan.
+    const basissen = await resolveBaseSkus(kleuren.items);
+    if (basissen.gezet) {
+      console.info(`[checkout] mengverf: basis-sku gezet op ${basissen.gezet} regel(s)`);
+    }
+    const items = basissen.items;
 
     // 0b. Prijscontrole: het totaal komt uit de browser en is dus zowel te
     // manipuleren als te verouderen (de winkelwagen bewaart een

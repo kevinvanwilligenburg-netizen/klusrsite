@@ -5,6 +5,8 @@ import { createPayment } from "@/lib/payments";
 import { getProductById } from "@/lib/data/products";
 import { shippingForCountry } from "@/lib/shipping";
 import { checkStockForItems, shortageMessage } from "@/lib/live-stock";
+import { resolveCartColors } from "@/lib/paint-color-resolve";
+import { resolveBaseSkus } from "@/lib/mengverf";
 import type { CartItem, OrderCustomer } from "@/types";
 
 export const runtime = "nodejs";
@@ -62,9 +64,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Variant niet gevonden" }, { status: 400 });
     }
 
-    // 2. Eventuele gekozen kleur (alleen ter info op de orderregel). De Apple Pay-
-    //    sheet rekent met de kale variantprijs, dus we tellen geen base-toeslag mee
-    //    zodat de regel exact op `subtotal` aansluit.
+    // 2. Eventuele gekozen kleur. De Apple Pay-sheet rekent met de kale
+    //    variantprijs, zodat de regel exact op `subtotal` aansluit; er is ook
+    //    geen basistoeslag om mee te tellen. De kleur zelf wordt hieronder
+    //    gecontroleerd (stap 3a).
     const color = data.color ?? undefined;
 
     // 3. Regel opbouwen (zelfde vorm als create-payment verwacht).
@@ -84,8 +87,19 @@ export async function POST(req: Request) {
       selectedColor: color,
     };
 
+    // 3a. Kleurcontrole. De kleur komt van de client en bepaalt wat de winkel
+    // mengt, dus we zoeken 'm opnieuw op in onze eigen bron — hij stond hier als
+    // "alleen ter info", maar hij belandt wel degelijk op de order. Het opzoeken
+    // levert meteen de mengbasis, die deze route helemaal niet kende, en daarmee
+    // de sku van het basisartikel waarvan Tilroy moet afboeken.
+    const kleuren = await resolveCartColors([cartItem]);
+    if (kleuren.fout) {
+      return NextResponse.json({ ok: false, error: kleuren.fout }, { status: 409 });
+    }
+    const [regel] = (await resolveBaseSkus(kleuren.items)).items;
+
     // 3b. Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
-    const shortages = await checkStockForItems([cartItem]);
+    const shortages = await checkStockForItems([regel]);
     if (shortages.length) {
       return NextResponse.json(
         { ok: false, error: shortageMessage(shortages), shortages },
@@ -123,7 +137,7 @@ export async function POST(req: Request) {
     // 6. Order vastleggen (status "open").
     const order = await createOrder({
       customer,
-      items: [cartItem],
+      items: [regel],
       subtotal,
       shipping,
       total,

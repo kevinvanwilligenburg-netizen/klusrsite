@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { VDM_DASHBOARD_BASE } from "@/lib/vdm-dashboard";
 
 /**
  * Server-proxy voor de kleurenkiezer-feed. Haalt de (grote) DVM-feed één keer
@@ -9,11 +10,7 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const revalidate = 86400; // 24 uur
 
-const FEED_URL =
-  (process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app").replace(
-    /\/+$/,
-    "",
-  ) + "/api/kleurenkiezer/feed";
+const FEED_URL = `${VDM_DASHBOARD_BASE}/api/kleurenkiezer/feed`;
 
 const CACHE = "public, s-maxage=86400, stale-while-revalidate=604800";
 

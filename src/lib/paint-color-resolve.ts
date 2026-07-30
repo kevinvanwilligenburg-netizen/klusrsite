@@ -1,6 +1,7 @@
 import type { CartItem, SelectedColor } from "@/types";
 import { colorCollections } from "@/lib/data/colors";
 import { withBase } from "@/lib/paint-bases";
+import { VDM_DASHBOARD_BASE } from "@/lib/vdm-dashboard";
 
 /**
  * Server-side controle van de gekozen verfkleur.
@@ -22,11 +23,7 @@ import { withBase } from "@/lib/paint-bases";
  * code, zodat RAL-bestellingen blijven werken als de feed onbereikbaar is.
  */
 
-const FEED_URL =
-  (process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app").replace(
-    /\/+$/,
-    "",
-  ) + "/api/kleurenkiezer/feed";
+const FEED_URL = `${VDM_DASHBOARD_BASE}/api/kleurenkiezer/feed`;
 
 /** Hoe lang de opgehaalde kleurenbron per lambda blijft staan. */
 const TTL_MS = 60 * 60 * 1000;
