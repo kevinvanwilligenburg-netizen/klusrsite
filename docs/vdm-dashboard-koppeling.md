@@ -135,6 +135,46 @@ sku's + costPrice zitten onder `colours[].skus` (niet top-level), `brand` is
 een object `{code, descriptions[]}`, en de `fields`-parameter moet `"colours"`
 bevatten.
 
+## Mengverf: basissen zijn losse Tilroy-artikelen
+
+**Wat we fout deden.** De productpagina leidde de tinting-basis af uit de
+lichtheid van de kleur en rekende daar een toeslag bij van € 0 / € 2,00 /
+€ 4,50, plus een voorraadfactor van 1 / 0,6 / 0,35. Beide getallen waren
+verzonnen en hadden geen bron. Het dashboard heeft in de Tilroy-prijslijst
+nagemeten: in 8 van de 10 lijn+maat-paren kost een donkere basis **exact
+hetzelfde** als een lichte. Er is dus geen toeslag; wij rekenden op donkere
+kleuren zo'n 10% te veel. De voorraadfactor was nog duurder: 143 van de 212
+leverbare mengverf-varianten (67%) waren daardoor niet in een donkere kleur te
+bestellen, en sinds de checkout-guard erop blokkeerde was dat een geweigerde
+bestelling in plaats van een weergavefoutje.
+
+**Gecorrigeerd (2026-07-30):** toeslag en voorraadfactor staan op 0 resp. 1.
+
+**Nog te doen — vraagt `SITE_API_KEY`.** Het dashboard levert nu
+`GET /api/mengverf` met per verflijn + maat de basissen die echt bestaan:
+sku, basiscode (N00/W05/LN/ZX…), label, prijs, kluspasprijs en voorraad per
+vestiging, plus `zelfdePrijs`, `voorraadSamen` en `perWinkelSamen`.
+
+Drie afspraken bij het aansluiten:
+1. **Toon de prijs van het basisartikel, tel niets bij.** Bij
+   `zelfdePrijs: true` (het normale geval) hoef je in de basiskeuze helemaal
+   geen prijs te tonen. Bij `false` — Sikkens Alphadur, 24,95 om 31,95 op
+   2,5 L — toon je de prijs per optie; dat zijn twee artikelen, geen opslag.
+2. **Voorraad tonen mag opgeteld** (`voorraadSamen` / `perWinkelSamen`): de
+   klant wil weten of de winkel zijn kleur kan mengen, en dat kan met beide
+   basissen.
+3. **Afboeken moet per basis.** Zet in de bestelregel de **sku van de gekozen
+   basis**, niet die van het product waarop de klant klikte. De orderpush van
+   het dashboard neemt die sku één-op-één over naar Tilroy, dus een verkeerde
+   sku laat de voorraad daar scheeflopen — en dat zie je pas maanden later
+   terug in de inkoop.
+
+⚠️ **Niet hard blokkeren op nul voor mengverf.** De voorraadadministratie klopt
+niet op de hardlopers: van de vijftien best verkopende artikelen staat Deventer
+er op tien negatief, en de webshopvestiging op vijf. `voorraadSamen` valt
+daardoor lager uit dan wat er fysiek ligt. Blokkeer pas bij een duidelijk
+tekort over álle vestigingen samen, tot die telling is rechtgezet.
+
 ## Verzending: PostNL → DHL (webshop-kant af)
 
 **Gedaan (2026-07-27):** de bezorgklok in `src/lib/delivery.ts` volgt de

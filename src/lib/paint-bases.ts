@@ -24,6 +24,21 @@ export interface PaintBase {
   stockFactor: number;
 }
 
+/**
+ * De tinting-basissen.
+ *
+ * `surcharge` staat overal op 0 en dat is een bewuste correctie: hier stond
+ * € 0 / € 2,00 / € 4,50, een bedrag dat ooit is verzonnen en nooit een bron
+ * had. Het dashboard heeft in de Tilroy-prijslijst nagemeten dat een donkere
+ * basis in 8 van de 10 gevallen exact hetzelfde kost als een lichte — er ís
+ * geen toeslag. Wij rekenden op donkere kleuren dus zo'n 10% te veel.
+ *
+ * Waar de prijs wél verschilt (bv. Sikkens Alphadur: 24,95 om 31,95 op 2,5 L)
+ * zijn het twee losse artikelen met een eigen prijs, geen opslag op één artikel
+ * — daar hoort de prijs van het gekozen basisartikel getoond te worden. Zodra
+ * we `/api/mengverf` aansluiten komt die prijs uit Tilroy en verdwijnt dit
+ * veld helemaal. Zie docs/vdm-dashboard-koppeling.md.
+ */
 export const paintBases: Record<PaintBase["id"], PaintBase> = {
   wit: {
     id: "wit",
@@ -38,16 +53,16 @@ export const paintBases: Record<PaintBase["id"], PaintBase> = {
     label: "Basis Medium (M)",
     short: "Medium",
     description: "Voor heldere en middentinten.",
-    surcharge: 2.0,
-    stockFactor: 0.6,
+    surcharge: 0,
+    stockFactor: 1,
   },
   deep: {
     id: "deep",
     label: "Basis Deep (D)",
     short: "Deep",
     description: "Voor diepe en donkere kleuren — meer pigment nodig.",
-    surcharge: 4.5,
-    stockFactor: 0.35,
+    surcharge: 0,
+    stockFactor: 1,
   },
 };
 
@@ -85,14 +100,20 @@ export function priceWithBase(unitPrice: number, base?: PaintBaseSelection | nul
   return Math.round((unitPrice + (base?.surcharge ?? 0)) * 100) / 100;
 }
 
-/** Voorraad per winkel voor de gekozen basis (eigen blik = eigen voorraad). */
-export function baseStockByStore(
-  productStock: StoreStock[],
-  baseId: PaintBase["id"] = "wit",
-): StoreStock[] {
-  const factor = paintBases[baseId].stockFactor;
-  return productStock.map((s) => ({
-    storeId: s.storeId,
-    quantity: Math.max(0, Math.floor(s.quantity * factor)),
-  }));
+/**
+ * VERVALLEN — gaf de voorraad per basis terug op een verzonnen factor.
+ *
+ * Bij Tilroy is elke mengbasis een eigen artikel met een eigen voorraadstand
+ * per vestiging; die stand kennen wij niet, want onze import vouwt de basissen
+ * samen tot één variant per maat. De factor (1 / 0,6 / 0,35) was dus een gok,
+ * en een dure: 143 van de 212 leverbare mengverf-varianten (67%) waren daardoor
+ * niet in een donkere kleur te bestellen, terwijl de winkel ze gewoon kan
+ * mengen. Sinds de checkout-guard erop blokkeerde was dat geen weergavefoutje
+ * meer maar een geweigerde bestelling.
+ *
+ * Tot we de echte voorraad per basisartikel hebben, rekenen we met de
+ * variantvoorraad zoals die er staat. Zie docs/vdm-dashboard-koppeling.md.
+ */
+export function baseStockByStore(productStock: StoreStock[]): StoreStock[] {
+  return productStock;
 }
