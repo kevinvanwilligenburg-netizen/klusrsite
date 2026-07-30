@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   allProductSlugs,
@@ -68,6 +68,17 @@ export async function generateMetadata({
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = getLocalizedProduct(params.slug);
   if (!product) notFound();
+
+  // Een verouderde slug blijft werken (getProduct herkent het stabiele
+  // tilroy-id aan het eind), maar dan staat dezelfde pagina op twee URL's.
+  // Bij de herimport van vandaag veranderden 230 van de 2.491 slugs — vaak
+  // doordat de glansgraad in de titel kwam — dus dat is geen randgeval maar
+  // wekelijkse kost. Een permanente redirect naar de actuele URL houdt de
+  // linkwaarde bij elkaar en voorkomt dat Merchant Center en Google een
+  // stale URL blijven crawlen die alleen via een canonical doorverwijst.
+  if (params.slug !== product.slug) {
+    permanentRedirect(`/product/${product.slug}`);
+  }
 
   const publishedContent = await getProductContent(product.id);
   const glansVariants = getGlansVariants(product);
