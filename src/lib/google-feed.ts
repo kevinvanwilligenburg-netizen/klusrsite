@@ -40,6 +40,12 @@ const shippingFor = (subtotal: number): number =>
   subtotal <= 0 || subtotal >= 50 ? 0 : 4.95;
 
 // Categorie → officiële Google-producttaxonomie (verbetert matching/zichtbaarheid).
+/**
+ * Google-producttaxonomie per categorie. Laat je dit leeg, dan raadt Merchant
+ * Center zelf — en bij een verfzaak gaat dat mis (schuurpapier belandt onder
+ * verf). Alleen invullen waar we het zeker weten: een foute categorie is erger
+ * dan geen.
+ */
 const GOOGLE_CATEGORY: Record<string, string> = {
   verf: "Hardware > Paint & Wall Covering > Paint",
   "afbouw-fijnbouw": "Hardware > Building Materials",
@@ -49,6 +55,10 @@ const GOOGLE_CATEGORY: Record<string, string> = {
   tuin: "Home & Garden > Lawn & Garden",
   verlichting: "Home & Garden > Lighting",
   "vloeren-raam": "Hardware > Building Materials > Flooring & Carpet",
+  // Ontbraken, samen goed voor 470 producten die Merchant Center dus zelf zat
+  // in te delen.
+  behang: "Hardware > Paint & Wall Covering > Wallpaper",
+  reiniging: "Home & Garden > Household Supplies > Household Cleaning Supplies",
 };
 
 // slug → titel, voor het product_type-pad (bv. "Verf > Binnenlak").
@@ -162,15 +172,20 @@ function buildItems(locale: Locale, country: string): string {
       .join("");
 
     for (const v of p.variants) {
-      // De feed-prijs = de KLUSRPAS-prijs (de pasprijs). Bewuste keuze: hiermee
-      // adverteren we de scherpste prijs in Google Shopping, óók al betaalt een
-      // niet-ingelogde bezoeker op de site nog de normale prijs. Dit kan een
-      // "niet-overeenkomende productprijs"-afwijzing opleveren, omdat de landings-
-      // pagina (en haar structured data) voor een gast de normale prijs toont —
-      // dat risico is welbewust geaccepteerd. Terugval op de normale prijs alleen
-      // als er geen pasprijs is. Géén adviesprijs als g:price.
-      const feedPrice = v.kluspasPrice > 0 ? v.kluspasPrice : v.price;
+      // De feed-prijs is wat een gewone bezoeker betaalt — dus de normale prijs,
+      // niet de KLUSRPAS-prijs. Die pasprijs stond hier eerder bewust in om de
+      // scherpste prijs te adverteren, maar Google verwacht dat iedereen de
+      // getoonde prijs krijgt: een ledenprijs levert "niet-overeenkomende
+      // productprijs"-afwijzingen op, omdat de landingspagina een gast de
+      // normale prijs toont.
+      //
+      // Is er een échte actie (adviesprijs hoger dan wat je nu betaalt), dan
+      // hoort dat in het price/sale_price-paar: price = van-prijs,
+      // sale_price = wat het nu kost.
+      const feedPrice = v.price > 0 ? v.price : v.kluspasPrice;
       if (!(feedPrice > 0)) continue;
+      const vanPrijs =
+        v.compareAtPrice != null && v.compareAtPrice > feedPrice ? v.compareAtPrice : null;
       const id = multi ? `${p.id}-${v.id}` : p.id;
       // Verrijkte titel: merk vooraan + glans/kleur/maat als die er nog niet in
       // staan (beter voor Shopping). Zonder dubbeling.
@@ -200,7 +215,10 @@ function buildItems(locale: Locale, country: string): string {
         `<g:image_link>${xml(image)}</g:image_link>`,
         extraImages,
         `<g:availability>${inStock ? "in_stock" : "out_of_stock"}</g:availability>`,
-        `<g:price>${feedPrice.toFixed(2)} EUR</g:price>`,
+        // Actie? Dan is de adviesprijs de van-prijs en feedPrice de actieprijs.
+        vanPrijs
+          ? `<g:price>${vanPrijs.toFixed(2)} EUR</g:price><g:sale_price>${feedPrice.toFixed(2)} EUR</g:sale_price>`
+          : `<g:price>${feedPrice.toFixed(2)} EUR</g:price>`,
         brand ? `<g:brand>${xml(brand)}</g:brand>` : "",
         gtin ? `<g:gtin>${xml(gtin)}</g:gtin>` : "",
         // identifier_exists alleen "no" als er écht geen merk/GTIN is.
