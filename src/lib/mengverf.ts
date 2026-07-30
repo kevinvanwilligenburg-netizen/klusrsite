@@ -1,4 +1,5 @@
 import type { CartItem, PaintBaseSelection } from "@/types";
+import { VDM_DASHBOARD_BASE } from "@/lib/vdm-dashboard";
 
 /**
  * Mengverf-basissen uit Tilroy (via het VDM-dashboard).
@@ -26,11 +27,7 @@ import type { CartItem, PaintBaseSelection } from "@/types";
  */
 
 const BASIS_URL =
-  (process.env.VDM_MENGVERF_URL ||
-    (process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app").replace(
-      /\/+$/,
-      "",
-    ) + "/api/mengverf") + "?alleMengverf=1";
+  (process.env.VDM_MENGVERF_URL || `${VDM_DASHBOARD_BASE}/api/mengverf`) + "?alleMengverf=1";
 
 /** Hoe lang de opgehaalde basissen per lambda blijven staan. */
 const TTL_MS = 60 * 60 * 1000;

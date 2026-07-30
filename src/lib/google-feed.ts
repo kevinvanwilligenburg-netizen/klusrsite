@@ -43,46 +43,73 @@ const JUNK_BRANDS = new Set(["", "onbekend", "merk", "overig", "overige"]);
 // terwijl de Duitse en Franse feed duurder zijn. Merchant Center rekent je af op
 // verzendkosten die lager zijn dan bij het afrekenen.
 
-// Categorie → officiële Google-producttaxonomie (verbetert matching/zichtbaarheid).
 /**
- * Google-producttaxonomie per categorie. Laat je dit leeg, dan raadt Merchant
- * Center zelf — en bij een verfzaak gaat dat mis (schuurpapier belandt onder
- * verf). Alleen invullen waar we het zeker weten: een foute categorie is erger
- * dan geen.
+ * Categorie → officiële Google-producttaxonomie. Laat je dit leeg, dan raadt
+ * Merchant Center zelf — en bij een verfzaak gaat dat mis (schuurpapier belandt
+ * onder verf).
+ *
+ * We sturen het **nummer**, niet het pad. Google accepteert allebei, maar een
+ * pad is een letterlijke tekst die moet matchen, en dat ging hier drie keer mis:
+ * "Hardware > Paint & Wall Covering > Paint", "… > Wallpaper" en
+ * "Hardware > Fasteners" bestaan geen van drieën in de taxonomie. Merchant
+ * Center negeert zo'n waarde stilzwijgend en gaat alsnog zelf raden — precies
+ * wat deze tabel moest voorkomen, en dan ook nog voor verf, onze grootste
+ * categorie. Een nummer is niet verkeerd te spellen.
+ *
+ * `scripts/sync-google-categories.mjs` toetst elk nummer aan het officiële
+ * taxonomiebestand van Google en klapt om als er één niet klopt. Het pad staat
+ * er alleen bij zodat deze tabel te lezen is.
  */
 const GOOGLE_CATEGORY: Record<string, string> = {
-  verf: "Hardware > Paint & Wall Covering > Paint",
-  "afbouw-fijnbouw": "Hardware > Building Materials",
-  ijzerwaren: "Hardware > Fasteners",
-  elektra: "Hardware > Power & Electrical Supplies",
-  gereedschap: "Hardware > Tools",
-  tuin: "Home & Garden > Lawn & Garden",
-  verlichting: "Home & Garden > Lighting",
-  "vloeren-raam": "Hardware > Building Materials > Flooring & Carpet",
-  // Ontbraken, samen goed voor 470 producten die Merchant Center dus zelf zat
-  // in te delen.
-  behang: "Hardware > Paint & Wall Covering > Wallpaper",
-  reiniging: "Home & Garden > Household Supplies > Household Cleaning Supplies",
+  // 1361 = Hardware > Building Consumables > Painting Consumables > Paint
+  verf: "1361",
+  // 115 = Hardware > Building Materials
+  "afbouw-fijnbouw": "115",
+  // Bewust de overkoepelende categorie: 428 van de 464 artikelen zijn
+  // bevestigingsmateriaal, maar daar zitten staalkabel en ketting tussen
+  // (Chain, Wire & Rope), dus "Hardware Fasteners" zou een deel misplaatsen.
+  // 2878 = Hardware > Hardware Accessories
+  ijzerwaren: "2878",
+  // 127 = Hardware > Power & Electrical Supplies
+  elektra: "127",
+  // 1167 = Hardware > Tools
+  gereedschap: "1167",
+  // 689 = Home & Garden > Lawn & Garden
+  tuin: "689",
+  // Niet verfijnd naar Light Bulbs: in "lichtbronnen-en-zaklampen" zitten ook
+  // zaklampen, en die horen bij Google onder Tools.
+  // 594 = Home & Garden > Lighting
+  verlichting: "594",
+  // 2826 = Hardware > Building Materials > Flooring & Carpet
+  "vloeren-raam": "2826",
+  // 2334 = Home & Garden > Decor > Wallpaper
+  behang: "2334",
+  // 623 = Home & Garden > Household Supplies > Household Cleaning Supplies
+  reiniging: "623",
 };
 
 /**
- * Google-categorie voor een KLUSR-categorie.
+ * Google-categorie (nummer) voor een KLUSR-categorie.
  *
  * Onze eigen tabel wint; de gedeelde taxonomie van het dashboard
  * (`scripts/sync-google-categories.mjs`) vult alleen categorieën aan die wij
- * nog niet kennen. Blind overnemen zou een verslechtering zijn: hun patroon
- * `verlichting|elektra` zet elektra onder Lighting, terwijl stopcontacten en
- * kabel bij ons onder Power & Electrical Supplies horen.
+ * nog niet kennen — een vangnet voor hoofdgroepen die later bijkomen.
  *
- * De tabel staat lokaal in een gegenereerd bestand, zodat de feed blijft
- * werken als het dashboard onbereikbaar is.
+ * Het syncscript laat alleen regels door die het aan Google's officiële
+ * taxonomie heeft kunnen toetsen, en zet daar het gecontroleerde nummer bij.
+ * Regels zonder zo'n nummer slaan we hier over: liever geen categorie dan een
+ * verkeerde, want Merchant Center gooit een onbekende waarde toch weg.
+ *
+ * Het bestand staat lokaal en wordt meegecommit, zodat de feed blijft werken
+ * als het dashboard onbereikbaar is.
  */
 function googleCategoryFor(slug: string): string | undefined {
   const eigen = GOOGLE_CATEGORY[slug];
   if (eigen) return eigen;
   for (const regel of GEDEELDE_TAXONOMIE.regels ?? []) {
+    if (!regel.id) continue;
     try {
-      if (new RegExp(regel.patroon, "i").test(slug)) return regel.pad || undefined;
+      if (new RegExp(regel.patroon, "i").test(slug)) return regel.id;
     } catch {
       /* onbruikbaar patroon overslaan */
     }

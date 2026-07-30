@@ -1,5 +1,6 @@
 import type { SelectedColor } from "@/types";
 import { colorCollections, type ColorCollection } from "@/lib/data/colors";
+import { VDM_DASHBOARD_BASE } from "@/lib/vdm-dashboard";
 
 /**
  * Verbinding met de DVM-kleurenkiezerportal (repo: vdmhq01-eng/dashboardvdm).
@@ -9,9 +10,7 @@ import { colorCollections, type ColorCollection } from "@/lib/data/colors";
  *
  * Overschrijfbaar via NEXT_PUBLIC_KLEURENKIEZER_API (bv. https://kleur.devoordeelmarkt.nl).
  */
-const API_BASE = (
-  process.env.NEXT_PUBLIC_KLEURENKIEZER_API || "https://dashboardvdm.vercel.app"
-).replace(/\/+$/, "");
+const API_BASE = VDM_DASHBOARD_BASE;
 // Eerst onze gecachete server-proxy (zelfde origin, klein + snel), dan de
 // volledige bron-feed, dan de lichtere public-colors, dan de gecureerde set.
 const PROXY_URL = "/api/colors";

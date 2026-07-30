@@ -1,7 +1,9 @@
 # KLUSR ⇄ VDM-dashboard — datakoppeling
 
 KLUSR leest productdata uit het interne VDM-dashboard (repo `dashboardvdm`,
-live: `https://dashboardvdm.vercel.app`). Het dashboard praat zelf live met de
+live: `https://dashboardvdm-k-evin-s-projects.vercel.app` — het canonieke
+projectdomein; de kale alias `dashboardvdm.vercel.app` hangt vast op een
+deployment van elf versies terug, zie `src/lib/vdm-dashboard.ts`). Het dashboard praat zelf live met de
 Tilroy-API (dagelijkse voorraad-cron om 05:00 UTC) en is daarmee een véél
 versere bron dan de oude Tilroy S3-feeds of de (uitgeklede) Channable-feed.
 
@@ -192,6 +194,38 @@ niet op de hardlopers: van de vijftien best verkopende artikelen staat Deventer
 er op tien negatief, en de webshopvestiging op vijf. `voorraadSamen` valt
 daardoor lager uit dan wat er fysiek ligt. Blokkeer pas bij een duidelijk
 tekort over álle vestigingen samen, tot die telling is rechtgezet.
+
+## Google-categorieën: nummers, geen paden
+
+Het dashboard deelt zijn categorie-mapping via `/api/google/categorie-mapping`.
+`scripts/sync-google-categories.mjs` haalt die op bij de import en legt 'm
+lokaal vast (meegecommit), zodat onze feed blijft werken als het dashboard
+hapert.
+
+**We sturen het nummer, niet het pad.** Google accepteert allebei, maar een pad
+is een letterlijke tekst die exact moet matchen — en een waarde die Google niet
+kent, wordt stílzwijgend genegeerd. Merchant Center gaat dan alsnog zelf raden
+en je ziet nergens dat je categorie is weggegooid.
+
+Dat gebeurde hier ook, aan beide kanten. In onze eigen tabel stonden drie paden
+die niet bestaan: `Hardware > Paint & Wall Covering > Paint`, `… > Wallpaper` en
+`Hardware > Fasteners` — samen 40% van de feed, met verf als grootste categorie.
+In de gedeelde mapping bestonden vijf van de twaalf paden niet, en wezen vier
+nummers naar iets heel anders dan het pad ernaast (`elektra` → 2422 =
+espressomachines, `vloeren` → 503751 = zwembadfolie, `ijzerwaren` → 1974 =
+Locks & Keys, `gereedschap` → 632 = de hoofdcategorie Hardware).
+
+Daarom:
+
+- het syncscript zoekt bij elk **pad** zélf het juiste nummer op in Google's
+  officiële taxonomiebestand, en negeert het meegeleverde nummer;
+- regels die het niet kan thuisbrengen worden zónder nummer opgeslagen; de feed
+  slaat die over — liever geen categorie dan een verkeerde;
+- `scripts/check-google-categories.mjs` toetst zowel onze eigen tabel als de
+  gedeelde mapping en geeft exit 1 bij een fout, zodat dit in CI kan.
+
+Onze eigen tabel in `src/lib/google-feed.ts` blijft leidend; de gedeelde mapping
+is het vangnet voor hoofdgroepen die wij nog niet kennen.
 
 ## Verzending: PostNL → DHL (webshop-kant af)
 

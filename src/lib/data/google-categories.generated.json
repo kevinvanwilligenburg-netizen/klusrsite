@@ -1,45 +1,65 @@
 {
-  "opgehaald": "2026-07-30T20:07:14.350Z",
+  "opgehaald": "2026-07-30T20:34:25.871Z",
   "regels": [
     {
       "patroon": "verf en beits|^verf$",
       "pad": "Hardware > Paint & Wall Covering > Paint",
-      "id": "503734"
+      "id": ""
     },
     {
       "patroon": "verfbenodigdheden",
       "pad": "Hardware > Tools > Painting & Wallpapering Tools",
-      "id": "503739"
+      "id": ""
     },
     {
       "patroon": "behang",
       "pad": "Hardware > Paint & Wall Covering > Wallpaper",
-      "id": "503742"
+      "id": ""
     },
     {
       "patroon": "lijmen en kitten",
       "pad": "Hardware > Building Consumables > Chemicals > Adhesives & Sealants",
-      "id": "505382"
+      "id": ""
     },
     {
       "patroon": "gereedschap",
       "pad": "Hardware > Tools",
-      "id": "632"
+      "id": "1167"
     },
     {
       "patroon": "ijzerwaren",
       "pad": "Hardware > Hardware Accessories",
-      "id": "1974"
+      "id": "2878"
     },
     {
       "patroon": "vloeren",
       "pad": "Hardware > Building Materials > Flooring & Carpet",
-      "id": "503751"
+      "id": "2826"
     },
     {
-      "patroon": "verlichting|elektra",
+      "patroon": "verlichting",
       "pad": "Hardware > Lighting",
-      "id": "594"
+      "id": ""
+    },
+    {
+      "patroon": "elektra|installatiemateriaal",
+      "pad": "Hardware > Power & Electrical Supplies",
+      "id": "127"
+    },
+    {
+      "patroon": "reiniging|schoonmaak|huishoudelijk",
+      "pad": "Home & Garden > Household Supplies > Household Cleaning Supplies",
+      "id": "623"
+    },
+    {
+      "patroon": "afbouw|fijnbouw|bouwmateria",
+      "pad": "Hardware > Building Materials",
+      "id": "115"
+    },
+    {
+      "patroon": "^tuin",
+      "pad": "Home & Garden > Lawn & Garden",
+      "id": "689"
     }
   ]
 }

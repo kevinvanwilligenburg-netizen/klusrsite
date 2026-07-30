@@ -41,7 +41,7 @@ function itemsUrl(offset, limit) {
 const VDM_PRIJSFEED_URL =
   process.env.PRIJSFEED_URL ||
   process.env.VDM_PRIJSFEED_URL ||
-  "https://dashboardvdm.vercel.app/api/prijsfeed";
+  "https://dashboardvdm-k-evin-s-projects.vercel.app/api/prijsfeed";
 
 /**
  * EAN's uit de VDM-dashboard prijsfeed (publiek; per product sku + ean).

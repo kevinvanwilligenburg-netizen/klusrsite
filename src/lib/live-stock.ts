@@ -5,6 +5,7 @@ import { primaryStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
 import { getSafetyStock } from "@/lib/store/settings";
 import { getSoldFor, getAdjustFor, liveStock } from "@/lib/store/stock-ledger";
 import TILROY_SHOPS from "@/lib/data/tilroy-shops.json";
+import { VDM_DASHBOARD_BASE } from "@/lib/vdm-dashboard";
 
 /**
  * Live verkoopbare voorraad (Nijverdal) voor de checkout-guard.
@@ -24,8 +25,7 @@ import TILROY_SHOPS from "@/lib/data/tilroy-shops.json";
  * volledig op het grootboek.
  */
 
-const SKUS_URL =
-  process.env.VDM_STOCK_SKUS_URL || "https://dashboardvdm.vercel.app/api/voorraad/skus";
+const SKUS_URL = process.env.VDM_STOCK_SKUS_URL || `${VDM_DASHBOARD_BASE}/api/voorraad/skus`;
 const SKUS_PER_CALL = 200;
 const FETCH_TIMEOUT_MS = 2_500;
 const CACHE_TTL_MS = 45_000;

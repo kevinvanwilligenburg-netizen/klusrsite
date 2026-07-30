@@ -10,7 +10,7 @@
  *
  * Bron (in volgorde) — beide rechtstreeks op Tilroy-data, Channable-vrij:
  *   1. VDM-dashboard prijsfeed (publiek, sku = Tilroy-artikel-id, mét
- *      adviesprijs) — https://dashboardvdm.vercel.app/api/prijsfeed.
+ *      adviesprijs) — https://dashboardvdm-k-evin-s-projects.vercel.app/api/prijsfeed.
  *      Override: PRIJSFEED_URL (zelfde env als build-price-feed.mjs).
  *   2. Publieke Tilroy Google-feed (XML) — zelfde bronprijzen, geen adviesprijs.
  *      Override: TILROY_FEED_URL.
@@ -31,7 +31,7 @@ const SNAP = join(__dirname, "..", "src", "lib", "data", "feed-products.generate
 const VDM_PRIJSFEED_URL =
   process.env.PRIJSFEED_URL ||
   process.env.VDM_PRIJSFEED_URL ||
-  "https://dashboardvdm.vercel.app/api/prijsfeed";
+  "https://dashboardvdm-k-evin-s-projects.vercel.app/api/prijsfeed";
 const TILROY_FEED_URL =
   process.env.TILROY_FEED_URL ||
   "https://tilroy.s3.eu-west-1.amazonaws.com/780/feed/google_devoordeelmarkt_NL.xml";
