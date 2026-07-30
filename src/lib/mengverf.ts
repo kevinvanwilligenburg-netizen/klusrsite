@@ -160,6 +160,17 @@ export function basisSkuVoor(lijn: MengverfLijn, base: PaintBaseSelection | unde
   // Eén basis? Dan valt er niets te kiezen en is die sku per definitie juist.
   if (lijn.basissen.length === 1) return kaal(lijn.basissen[0].sku) || null;
 
+  // Kosten de basissen niet hetzelfde, dan laten we de sku met rust. Onze
+  // catalogus draagt namelijk de prijs van één bepaald basisartikel (bij
+  // Sikkens Alphadur de duurste: 31,95 op 2,5 L, terwijl de lichte basis 24,95
+  // is). Zouden we hier naar een goedkoper artikel omschakelen, dan boekt Tilroy
+  // een artikel af waarvan de prijs niet overeenkomt met wat de klant betaalde —
+  // dan ruilen we een scheve voorraad in voor een scheve omzet. Zodra de prijs
+  // per basis wordt getoond én server-side gecontroleerd (afspraak 1, zie
+  // docs/vdm-dashboard-koppeling.md) vervalt deze rem. Bij `zelfdePrijs: true`,
+  // veruit het normale geval, speelt dit niet.
+  if (lijn.zelfdePrijs === false) return null;
+
   for (const niveau of VOORKEUR[base.id] ?? []) {
     const treffer = lijn.basissen.find((b) => b.basis === niveau);
     if (treffer) return kaal(treffer.sku) || null;

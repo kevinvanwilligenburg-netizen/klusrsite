@@ -194,9 +194,22 @@ nog draagt, niet verkoopbaar en dus onbereikbaar voor een order.
 `verifyOrderTotal`: toont de productpagina straks de prijs van het basisartikel,
 dan moet de servercontrole dezelfde bron gebruiken — anders weigert de checkout
 bestellingen zodra `/api/mengverf` even hapert. Dat vraagt een prijsval die
-niet fail-open mag zijn, en die keuze is groter dan een weergavewijziging. Tot
-die tijd rekenen we de variantprijs, wat op lijnen met `zelfdePrijs: false`
-(Alphadur 2,5 L: 24,95 om 31,95) te weinig is.
+niet fail-open mag zijn, en die keuze is groter dan een weergavewijziging.
+
+**Alphadur: wij verkopen de dúúrste basis, niet de goedkoopste.** Even
+nagemeten, want de aanname ging de andere kant op. Onze catalogus draagt voor
+Sikkens Alphadur HD SF Mat de sku's 39038369 (2,50 L, €31,95), 39038372
+(5,00 L, €57,95) en 39974023 (10,00 L, €83,95) — precies de prijzen die Tilroy
+voor díé artikelen kent. De goedkopere basis (24,95 resp. 46,95) zit niet in
+onze catalogus. We lopen dus geen marge mis; wie een lichte kleur kiest betaalt
+de prijs van de donkere basis.
+
+Daarom laat `basisSkuVoor()` de sku met rust zodra `zelfdePrijs: false`. Zouden
+we bij een lichte kleur naar het goedkope basisartikel omschakelen, dan boekt
+Tilroy een artikel af waarvan de prijs niet overeenkomt met wat de klant
+betaalde — dan ruilen we een scheve voorraad in voor een scheve omzet. Bij
+`zelfdePrijs: true`, veruit het normale geval, speelt dit niet. Die rem vervalt
+zodra afspraak 1 rond is.
 
 ⚠️ **Niet hard blokkeren op nul voor mengverf.** De voorraadadministratie klopt
 niet op de hardlopers: van de vijftien best verkopende artikelen staat Deventer
