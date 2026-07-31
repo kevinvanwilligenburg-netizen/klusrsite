@@ -94,16 +94,30 @@ function kaal(sku: string | undefined): string {
  * basis die onze import toevallig in de variant vouwde — maar zodra het antwoord
  * er is, hoort deze tabel eraan aangepast te worden.
  */
-const VOORKEUR: Record<PaintBaseSelection["id"], string[]> = {
-  wit: ["wit", "light", "medium", "dark"],
-  // Middentint: donker vóór licht. Sikkens noemt W05 uitdrukkelijk "witte
+/**
+ * Welke basisniveaus we voor onze kleur accepteren — **geen terugvalketen**.
+ *
+ * Hier stond eerst een aflopende voorkeur (deep → dark → medium → light → wit),
+ * bedoeld om ook een treffer te hebben als ons niveau niet bestond. Dat is bij
+ * deze bron gevaarlijk gebleken: de basiscode-regex van het dashboard herkent
+ * `D` en het losse `Wit` niet, dus van een Fitex- of Drenth-lijn zit alléén het
+ * TR-artikel in de index. Een donkere kleur viel dan door de keten heen tot
+ * "light" en boekte af van juist de lichte basis — het tegenovergestelde van wat
+ * de koppeling moet doen.
+ *
+ * Nu accepteren we alleen een niveau dat de kleur niet tegenspreekt. Geen
+ * treffer betekent geen basis-sku, en dan houdt de regel de variant-sku die hij
+ * vandaag ook heeft. Dekking inleveren voor zekerheid is hier de goede ruil: een
+ * gemiste verbetering kost niets, een omgekeerde basis kost voorraad.
+ */
+const AANVAARDBAAR: Record<PaintBaseSelection["id"], string[]> = {
+  wit: ["wit", "light"],
+  // Middentint: alleen de donkere. Sikkens noemt W05 uitdrukkelijk "witte
   // kleuren" — niet "lichte" — dus alles met echte kleur gaat daar naar N00.
-  // Bij Drenth/Fitex heet TR wél "lichtere kleuren" en zou licht-eerst kunnen
-  // kloppen; welke van de twee de winkel in de praktijk pakt staat nog uit.
-  // Tot dat antwoord er is houden we de bestaande volgorde aan, zodat die niet
-  // per ongeluk verschuift bij een refactor.
-  medium: ["medium", "dark", "light", "wit"],
-  deep: ["dark", "medium", "light", "wit"],
+  // Bij Drenth/Fitex heet TR wél "lichtere kleuren"; of een middentint daar
+  // lichter uitpakt staat nog uit bij de winkel.
+  medium: ["medium", "dark"],
+  deep: ["dark"],
 };
 
 /**
@@ -188,8 +202,6 @@ export async function mengverfLijnVoor(variantId: string): Promise<MengverfLijn 
  */
 export function basisSkuVoor(lijn: MengverfLijn, base: PaintBaseSelection | undefined | null): string | null {
   if (!base) return null;
-  // Eén basis? Dan valt er niets te kiezen en is die sku per definitie juist.
-  if (lijn.basissen.length === 1) return kaal(lijn.basissen[0].sku) || null;
 
   // Kosten de basissen niet hetzelfde, dan laten we de sku met rust. Onze
   // catalogus draagt namelijk de prijs van één bepaald basisartikel (bij
@@ -208,7 +220,7 @@ export function basisSkuVoor(lijn: MengverfLijn, base: PaintBaseSelection | unde
   const niveauVan = (b: Basis): string | null =>
     CODE_NIVEAU[(b.basisCode ?? "").toUpperCase().replace(/^WIT\//, "")] ?? b.basis ?? null;
 
-  for (const niveau of VOORKEUR[base.id] ?? []) {
+  for (const niveau of AANVAARDBAAR[base.id] ?? []) {
     const treffer = lijn.basissen.find((b) => niveauVan(b) === niveau);
     if (treffer) return kaal(treffer.sku) || null;
   }
