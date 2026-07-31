@@ -181,6 +181,31 @@ Tilroy meestal twee; bestaat ons niveau niet, dan pakken we de eerstvolgende
 wat meer colorant. Fail-safe: geen sleutel, geen bron of geen herkenbare basis →
 de regel houdt de variant-sku die hij vandaag ook heeft.
 
+
+**Basiscodes volgens de winkel (Kevin, 30-07-2026) — en waar het dashboard ze
+omdraait.**
+
+| merk | donker | licht | wit |
+|---|---|---|---|
+| Sikkens | N00 | W05 ("witte kleuren") | Wit |
+| Drenth | D | TR ("lichtere kleuren") | Wit |
+| Fitex | D | TR ("lichte kleuren") | Wit |
+
+`detectMixBase` in het dashboard geeft voor Drenth/Fitex **TR terug als `dark`
+en D als `medium`** — allebei omgekeerd. Fitex (54) en Drenth (23) zijn samen 77
+van onze 132 mengbare producten, dus daarop zouden we stelselmatig de lichte
+basis afboeken bij een donkere kleur: precies de fout die deze koppeling moest
+voorkomen, alleen dan consequent in plaats van willekeurig. `CODE_NIVEAU` in
+`src/lib/mengverf.ts` gaat daarom vóór het `basis`-veld; dat veld is alleen nog
+de terugval voor codes waarover de winkel zich niet heeft uitgesproken (Histor
+LN/ZX/ZN, Hammerite, Flexa, Epanol).
+
+Er is geen middenbasis: de drie niveaus zijn wit, licht en donker, waarbij "Wit"
+een eigen artikel is en niet hetzelfde als W05/TR. Onze `baseForColor()` leidt
+uit de kleurhelderheid wél een `medium` af (41 van onze 159 gecureerde kleuren,
+26%). Die valt terug op donker — zie de VOORKEUR-tabel in `mengverf.ts`, waar
+ook staat waarom donker en niet licht.
+
 **Sku-ruimte nagemeten (2026-07-30).** De koppeling matcht op het kale
 artikelnummer: wij schrijven `tilroy-39973076`, het dashboard `feed-39973076`,
 de prijsfeed `39973076`. Zou dat niet samenvallen, dan werd `baseSku` stil nooit

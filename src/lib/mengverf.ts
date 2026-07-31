@@ -95,9 +95,40 @@ function kaal(sku: string | undefined): string {
  * er is, hoort deze tabel eraan aangepast te worden.
  */
 const VOORKEUR: Record<PaintBaseSelection["id"], string[]> = {
-  wit: ["light", "medium", "dark"],
-  medium: ["medium", "dark", "light"],
-  deep: ["dark", "medium", "light"],
+  wit: ["wit", "light", "medium", "dark"],
+  // Middentint: donker vóór licht. Sikkens noemt W05 uitdrukkelijk "witte
+  // kleuren" — niet "lichte" — dus alles met echte kleur gaat daar naar N00.
+  // Bij Drenth/Fitex heet TR wél "lichtere kleuren" en zou licht-eerst kunnen
+  // kloppen; welke van de twee de winkel in de praktijk pakt staat nog uit.
+  // Tot dat antwoord er is houden we de bestaande volgorde aan, zodat die niet
+  // per ongeluk verschuift bij een refactor.
+  medium: ["medium", "dark", "light", "wit"],
+  deep: ["dark", "medium", "light", "wit"],
+};
+
+/**
+ * Basiscode → niveau, volgens de winkel (Kevin, 30-07-2026):
+ *
+ *   Sikkens        N00 donker · W05 witte kleuren · Wit
+ *   Drenth/Fitex   D   donker · TR  lichte kleuren · Wit
+ *
+ * **Dit gaat vóór het `basis`-veld van het dashboard, want dat staat voor
+ * Drenth/Fitex omgekeerd**: `detectMixBase` geeft TR terug als "dark" en D als
+ * "medium", terwijl TR juist de lichte is en D de donkere. Dat is geen detail —
+ * Fitex en Drenth zijn samen 77 van onze 132 mengbare producten, dus we zouden
+ * daar stelselmatig de lichte basis afboeken bij een donkere kleur. Precies de
+ * fout die deze koppeling moest voorkomen, alleen dan consequent.
+ *
+ * Codes die hier niet in staan (Histor LN/ZX/ZN, Hammerite, Flexa, Epanol) laten
+ * we bewust met rust: daarvoor hebben we geen uitspraak van de winkel, en dan is
+ * de bestaande variant-sku beter dan een gok. Vul aan zodra die bekend zijn.
+ */
+const CODE_NIVEAU: Record<string, string> = {
+  WIT: "wit", // eigen niveau: de witte basis is niet hetzelfde als W05/TR
+  W05: "light",
+  TR: "light",
+  N00: "dark",
+  D: "dark",
 };
 
 function isLijn(x: unknown): x is MengverfLijn {
@@ -171,8 +202,14 @@ export function basisSkuVoor(lijn: MengverfLijn, base: PaintBaseSelection | unde
   // veruit het normale geval, speelt dit niet.
   if (lijn.zelfdePrijs === false) return null;
 
+  // Niveau per basis: de basiscode is leidend (die komt uit de winkel), het
+  // `basis`-veld van het dashboard is de terugval voor codes die wij niet
+  // kennen. Andersom zou de omgekeerde TR/D-labeling doorwerken.
+  const niveauVan = (b: Basis): string | null =>
+    CODE_NIVEAU[(b.basisCode ?? "").toUpperCase().replace(/^WIT\//, "")] ?? b.basis ?? null;
+
   for (const niveau of VOORKEUR[base.id] ?? []) {
-    const treffer = lijn.basissen.find((b) => b.basis === niveau);
+    const treffer = lijn.basissen.find((b) => niveauVan(b) === niveau);
     if (treffer) return kaal(treffer.sku) || null;
   }
   return null;
