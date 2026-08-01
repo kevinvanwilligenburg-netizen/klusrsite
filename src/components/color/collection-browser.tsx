@@ -114,11 +114,21 @@ export function CollectionBrowser({
     // de dichtstbijzijnde positioned ancestor, en die is hier de dialoog en niet
     // de scrollende kolom — dan komt er 0 uit en beweegt er niets.
     const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
-    // Direct springen, niet "smooth". Twee redenen: een letterbalk is een
-    // "breng me er nu heen"-actie, dus een halve seconde animatie vertraagt
-    // alleen het lezen — en `behavior: "smooth"` bleek in de testbrowser
-    // helemaal niet uitgevoerd te worden, waardoor de knop stilletjes niets deed.
-    box.scrollTop = Math.max(0, top - 8);
+    // Direct springen, en expliciet "instant".
+    //
+    // Een letterbalk is een "breng me er nu heen"-actie: een halve seconde
+    // animatie vertraagt alleen het lezen. Bovendien bleek `behavior: "smooth"`
+    // in de testbrowser helemaal niet uitgevoerd te worden — de knop deed dan
+    // stilletjes niets terwijl de rekensom klopte.
+    //
+    // Waarom "instant" en niet een kale `box.scrollTop = …`: globals.css zet
+    // `scroll-behavior: smooth` op <html>. Die eigenschap erft niet, dus onze
+    // geneste scroller staat vandaag op `auto` en een directe toewijzing zou
+    // werken. Maar zodra iemand die regel breder trekt (bv. naar `*`, zoals in
+    // het reduced-motion-blok hieronder al gebeurt) wordt óók `scrollTop = …`
+    // smooth, en dan breekt dit geruisloos. `behavior: "instant"` wint altijd
+    // van de CSS. Gemeld door de VDM-sessie, die er drie kwartier op zocht.
+    box.scrollTo({ top: Math.max(0, top - 8), behavior: "instant" });
   }
 
   return (
