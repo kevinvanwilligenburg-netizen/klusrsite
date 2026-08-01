@@ -82,6 +82,8 @@ export interface CreatePaymentInput {
   issuer?: string;
   /** Factuuradres — vereist voor Klarna e.d. (pay-later). */
   billingAddress?: Record<string, unknown>;
+  /** Landcode (ISO-2) als er geen factuuradres is; bepaalt de Mollie-locale. */
+  country?: string;
   /** Order-regels — vereist voor Klarna e.d.; moeten exact optellen tot `amount`. */
   lines?: unknown[];
 }
@@ -114,12 +116,18 @@ export async function createPayment(
     redirectUrl: `${base}/bedankt?order=${input.orderId}`,
     webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${base}/api/checkout/webhook`,
     metadata: { orderId: input.orderId, reference: input.reference },
-    // Expliciete locale. Zonder dit leidt Mollie 'm af uit de browser, en bij
-    // achteraf-betalen bepaalt de locale in welke markt Klarna de aanvraag doet
-    // — een bezoeker met een niet-Nederlandse browsertaal kan daardoor op een
-    // Klarna-variant belanden die voor dit profiel niet geautoriseerd wordt. De
-    // VDM-webshop stuurt 'm wél mee en heeft dit probleem niet.
-    locale: "nl_NL",
+    // Expliciete locale, afgeleid uit het factuurland. Zonder locale leidt
+    // Mollie 'm af uit de browser, en juist bij achteraf-betalen bepaalt die in
+    // welke markt Klarna de aanvraag doet.
+    //
+    // Waarom niet gewoon nl_NL: de twee Klarna-betalingen die op 31-07-2026
+    // bleven hangen (tr_YpPVz9fJpA8cMtfSokiUJ en tr_yshLcEBi3E6DbJtQnjiUJ)
+    // waren allebei van een Belgische klant. Een vaste nl_NL zou die op de
+    // Nederlandse Klarna-markt vastpinnen, waar een Belgisch adres niet
+    // doorkomt — dan lost het niets op maar maakt het de zaak erger.
+    locale: localeVoorLand(
+      (input.billingAddress?.country as string | undefined) ?? input.country,
+    ),
     ...(mollieMethod ? { method: mollieMethod } : {}),
   };
   // iDEAL: vooraf gekozen bank meesturen → klant gaat direct naar de juiste bank.
@@ -383,6 +391,34 @@ export async function listPaymentMethods(
   } catch (err) {
     console.error("[mollie] methods list failed", err);
     return { configured: false, methods: filterMethodsByCountry(fallbackMethods(cc), cc) };
+  }
+}
+
+/**
+ * Mollie-locale bij een landcode.
+ *
+ * Alleen de landen waar wij daadwerkelijk naartoe verzenden en die Mollie
+ * kent; de rest valt terug op nl_NL. Belangrijk voor achteraf-betalen: Klarna
+ * beoordeelt de klant in de markt die bij deze locale hoort, dus een Belgisch
+ * adres hoort nl_BE te krijgen en niet nl_NL.
+ */
+function localeVoorLand(land?: string): string {
+  const code = (land ?? "").trim().toUpperCase().slice(0, 2);
+  switch (code) {
+    case "BE":
+      return "nl_BE";
+    case "DE":
+      return "de_DE";
+    case "FR":
+      return "fr_FR";
+    case "AT":
+      return "de_AT";
+    case "ES":
+      return "es_ES";
+    case "IT":
+      return "it_IT";
+    default:
+      return "nl_NL";
   }
 }
 
