@@ -217,8 +217,32 @@ export const popularColors2026: ColorCollection = colorCollections[0];
 
 export const defaultColor: SelectedColor = colorCollections[0].colors[0]; // Zuiver Wit
 
+/**
+ * Zoek een kleur op code (of naam), tolerant voor schrijfwijze.
+ *
+ * Dit stond op een exacte tekstvergelijking, en dat is precies de val waar de
+ * VDM-webshop tegenaan liep: `?kleur=RAL9010` en `?kleur=ral 9010` vonden dan
+ * niets, en de klant landde op de productpagina zónder kleur — zonder enige
+ * melding, dus je ziet het alleen als je het toevallig probeert. Onze eigen
+ * kleurcodes staan als "RAL 9010" met een spatie, en elke link van buiten
+ * (Shopping, een gedeelde URL, een handmatig getypte parameter) schrijft het
+ * anders.
+ *
+ * Zelfde normalisatie als `paint-color-resolve.ts` bij het afrekenen: alleen
+ * letters en cijfers, kleine letters. Valt terug op de naam, zodat
+ * `?kleur=gitzwart` ook werkt.
+ */
+function normCode(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 export function findColor(code: string): SelectedColor | undefined {
-  return allColors.find((c) => c.code === code);
+  const q = normCode(code ?? "");
+  if (!q) return undefined;
+  return (
+    allColors.find((c) => normCode(c.code) === q) ??
+    allColors.find((c) => normCode(c.name) === q)
+  );
 }
 
 /** Simple readable-contrast helper for swatch labels. */

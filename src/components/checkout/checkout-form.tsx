@@ -270,6 +270,39 @@ export function CheckoutForm({
   const [sameDay, setSameDay] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * VIES-controle van het btw-nummer, bij het verlaten van het veld.
+   *
+   * Puur informatief: de uitkomst blokkeert het bestellen niet. VIES ligt er
+   * met enige regelmaat uit, en dan zou een harde blokkade een zakelijke klant
+   * buitensluiten om een storing in Brussel. Zie /api/zakelijk/vies.
+   */
+  const [viesStatus, setViesStatus] = useState<"leeg" | "bezig" | "geldig" | "ongeldig">("leeg");
+  const [viesNaam, setViesNaam] = useState<string | undefined>();
+
+  async function controleerBtw(waarde: string) {
+    const btw = String(waarde ?? "").toUpperCase().replace(/[\s.-]/g, "");
+    // NL gaat op KVK, en een half ingetypt nummer hoeft niet opgezocht.
+    if (!btw || btw.startsWith("NL") || btw.length < 8) {
+      setViesStatus("leeg");
+      return;
+    }
+    setViesStatus("bezig");
+    try {
+      const res = await fetch(`/api/zakelijk/vies?btw=${encodeURIComponent(btw)}`);
+      const j = (await res.json()) as { bekend?: boolean; geldig?: boolean; naam?: string };
+      if (!j.bekend) {
+        // Dienst onbereikbaar of niet van toepassing → niets tonen.
+        setViesStatus("leeg");
+        return;
+      }
+      setViesNaam(j.naam);
+      setViesStatus(j.geldig ? "geldig" : "ongeldig");
+    } catch {
+      setViesStatus("leeg");
+    }
+  }
   const [lookingUp, setLookingUp] = useState(false);
 
   // --- Interne checkout (alleen actief bij expressMode) ----------------------
@@ -1031,7 +1064,27 @@ export function CheckoutForm({
                     <Input placeholder="12345678" {...register("cocNumber")} />
                   </Field>
                   <Field label={t("checkout.field.vat")} error={errors.vatNumber?.message}>
-                    <Input placeholder="NL000000000B00" {...register("vatNumber")} />
+                    <Input
+                      placeholder="NL000000000B00"
+                      {...register("vatNumber", { onBlur: (e) => controleerBtw(e.target.value) })}
+                    />
+                    {/* Uitkomst van de VIES-opzoeking. Bewust alleen informatief:
+                        de bestelling gaat door, ook als VIES er niet uit komt.
+                        Zie /api/zakelijk/vies voor waarom dat fail-open moet. */}
+                    {viesStatus === "bezig" && (
+                      <p className="mt-1 text-xs text-muted-foreground">Btw-nummer controleren…</p>
+                    )}
+                    {viesStatus === "geldig" && (
+                      <p className="mt-1 text-xs font-semibold text-klusr-stock">
+                        ✓ Geldig btw-nummer{viesNaam ? ` — ${viesNaam}` : ""}
+                      </p>
+                    )}
+                    {viesStatus === "ongeldig" && (
+                      <p className="mt-1 text-xs font-semibold text-destructive">
+                        Dit btw-nummer kent de EU-registratie niet. Controleer het even — je kunt
+                        gewoon doorgaan, maar we kunnen de btw dan niet verleggen.
+                      </p>
+                    )}
                   </Field>
                 </div>
               </>

@@ -1,0 +1,415 @@
+{
+  "opgehaald": "2026-08-01T18:20:46.237Z",
+  "kleuren": [
+    {
+      "nummer": 1000,
+      "naam": "Groenbeige",
+      "hex": "#cdba88"
+    },
+    {
+      "nummer": 1001,
+      "naam": "Beige",
+      "hex": "#d0b084"
+    },
+    {
+      "nummer": 1003,
+      "naam": "Signaalgeel",
+      "hex": "#f9a800"
+    },
+    {
+      "nummer": 1004,
+      "naam": "Goudgeel",
+      "hex": "#e19b00"
+    },
+    {
+      "nummer": 1005,
+      "naam": "Honinggeel",
+      "hex": "#ca8d00"
+    },
+    {
+      "nummer": 1006,
+      "naam": "Maisgeel",
+      "hex": "#df8e00"
+    },
+    {
+      "nummer": 1007,
+      "naam": "Narcissengeel",
+      "hex": "#e68b00"
+    },
+    {
+      "nummer": 1011,
+      "naam": "Bruinbeige",
+      "hex": "#ae7f4d"
+    },
+    {
+      "nummer": 1012,
+      "naam": "Citroengeel",
+      "hex": "#dbad26"
+    },
+    {
+      "nummer": 1013,
+      "naam": "Oesterwit",
+      "hex": "#e3d9c6"
+    },
+    {
+      "nummer": 1014,
+      "naam": "Ivoor",
+      "hex": "#ddc49a"
+    },
+    {
+      "nummer": 1015,
+      "naam": "Licht Ivoor",
+      "hex": "#e6d2b5"
+    },
+    {
+      "nummer": 1016,
+      "naam": "Zwavelgeel",
+      "hex": "#efdc34"
+    },
+    {
+      "nummer": 1017,
+      "naam": "Saffraangeel",
+      "hex": "#f3a74e"
+    },
+    {
+      "nummer": 1018,
+      "naam": "Zinkgeel",
+      "hex": "#f3da0b"
+    },
+    {
+      "nummer": 1019,
+      "naam": "Grijsbeige",
+      "hex": "#a28d76"
+    },
+    {
+      "nummer": 1020,
+      "naam": "Olijfgeel",
+      "hex": "#a08d60"
+    },
+    {
+      "nummer": 1021,
+      "naam": "Koolzaadgeel",
+      "hex": "#f0b200"
+    },
+    {
+      "nummer": 1023,
+      "naam": "Verkeersgeel",
+      "hex": "#f3b300"
+    },
+    {
+      "nummer": 1024,
+      "naam": "Okergeel",
+      "hex": "#b88e4a"
+    },
+    {
+      "nummer": 1027,
+      "naam": "Kerriegeel",
+      "hex": "#a67d07"
+    },
+    {
+      "nummer": 1028,
+      "naam": "Meloengeel",
+      "hex": "#ff9800"
+    },
+    {
+      "nummer": 1032,
+      "naam": "Bremgeel",
+      "hex": "#dea000"
+    },
+    {
+      "nummer": 1033,
+      "naam": "Dahliageel",
+      "hex": "#f59817"
+    },
+    {
+      "nummer": 1034,
+      "naam": "Pastelgeel",
+      "hex": "#e79b52"
+    },
+    {
+      "nummer": 1037,
+      "naam": "Zonnegeel",
+      "hex": "#eb8f00"
+    },
+    {
+      "nummer": 2000,
+      "naam": "Geeloranje",
+      "hex": "#d66d00"
+    },
+    {
+      "nummer": 2001,
+      "naam": "Roodoranje",
+      "hex": "#b8481e"
+    },
+    {
+      "nummer": 2002,
+      "naam": "Vermiljoen",
+      "hex": "#bc341b"
+    },
+    {
+      "nummer": 2003,
+      "naam": "Pasteloranje",
+      "hex": "#f3782a"
+    },
+    {
+      "nummer": 2004,
+      "naam": "Zuiver Oranje",
+      "hex": "#e25303"
+    },
+    {
+      "nummer": 2008,
+      "naam": "Licht roodoranje",
+      "hex": "#ea6717"
+    },
+    {
+      "nummer": 2009,
+      "naam": "Verkeersoranje",
+      "hex": "#d95000"
+    },
+    {
+      "nummer": 2010,
+      "naam": "Signaaloranje",
+      "hex": "#c9571a"
+    },
+    {
+      "nummer": 2011,
+      "naam": "Dieporanje",
+      "hex": "#df6e13"
+    },
+    {
+      "nummer": 2012,
+      "naam": "Zalmoranje",
+      "hex": "#d26147"
+    },
+    {
+      "nummer": 3000,
+      "naam": "Vuurrood",
+      "hex": "#a3291f"
+    },
+    {
+      "nummer": 3001,
+      "naam": "Signaalrood",
+      "hex": "#9b2423"
+    },
+    {
+      "nummer": 3002,
+      "naam": "Karmijnrood",
+      "hex": "#9b1e1d"
+    },
+    {
+      "nummer": 3003,
+      "naam": "Robijnrood",
+      "hex": "#84171e"
+    },
+    {
+      "nummer": 3004,
+      "naam": "Purperrood",
+      "hex": "#6b1b23"
+    },
+    {
+      "nummer": 3005,
+      "naam": "Wijnrood",
+      "hex": "#5e2129"
+    },
+    {
+      "nummer": 3007,
+      "naam": "Zwartrood",
+      "hex": "#3f2324"
+    },
+    {
+      "nummer": 3009,
+      "naam": "Oxyderood",
+      "hex": "#6b3027"
+    },
+    {
+      "nummer": 3011,
+      "naam": "Bruinrood",
+      "hex": "#76201f"
+    },
+    {
+      "nummer": 3012,
+      "naam": "Beigerood",
+      "hex": "#c3836b"
+    },
+    {
+      "nummer": 3020,
+      "naam": "Verkeersrood",
+      "hex": "#c1121c"
+    },
+    {
+      "nummer": 4004,
+      "naam": "Bordeauxpaars",
+      "hex": "#641f38"
+    },
+    {
+      "nummer": 4005,
+      "naam": "Blauwlila",
+      "hex": "#6c4675"
+    },
+    {
+      "nummer": 5010,
+      "naam": "Gentiaanblauw",
+      "hex": "#0e4c92"
+    },
+    {
+      "nummer": 5011,
+      "naam": "Staalblauw",
+      "hex": "#1a2b3c"
+    },
+    {
+      "nummer": 5012,
+      "naam": "Lichtblauw",
+      "hex": "#3b83bd"
+    },
+    {
+      "nummer": 5014,
+      "naam": "Duifblauw",
+      "hex": "#606e8c"
+    },
+    {
+      "nummer": 5015,
+      "naam": "Hemelsblauw",
+      "hex": "#2271b3"
+    },
+    {
+      "nummer": 5020,
+      "naam": "Oceaanblauw",
+      "hex": "#1b5583"
+    },
+    {
+      "nummer": 5024,
+      "naam": "Pastelblauw",
+      "hex": "#5d9b9b"
+    },
+    {
+      "nummer": 6005,
+      "naam": "Mosgroen",
+      "hex": "#2f4538"
+    },
+    {
+      "nummer": 6009,
+      "naam": "Dennengroen",
+      "hex": "#27352a"
+    },
+    {
+      "nummer": 6011,
+      "naam": "Resedagroen",
+      "hex": "#587246"
+    },
+    {
+      "nummer": 6018,
+      "naam": "Geelgroen",
+      "hex": "#57a639"
+    },
+    {
+      "nummer": 6019,
+      "naam": "Pastelgroen",
+      "hex": "#bdecb6"
+    },
+    {
+      "nummer": 7011,
+      "naam": "IJzergrijs",
+      "hex": "#52595d"
+    },
+    {
+      "nummer": 7012,
+      "naam": "Basaltgrijs",
+      "hex": "#575d5e"
+    },
+    {
+      "nummer": 7015,
+      "naam": "Leigrijs",
+      "hex": "#434b4d"
+    },
+    {
+      "nummer": 7016,
+      "naam": "Antracietgrijs",
+      "hex": "#383e42"
+    },
+    {
+      "nummer": 7021,
+      "naam": "Zwartgrijs",
+      "hex": "#23282b"
+    },
+    {
+      "nummer": 7024,
+      "naam": "Grafietgrijs",
+      "hex": "#45494e"
+    },
+    {
+      "nummer": 7035,
+      "naam": "Lichtgrijs",
+      "hex": "#cbd0cc"
+    },
+    {
+      "nummer": 7037,
+      "naam": "Stofgrijs",
+      "hex": "#7d7f7d"
+    },
+    {
+      "nummer": 7038,
+      "naam": "Agaatgrijs",
+      "hex": "#b5b8b1"
+    },
+    {
+      "nummer": 7040,
+      "naam": "Venstergrijs",
+      "hex": "#9da3a6"
+    },
+    {
+      "nummer": 7044,
+      "naam": "Zijdegrijs",
+      "hex": "#cac4b0"
+    },
+    {
+      "nummer": 8003,
+      "naam": "Kleibruin",
+      "hex": "#734222"
+    },
+    {
+      "nummer": 8011,
+      "naam": "Notenbruin",
+      "hex": "#5a3a29"
+    },
+    {
+      "nummer": 8017,
+      "naam": "Chocoladebruin",
+      "hex": "#45322e"
+    },
+    {
+      "nummer": 9001,
+      "naam": "Gebroken Wit",
+      "hex": "#e9e0d2"
+    },
+    {
+      "nummer": 9002,
+      "naam": "Grijswit",
+      "hex": "#e7ebda"
+    },
+    {
+      "nummer": 9003,
+      "naam": "Signaalwit",
+      "hex": "#f4f8f4"
+    },
+    {
+      "nummer": 9005,
+      "naam": "Gitzwart",
+      "hex": "#0a0a0a"
+    },
+    {
+      "nummer": 9010,
+      "naam": "Zuiver Wit",
+      "hex": "#f1ece1"
+    },
+    {
+      "nummer": 9012,
+      "naam": "Ultrareine Zone Wit",
+      "hex": "#f0efdd"
+    },
+    {
+      "nummer": 9016,
+      "naam": "Verkeerswit",
+      "hex": "#f1f0ea"
+    }
+  ]
+}

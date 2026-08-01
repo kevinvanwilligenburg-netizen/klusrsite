@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Palette, ArrowRight } from "lucide-react";
 import { colorCollections, allColors, isLightColor } from "@/lib/data/colors";
 import { cn } from "@/lib/utils";
+import { ralKleuren } from "@/lib/data/ral";
 
 export const metadata: Metadata = {
   title: "Alle verfkleuren & kleurcollecties — op kleur gemengd",
@@ -52,6 +53,35 @@ export default function KleurenPage() {
       </nav>
 
       <div className="mt-10 space-y-12">
+        {/* RAL is de enige kleurreeks waar mensen op códe zoeken ("RAL 7016
+            verf"), dus die krijgt een eigen ingang met een pagina per kleur.
+            Voor merkkleuren doen we dat bewust niet: 54.222 bijna-identieke
+            pagina's is thin content. */}
+        <Link
+          href="/kleuren/ral"
+          className="flex items-center justify-between gap-4 rounded-2xl border border-primary/30 bg-primary/5 p-4 transition-colors hover:bg-primary/10"
+        >
+          <span className="min-w-0">
+            <span className="block text-lg font-black tracking-tight">
+              Zoek op RAL-code
+            </span>
+            <span className="mt-0.5 block text-sm text-muted-foreground">
+              {ralKleuren.length} RAL-kleuren, elk met de verf waarin wij hem mengen.
+            </span>
+          </span>
+          <span className="flex shrink-0 -space-x-2">
+            {ralKleuren.slice(0, 5).map((k) => (
+              <span
+                key={k.nummer}
+                className="h-9 w-9 rounded-full border-2 border-card shadow-sm"
+                style={{ backgroundColor: k.hex }}
+                aria-hidden
+              />
+            ))}
+          </span>
+          <ArrowRight className="hidden h-5 w-5 shrink-0 text-primary sm:block" />
+        </Link>
+
         {colorCollections.map((coll) => (
           <section key={coll.id} id={coll.id} className="scroll-mt-24">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
