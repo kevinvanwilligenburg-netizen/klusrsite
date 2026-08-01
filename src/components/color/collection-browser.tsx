@@ -40,6 +40,26 @@ function letterVan(naam: string): string {
   return /[A-Z]/.test(c) ? c : "#";
 }
 
+/**
+ * Collecties die vóór het alfabet blijven staan.
+ *
+ * Strikt alfabetisch zette "Populair 2026" tussen de P's en RAL tussen de R's,
+ * terwijl dat precies de twee zijn waar de meeste mensen voor komen — de rest
+ * van de 257 is naslagwerk. Overgenomen van de VDM-webshop, die het meteen zo
+ * heeft gebouwd.
+ *
+ * Matchen op naam en niet op id: onze eigen set gebruikt "populair-2026" en
+ * "ral-classic", maar zodra de portalfeed binnen is komen dezelfde waaiers
+ * onder de id's van het dashboard binnen ("RAL Design", "RAL kleuren").
+ * Bewust géén match op "… to RAL"/"RAL to ACC": dat zijn Sikkens- en
+ * Trimetal-omzettabellen, geen RAL-waaier.
+ */
+const VAST_BOVENAAN = [/^populair/i, /^ral\b/i];
+
+function isVastgepind(naam: string): boolean {
+  return VAST_BOVENAAN.some((re) => re.test(naam.trim()));
+}
+
 export function CollectionBrowser({
   collections,
   open,
@@ -82,14 +102,22 @@ export function CollectionBrowser({
   );
 
   const groepen = useMemo(() => {
+    const vast: ColorCollection[] = [];
     const map = new Map<string, ColorCollection[]>();
     for (const c of zichtbaar) {
+      if (isVastgepind(c.name)) {
+        vast.push(c);
+        continue;
+      }
       const l = letterVan(c.name);
       const lijst = map.get(l);
       if (lijst) lijst.push(c);
       else map.set(l, [c]);
     }
-    return [...map.entries()];
+    // De vastgepinde groep krijgt een eigen kop en staat vóór het alfabet.
+    return vast.length
+      ? ([["★", vast], ...map.entries()] as [string, ColorCollection[]][])
+      : [...map.entries()];
   }, [zichtbaar]);
 
   // Letters die daadwerkelijk een groep hebben — de rest tonen we gedimd, zodat
@@ -97,8 +125,13 @@ export function CollectionBrowser({
   const aanwezig = useMemo(() => new Set(groepen.map(([l]) => l)), [groepen]);
   const alleLetters = useMemo(() => {
     const uit = new Set<string>();
-    for (const c of gesorteerd) uit.add(letterVan(c.name));
-    return [...uit].sort();
+    let vast = false;
+    for (const c of gesorteerd) {
+      if (isVastgepind(c.name)) vast = true;
+      else uit.add(letterVan(c.name));
+    }
+    const letters = [...uit].sort();
+    return vast ? ["★", ...letters] : letters;
   }, [gesorteerd]);
 
   const totaalKleuren = useMemo(
@@ -190,7 +223,7 @@ export function CollectionBrowser({
                   className="scroll-mt-2"
                 >
                   <h3 className="sticky top-0 z-10 -mx-1 bg-background/95 px-1 py-1.5 text-xs font-black uppercase tracking-wider text-primary backdrop-blur">
-                    {letter}
+                    {letter === "★" ? "Meest gekozen" : letter}
                   </h3>
                   <ul className="mb-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                     {lijst.map((c) => {
