@@ -114,6 +114,12 @@ export async function createPayment(
     redirectUrl: `${base}/bedankt?order=${input.orderId}`,
     webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${base}/api/checkout/webhook`,
     metadata: { orderId: input.orderId, reference: input.reference },
+    // Expliciete locale. Zonder dit leidt Mollie 'm af uit de browser, en bij
+    // achteraf-betalen bepaalt de locale in welke markt Klarna de aanvraag doet
+    // — een bezoeker met een niet-Nederlandse browsertaal kan daardoor op een
+    // Klarna-variant belanden die voor dit profiel niet geautoriseerd wordt. De
+    // VDM-webshop stuurt 'm wél mee en heeft dit probleem niet.
+    locale: "nl_NL",
     ...(mollieMethod ? { method: mollieMethod } : {}),
   };
   // iDEAL: vooraf gekozen bank meesturen → klant gaat direct naar de juiste bank.
@@ -126,7 +132,27 @@ export async function createPayment(
   // Factuuradres + order-regels (Klarna e.d.).
   if (input.billingAddress) params.billingAddress = input.billingAddress;
   if (input.lines && input.lines.length) params.lines = input.lines;
-  const payment = await mollie.payments.create(params as never);
+
+  let payment;
+  try {
+    payment = await mollie.payments.create(params as never);
+  } catch (err) {
+    // Methode niet actief in het Mollie-profiel, of tijdelijk niet beschikbaar:
+    // daar mag een bestelling niet op stuklopen. Zonder `method` toont Mollie
+    // zijn eigen keuzescherm — een extra klik voor de klant, in plaats van een
+    // checkout die met een 500 eindigt. Overgenomen van de VDM-webshop, waar
+    // deze terugval al langer draait.
+    const status = (err as { statusCode?: number })?.statusCode;
+    if (mollieMethod && status && status >= 400 && status < 500) {
+      console.warn(
+        `[mollie] methode "${mollieMethod}" geweigerd (${status}) — opnieuw zonder methode`,
+      );
+      const { method: _weg, ...zonderMethode } = params;
+      payment = await mollie.payments.create(zonderMethode as never);
+    } else {
+      throw err;
+    }
+  }
 
   return {
     checkoutUrl: payment.getCheckoutUrl() ?? `${base}/bedankt?order=${input.orderId}`,
