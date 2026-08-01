@@ -7,6 +7,7 @@ import {
   klushulpTasks,
 } from "@/lib/data";
 import { brands } from "@/lib/data/brands";
+import { ralKleuren, ralSlug } from "@/lib/data/ral";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
@@ -69,10 +70,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...brands.map((b) => entry(`/merk/${b.slug}`, { priority: 0.7 })),
   ];
 
+  // RAL-kleurpagina's: sterke landingspagina's voor kleur-zoekopdrachten
+  // ("RAL 7016 verf"). Bewust alleen RAL en niet elke merkkleur — de portalfeed
+  // heeft er 54.222, en zoveel bijna-identieke pagina's straft Google af.
+  const ralPages: MetadataRoute.Sitemap = [
+    entry("/kleuren/ral", { priority: 0.6 }),
+    ...ralKleuren.map((k) => entry(`/kleuren/${ralSlug(k)}`, { priority: 0.6 })),
+  ];
+
   return [
     ...staticPages,
     ...categoryPages,
     ...brandPages,
+    ...ralPages,
     ...productPages,
     ...articlePages,
     ...klusPages,
