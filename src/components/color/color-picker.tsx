@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Search, X } from "lucide-react";
+import { Check, LayoutGrid, Search, X } from "lucide-react";
 import type { SelectedColor } from "@/types";
 import { colorCollections, popularColors2026, allColors, isLightColor } from "@/lib/data/colors";
 import { fetchPortalColors } from "@/lib/portal-colors";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/tracking";
 import { formatPrice, cn } from "@/lib/utils";
+import { CollectionBrowser } from "./collection-browser";
 
 interface ColorPickerProps {
   value?: SelectedColor;
@@ -34,6 +35,7 @@ export function ColorPicker({
   const [activeCollection, setActiveCollection] = useState(colorCollections[0].id);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<SelectedColor | undefined>(value);
+  const [browserOpen, setBrowserOpen] = useState(false);
 
   // Live kleuren uit de portal (Gamma/AkzoNobel/RAL); terugval op gecureerde set.
   useEffect(() => {
@@ -52,6 +54,18 @@ export function ColorPicker({
       active = false;
     };
   }, []);
+
+  /**
+   * De pillen die in de strip blijven staan: de eerste paar collecties
+   * ("Populair 2026" en de grote waaiers) plus de actieve, zodat je altijd ziet
+   * waar je bent — ook als die uit het volledige overzicht komt. De rest zit
+   * achter de "Alle …"-knop.
+   */
+  const snelkoppelingen = useMemo(() => {
+    const eerste = collections.slice(0, 6);
+    const actief = collections.find((c) => c.id === activeCollection);
+    return actief && !eerste.some((c) => c.id === actief.id) ? [...eerste, actief] : eerste;
+  }, [collections, activeCollection]);
 
   const allColors = useMemo(() => collections.flatMap((c) => c.colors), [collections]);
   const q = query.trim().toLowerCase();
@@ -158,6 +172,13 @@ export function ColorPicker({
 
   return (
     <div className={cn("flex min-h-0 flex-col overflow-hidden bg-card", className)}>
+      <CollectionBrowser
+        collections={collections}
+        activeId={activeCollection}
+        onPick={openCollection}
+        open={browserOpen}
+        onOpenChange={setBrowserOpen}
+      />
       {/* Sticky: zoeken + collectie-pills */}
       <div className="shrink-0 space-y-3 border-b border-border px-4 pb-3 pt-4">
         <div className="relative">
@@ -183,7 +204,20 @@ export function ColorPicker({
 
         {!q && (
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 no-scrollbar">
-            {collections.map((c) => {
+            {/* Knop naar het volledige overzicht staat vóóraan: met 245
+                collecties uit de portalfeed is de strip zelf geen bruikbare
+                index meer — daarin swipe je op mobiel eindeloos. Hier staan
+                alleen de eerste paar plus de actieve, zodat één tik altijd
+                genoeg is om de rest te zien. */}
+            <button
+              type="button"
+              onClick={() => setBrowserOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/10"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Alle {collections.length}
+            </button>
+            {snelkoppelingen.map((c) => {
               const active = activeCollection === c.id;
               return (
                 <button
