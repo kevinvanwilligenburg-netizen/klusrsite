@@ -12,6 +12,7 @@ import {
   supportConfirmationEmail,
   supportTeamNotificationEmail,
   supportReplyEmail,
+  voucherHerinneringEmail,
 } from "./templates";
 
 /** Inbox van de klantenservice (waar contactformulier-meldingen heen gaan). */
@@ -139,5 +140,17 @@ export async function sendSupportReply(input: {
   body: string;
 }): Promise<SendEmailResult> {
   const { subject, html, text } = supportReplyEmail(input.name ?? "", input.reference, input.body);
+  return sendEmail({ to: input.email, subject, html, text });
+}
+
+/** Herinnering aan een openstaand kleurtester-tegoed (cron, na 14 dagen). */
+export async function sendVoucherHerinnering(input: {
+  email: string;
+  naam?: string;
+  code: string;
+  bedrag: number;
+  verlooptOp: string;
+}): Promise<SendEmailResult> {
+  const { subject, html, text } = voucherHerinneringEmail(input);
   return sendEmail({ to: input.email, subject, html, text });
 }

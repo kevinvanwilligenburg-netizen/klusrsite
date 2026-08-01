@@ -6,6 +6,7 @@ import { getSafetyStock } from "@/lib/store/settings";
 import { getSoldFor, getAdjustFor, liveStock } from "@/lib/store/stock-ledger";
 import TILROY_SHOPS from "@/lib/data/tilroy-shops.json";
 import { VDM_DASHBOARD_BASE } from "@/lib/vdm-dashboard";
+import { isKleurtester } from "@/lib/kleurtester";
 
 /**
  * Live verkoopbare voorraad (Nijverdal) voor de checkout-guard.
@@ -187,6 +188,11 @@ export async function checkStockForItems(items: CartItem[]): Promise<StockShorta
       { variantId: string; base?: PaintBaseSelection; qty: number; title: string }
     >();
     for (const it of items) {
+      // Kleurtesters overslaan: dat is een virtueel artikel dat per bestelling
+      // wordt gemengd, dus er ís geen voorraad van. Zonder deze uitzondering
+      // blokkeert de uitverkocht-logica een artikel dat altijd leverbaar is —
+      // en dan is de tester stilletjes niet te bestellen.
+      if (isKleurtester(it)) continue;
       const variantId = it.variantId || it.productId;
       if (!variantId) continue;
       const base = it.selectedColor?.base;

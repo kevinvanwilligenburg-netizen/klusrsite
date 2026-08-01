@@ -10,6 +10,7 @@ import { addContact, AUDIENCES } from "@/lib/email/audiences";
 import { clearPendingCart } from "@/lib/store/pending-cart";
 import { logEvent } from "@/lib/store/analytics";
 import { recordOrderSale } from "@/lib/store/stock-ledger";
+import { geefVoucherUit } from "@/lib/store/vouchers";
 
 /**
  * Verwerk een betaalde order: schiet hem in Channable (die routeert naar Tilroy)
@@ -20,6 +21,14 @@ export async function fulfillPaidOrder(order: Order): Promise<void> {
   // Voorraad afboeken op het gedeelde grootboek (idempotent per order) — zodat
   // een webverkoop direct meetelt met wat de kassa/voorraad nog beschikbaar ziet.
   void recordOrderSale(order).catch(() => {});
+
+  // Zaten er kleurtesters in? Dan komt dat bedrag terug als tegoed. Bewust hier
+  // en niet bij het plaatsen van de order: anders deel je tegoed uit voor een
+  // bestelling die nooit betaald wordt. De uitgifte is idempotent, want deze
+  // functie draait bij elke statuswijziging die Mollie doorgeeft.
+  void geefVoucherUit(order).catch((e) => {
+    console.warn(`[voucher] uitgeven mislukt voor ${order.id}:`, e);
+  });
 
   if (order.channableStatus === "sent" || order.channableStatus === "demo") return;
 

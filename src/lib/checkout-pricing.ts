@@ -5,6 +5,7 @@ import { profGrossPrice } from "@/lib/pricing";
 import { isBrievenbusOrder } from "@/lib/brievenbus";
 import { shippingForCountry } from "@/lib/shipping";
 import { SAME_DAY_SURCHARGE } from "@/lib/delivery";
+import { isKleurtester, KLEURTESTER_PRIJS } from "@/lib/kleurtester";
 
 /**
  * Server-side prijscontrole voor de checkout.
@@ -36,6 +37,14 @@ export interface PriceCheck {
 
 /** Eenheidsprijzen van een regel volgens de catalogus (incl. basistoeslag). */
 function catalogPrices(item: CartItem): { price: number; kluspasPrice: number } | null {
+  // De kleurtester staat niet in de catalogus — hij is virtueel en wordt per
+  // bestelling gemengd. Zijn prijs staat vast in code, en die is hier de
+  // waarheid. Zonder deze uitzondering vindt getVariantById niets, valt de
+  // regel uit de berekening, klopt het totaal niet meer en weigert de checkout
+  // de héle bestelling met een 409.
+  if (isKleurtester(item)) {
+    return { price: KLEURTESTER_PRIJS, kluspasPrice: KLEURTESTER_PRIJS };
+  }
   const variant = getVariantById(item.variantId || item.productId);
   if (!variant) return null;
   // Mengverf: de gekozen tinting-basis heeft een eigen toeslag per stuk.

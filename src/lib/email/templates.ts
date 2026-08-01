@@ -1307,3 +1307,49 @@ export function newsletterEmail({
     text: textLines.filter((l) => l !== undefined).join("\n"),
   };
 }
+
+/**
+ * Herinnering aan een openstaand kleurtester-tegoed.
+ *
+ * Twee weken na de bestelling: lang genoeg om de tester te hebben uitgeprobeerd,
+ * ruim voor de vervaldatum. Bewust één keer en niet in een reeks — dit is een
+ * dienst aan de klant, geen aanhoudende verkoopmail.
+ */
+export function voucherHerinneringEmail(input: {
+  naam?: string;
+  code: string;
+  bedrag: number;
+  verlooptOp: string;
+}): { subject: string; html: string; text: string } {
+  const hi = input.naam ? `Hoi ${esc(input.naam.split(" ")[0])},` : "Hoi,";
+  const url = `${SITE_URL}/kleurenkiezer`;
+  const datum = new Date(input.verlooptOp).toLocaleDateString("nl-NL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Je hebt nog ${euro(input.bedrag)} tegoed</h1>` +
+    `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">${hi} je bestelde bij ons een kleurtester. Bevalt de kleur? Dan gaat het bedrag van de tester van je verf af — je hebt ${euro(input.bedrag)} tegoed staan.</p>` +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border:2px dashed ${C.border};border-radius:12px;">` +
+    `<tr><td align="center" style="padding:18px;font-family:Arial,Helvetica,sans-serif;">` +
+    `<div style="font-size:12px;font-weight:bold;letter-spacing:1px;color:${C.muted};">JOUW CODE</div>` +
+    `<div style="margin-top:6px;font-size:26px;font-weight:900;letter-spacing:2px;color:${C.text};">${esc(input.code)}</div>` +
+    `<div style="margin-top:8px;font-size:13px;color:${C.muted};">Geldig tot ${esc(datum)}</div>` +
+    `</td></tr></table>` +
+    `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;"><tr><td>${button("Kies je kleur", url)}</td></tr></table>` +
+    `<p style="margin:0;font-size:13px;color:${C.muted};">Je verzilvert het tegoed bij een bestelling met verf die wij op kleur mengen. Nog niet de juiste kleur gevonden? Bestel gerust nog een tester — dat tegoed telt gewoon mee.</p>`;
+  return {
+    subject: `Je hebt nog ${euro(input.bedrag)} tegoed van je kleurtester`,
+    html: layout({
+      title: "Je kleurtester-tegoed staat klaar",
+      preheader: `Code ${input.code} — geldig tot ${datum}.`,
+      content,
+      footerNote: "Je ontvangt dit bericht omdat je een kleurtester bij KLUSR hebt besteld.",
+    }),
+    text:
+      `${hi} je hebt nog ${euro(input.bedrag)} tegoed van je kleurtester.\n` +
+      `Code: ${input.code}\nGeldig tot ${datum}\n\n` +
+      `Je verzilvert het bij een bestelling met verf die wij op kleur mengen: ${url}`,
+  };
+}
