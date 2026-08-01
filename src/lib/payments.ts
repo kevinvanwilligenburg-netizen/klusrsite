@@ -82,6 +82,8 @@ export interface CreatePaymentInput {
   issuer?: string;
   /** Factuuradres — vereist voor Klarna e.d. (pay-later). */
   billingAddress?: Record<string, unknown>;
+  /** Landcode (ISO-2) als er geen factuuradres is; bepaalt de Mollie-locale. */
+  country?: string;
   /** Order-regels — vereist voor Klarna e.d.; moeten exact optellen tot `amount`. */
   lines?: unknown[];
 }
@@ -114,6 +116,18 @@ export async function createPayment(
     redirectUrl: `${base}/bedankt?order=${input.orderId}`,
     webhookUrl: process.env.MOLLIE_WEBHOOK_URL || `${base}/api/checkout/webhook`,
     metadata: { orderId: input.orderId, reference: input.reference },
+    // Expliciete locale, afgeleid uit het factuurland. Zonder locale leidt
+    // Mollie 'm af uit de browser, en juist bij achteraf-betalen bepaalt die in
+    // welke markt Klarna de aanvraag doet.
+    //
+    // Waarom niet gewoon nl_NL: de twee Klarna-betalingen die op 31-07-2026
+    // bleven hangen (tr_YpPVz9fJpA8cMtfSokiUJ en tr_yshLcEBi3E6DbJtQnjiUJ)
+    // waren allebei van een Belgische klant. Een vaste nl_NL zou die op de
+    // Nederlandse Klarna-markt vastpinnen, waar een Belgisch adres niet
+    // doorkomt — dan lost het niets op maar maakt het de zaak erger.
+    locale: localeVoorLand(
+      (input.billingAddress?.country as string | undefined) ?? input.country,
+    ),
     ...(mollieMethod ? { method: mollieMethod } : {}),
   };
   // iDEAL: vooraf gekozen bank meesturen → klant gaat direct naar de juiste bank.
@@ -126,7 +140,27 @@ export async function createPayment(
   // Factuuradres + order-regels (Klarna e.d.).
   if (input.billingAddress) params.billingAddress = input.billingAddress;
   if (input.lines && input.lines.length) params.lines = input.lines;
-  const payment = await mollie.payments.create(params as never);
+
+  let payment;
+  try {
+    payment = await mollie.payments.create(params as never);
+  } catch (err) {
+    // Methode niet actief in het Mollie-profiel, of tijdelijk niet beschikbaar:
+    // daar mag een bestelling niet op stuklopen. Zonder `method` toont Mollie
+    // zijn eigen keuzescherm — een extra klik voor de klant, in plaats van een
+    // checkout die met een 500 eindigt. Overgenomen van de VDM-webshop, waar
+    // deze terugval al langer draait.
+    const status = (err as { statusCode?: number })?.statusCode;
+    if (mollieMethod && status && status >= 400 && status < 500) {
+      console.warn(
+        `[mollie] methode "${mollieMethod}" geweigerd (${status}) — opnieuw zonder methode`,
+      );
+      const { method: _weg, ...zonderMethode } = params;
+      payment = await mollie.payments.create(zonderMethode as never);
+    } else {
+      throw err;
+    }
+  }
 
   return {
     checkoutUrl: payment.getCheckoutUrl() ?? `${base}/bedankt?order=${input.orderId}`,
@@ -357,6 +391,34 @@ export async function listPaymentMethods(
   } catch (err) {
     console.error("[mollie] methods list failed", err);
     return { configured: false, methods: filterMethodsByCountry(fallbackMethods(cc), cc) };
+  }
+}
+
+/**
+ * Mollie-locale bij een landcode.
+ *
+ * Alleen de landen waar wij daadwerkelijk naartoe verzenden en die Mollie
+ * kent; de rest valt terug op nl_NL. Belangrijk voor achteraf-betalen: Klarna
+ * beoordeelt de klant in de markt die bij deze locale hoort, dus een Belgisch
+ * adres hoort nl_BE te krijgen en niet nl_NL.
+ */
+function localeVoorLand(land?: string): string {
+  const code = (land ?? "").trim().toUpperCase().slice(0, 2);
+  switch (code) {
+    case "BE":
+      return "nl_BE";
+    case "DE":
+      return "de_DE";
+    case "FR":
+      return "fr_FR";
+    case "AT":
+      return "de_AT";
+    case "ES":
+      return "es_ES";
+    case "IT":
+      return "it_IT";
+    default:
+      return "nl_NL";
   }
 }
 
