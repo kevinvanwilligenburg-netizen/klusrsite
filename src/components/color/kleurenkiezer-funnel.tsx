@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
+  LayoutGrid,
   Palette,
   Check,
   ArrowRight,
@@ -37,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn, formatPrice } from "@/lib/utils";
 import { trackEvent } from "@/lib/tracking";
+import { CollectionBrowser } from "./collection-browser";
 
 interface Klus {
   id: string;
@@ -266,6 +268,7 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
   );
   const [query, setQuery] = useState("");
   const [color, setColor] = useState<SelectedColor | null>(null);
+  const [browserOpen, setBrowserOpen] = useState(false);
 
   // Live kleuren uit de portal (Gamma/AkzoNobel/RAL …); terugval op gecureerde set.
   useEffect(() => {
@@ -361,6 +364,17 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
     () => (searching ? collections.filter((c) => c.name.toLowerCase().includes(q)) : []),
     [searching, q, collections],
   );
+
+  /**
+   * Wat er in de chip-rij blijft staan: alles wat je al hebt aangevinkt, plus
+   * de eerste paar collecties. De rest zit achter "Alle …" — met 245 stuks was
+   * die rij op mobiel geen keuzehulp meer maar een obstakel.
+   */
+  const stripCollecties = useMemo(() => {
+    const gekozen = collections.filter((c) => activeCollections.has(c.id));
+    const rest = collections.filter((c) => !activeCollections.has(c.id)).slice(0, 5);
+    return [...gekozen, ...rest];
+  }, [collections, activeCollections]);
 
   function toggleCollection(id: string) {
     setActiveCollections((cur) => {
@@ -582,6 +596,14 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
             <>
               {/* Volledige, doorzoekbare collectie-keuze — gesynchroniseerd met de chip-rij */}
               <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <CollectionBrowser
+                  collections={collections}
+                  open={browserOpen}
+                  onOpenChange={setBrowserOpen}
+                  selectedIds={activeCollections}
+                  onToggle={toggleCollection}
+                  onClear={clearCollections}
+                />
                 <CollectiesDropdown
                   collections={collections}
                   selected={activeCollections}
@@ -589,7 +611,22 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
                   onClear={clearCollections}
                 />
                 <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-1 sm:px-0 sm:pb-0">
-                  {collections.map((c) => {
+                  {/* Alle collecties in één beeld. De chip-rij hieronder is met
+                      245 collecties uit de portalfeed geen index meer: op mobiel
+                      swipe je erdoorheen zonder te zien wat er ís, en de
+                      volgorde is grootte-eerst (Benjamin Moore vooraan), niet
+                      alfabetisch. Vandaar dit paneel vóóraan, en daarachter
+                      alleen nog de collecties die je al gekozen hebt plus de
+                      eerste paar. */}
+                  <button
+                    type="button"
+                    onClick={() => setBrowserOpen(true)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3.5 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/10"
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Alle {collections.length}
+                  </button>
+                  {stripCollecties.map((c) => {
                   const on = activeCollections.has(c.id);
                   return (
                     <button
