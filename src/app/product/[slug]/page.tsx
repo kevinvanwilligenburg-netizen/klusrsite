@@ -15,6 +15,7 @@ import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductBuybox } from "@/components/product/product-buybox";
 import { onlineStock, bestVariantStock } from "@/lib/stock";
 import { brandSlugFor } from "@/lib/data/brands";
+import { productFaq } from "@/lib/product-faq";
 import { getSafetyStock } from "@/lib/store/settings";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
@@ -106,10 +107,13 @@ export default async function ProductPage({ params }: { params: { slug: string }
   // Beschikbaarheid voor schema.org: leverbaar zolang één variant voorraad heeft.
   const totalStock = onlineStock(bestVariantStock(product), safetyStock);
 
-  // Prijsrange over alle maten: de Merchant-feed stuurt per maat de NORMALE prijs
-  // (de 5% KLUSRPAS-korting is een ingelogd voordeel en hoort niet in de feed),
-  // dus de structured data moet díe hele range dekken (AggregateOffer) om een
-  // "niet-overeenkomende productprijs" in Google te voorkomen.
+  // Prijsrange over alle maten, zodat de structured data de hele range dekt
+  // (AggregateOffer) en Google geen "niet-overeenkomende productprijs" meldt.
+  //
+  // Let op de samenhang met de feed: die stuurt sinds vandaag `price` = normale
+  // prijs en `sale_price` = KLUSRPAS-prijs. Hier staat bewust de normale prijs,
+  // want dat is wat een uitgelogde bezoeker betaalt en dus wat een crawler op
+  // deze pagina als geldende prijs terugvindt.
   const variantPrices = product.variants
     .map((v) => (v.price > 0 ? v.price : v.kluspasPrice))
     .filter((p) => p > 0);
@@ -203,6 +207,23 @@ export default async function ProductPage({ params }: { params: { slug: string }
     },
   };
 
+  // FAQ-schema, maar alleen voor vragen waarvan de catalogus het antwoord
+  // levert (lib/product-faq.ts). Bij een product zonder specificaties staat er
+  // dus géén leeg FAQPage-blok — Google straft structured data zonder
+  // zichtbare tegenhanger op de pagina af, en verzonnen antwoorden helemaal.
+  const faqItems = productFaq(product);
+  const faqJsonLd = faqItems.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqItems.map((f) => ({
+          "@type": "Question",
+          name: f.vraag,
+          acceptedAnswer: { "@type": "Answer", text: f.antwoord },
+        })),
+      }
+    : null;
+
   return (
     <div className="container-klusr pb-12">
       <ViewItemTracker product={product} />
@@ -213,6 +234,13 @@ export default async function ProductPage({ params }: { params: { slug: string }
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
 
       {/* Main: gallery + buybox */}
       <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">

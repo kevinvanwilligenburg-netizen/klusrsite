@@ -16,6 +16,7 @@ import { StarRating } from "./star-rating";
 import { formatDate } from "@/lib/utils";
 import { getProductReviews } from "@/lib/reviews";
 import { t } from "@/lib/i18n/server";
+import { productFaq } from "@/lib/product-faq";
 
 export function ProductTabs({
   product,
@@ -26,12 +27,21 @@ export function ProductTabs({
 }) {
   const reviews = getProductReviews(product);
   // FAQ-bron: de catalogus-FAQ, of anders de gepubliceerde (AI-)FAQ uit KV.
-  const faqItems: { question: string; answer: string }[] =
+  const redactie: { question: string; answer: string }[] =
     product.faqs && product.faqs.length > 0
       ? product.faqs.map((f) => ({ question: f.question, answer: f.answer }))
       : publishedFaq
         ? parsePublishedFaqs(publishedFaq)
         : [];
+  // Daarnaast vragen die rechtstreeks uit de specificaties komen (rendement,
+  // droogtijd, ondergrond, maten). Die verschijnen alléén als de catalogus het
+  // antwoord levert — zie lib/product-faq.ts. Dubbele vragen vallen af, zodat
+  // een redactievraag altijd wint van de automatische variant.
+  const gesteld = new Set(redactie.map((f) => f.question.trim().toLowerCase()));
+  const uitSpecs = productFaq(product)
+    .filter((f) => !gesteld.has(f.vraag.trim().toLowerCase()))
+    .map((f) => ({ question: f.vraag, answer: f.antwoord }));
+  const faqItems = [...redactie, ...uitSpecs];
   const hasFaq = faqItems.length > 0;
   return (
     <Tabs defaultValue="omschrijving" className="w-full">

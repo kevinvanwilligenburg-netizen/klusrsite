@@ -9,6 +9,7 @@ import {
 import { brands } from "@/lib/data/brands";
 import { ralKleuren, ralSlug } from "@/lib/data/ral";
 import { GIDSEN } from "@/lib/data/gidsen";
+import { ALTERNATIEVEN } from "@/lib/data/merkalternatieven";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
@@ -88,6 +89,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     ...staticPages,
     ...gidsPages,
+    ...ALTERNATIEVEN.map((a) => entry("/vergelijk/" + a.slug, { priority: 0.5 })),
     ...categoryPages,
     ...brandPages,
     ...ralPages,
