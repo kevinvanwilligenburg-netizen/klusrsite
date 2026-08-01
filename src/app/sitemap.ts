@@ -8,6 +8,7 @@ import {
 } from "@/lib/data";
 import { brands } from "@/lib/data/brands";
 import { ralKleuren, ralSlug } from "@/lib/data/ral";
+import { GIDSEN } from "@/lib/data/gidsen";
 
 const BASE = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.klus-r.nl").replace(/\/$/, "");
 
@@ -78,8 +79,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...ralKleuren.map((k) => entry(`/kleuren/${ralSlug(k)}`, { priority: 0.6 })),
   ];
 
+  // Koopgidsen: mikken op "beste muurverf"-achtige zoektermen, waar nu
+  // vergelijkingssites en concurrenten staan.
+  const gidsPages: MetadataRoute.Sitemap = GIDSEN.map((g) =>
+    entry(`/gids/${g.slug}`, { priority: 0.7 }),
+  );
+
   return [
     ...staticPages,
+    ...gidsPages,
     ...categoryPages,
     ...brandPages,
     ...ralPages,
