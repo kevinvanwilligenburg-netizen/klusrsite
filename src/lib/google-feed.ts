@@ -117,43 +117,6 @@ function googleCategoryFor(slug: string): string | undefined {
   return undefined;
 }
 
-/**
- * KLUSRPAS-prijs voor Google, als **loyaliteitsprijs**.
- *
- * De pasprijs is een ingelogd voordeel: een gast ziet 'm wel staan, maar
- * betaalt bij het afrekenen de normale prijs. Daarom mag hij niet als
- * `sale_price` de feed in — dan adverteert Google een bedrag dat een gast op de
- * landingspagina niet krijgt, en dat levert "niet-overeenkomende productprijs"
- * op. Precies die fout is eerder vandaag verholpen.
- *
- * `loyalty_program` is het veld dat Google hiervoor heeft: `price` blijft de
- * gewone prijs (dus de paginacontrole blijft groen), en de pasprijs verschijnt
- * ernaast mét een ledenlabel. Merchant Center suggereert het zelf onder
- * "Show your loyalty program benefits".
- *
- * ⚠️ Werkt alleen als het programma in Merchant Center is aangemaakt en
- * `program_label` + `tier_label` exact overeenkomen met wat daar staat
- * (Instellingen → Loyaliteitsprogramma). Wijken ze af, dan negeert Google het
- * blok stilzwijgend — dezelfde stille faalwijze als bij de categorieën. Beide
- * labels zijn daarom instelbaar via env, zodat ze aan te passen zijn zonder
- * deploy.
- */
-const LOYALTY_PROGRAM = (process.env.GOOGLE_LOYALTY_PROGRAM || "KLUSRPAS").trim();
-const LOYALTY_TIER = (process.env.GOOGLE_LOYALTY_TIER || "KLUSRPAS").trim();
-
-function loyaltyBlok(normaal: number, pasPrijs: number | undefined): string {
-  if (!LOYALTY_PROGRAM || !pasPrijs || !(pasPrijs > 0)) return "";
-  // Geen voordeel = geen ledenprijs tonen; een "korting" van € 0 is misleidend.
-  if (pasPrijs >= normaal) return "";
-  return (
-    `<g:loyalty_program>` +
-    `<g:program_label>${xml(LOYALTY_PROGRAM)}</g:program_label>` +
-    `<g:tier_label>${xml(LOYALTY_TIER)}</g:tier_label>` +
-    `<g:price>${pasPrijs.toFixed(2)} EUR</g:price>` +
-    `</g:loyalty_program>`
-  );
-}
-
 // slug → titel, voor het product_type-pad (bv. "Verf > Binnenlak").
 const catTitle = new Map<string, string>();
 const subTitle = new Map<string, string>();
@@ -265,20 +228,29 @@ function buildItems(locale: Locale, country: string): string {
       .join("");
 
     for (const v of p.variants) {
-      // De feed-prijs is wat een gewone bezoeker betaalt — dus de normale prijs,
-      // niet de KLUSRPAS-prijs. Die pasprijs stond hier eerder bewust in om de
-      // scherpste prijs te adverteren, maar Google verwacht dat iedereen de
-      // getoonde prijs krijgt: een ledenprijs levert "niet-overeenkomende
-      // productprijs"-afwijzingen op, omdat de landingspagina een gast de
-      // normale prijs toont.
+      // `price` = de normale prijs, `sale_price` = de KLUSRPAS-prijs. Google
+      // toont daarmee de pasprijs als dé prijs, met de normale prijs
+      // doorgestreept ernaast.
       //
-      // Is er een échte actie (adviesprijs hoger dan wat je nu betaalt), dan
-      // hoort dat in het price/sale_price-paar: price = van-prijs,
-      // sale_price = wat het nu kost.
+      // Keuze van Kevin, en het risico staat genoteerd: de pasprijs is een
+      // ingelogd voordeel, dus een gast betooft bij het afrekenen de normale
+      // prijs. Google eist in beginsel dat de getoonde prijs voor iedereen
+      // geldt. Wat het houdbaar maakt is dat béide bedragen op de
+      // landingspagina staan — een uitgelogde bezoeker ziet de pasprijs groot
+      // op de PDP ("€ 16,72 met KLUSRPAS") én op de productkaarten. De
+      // geautomatiseerde prijscontrole vindt het bedrag dus terug. Blijkt
+      // Merchant Center er alsnog over te vallen, dan is het loyalty_program-
+      // veld het alternatief (zie git-historie, commit "KLUSRPAS-prijs naar
+      // Google als loyaliteitsprijs").
+      //
+      // De adviesprijs verdwijnt hiermee uit het price-paar: Google heeft maar
+      // twee prijsvelden en `price` hoort de prijs te zijn waarvoor je normaal
+      // verkoopt — dat is de normale prijs, niet de adviesprijs van de
+      // fabrikant.
       const feedPrice = v.price > 0 ? v.price : v.kluspasPrice;
       if (!(feedPrice > 0)) continue;
-      const vanPrijs =
-        v.compareAtPrice != null && v.compareAtPrice > feedPrice ? v.compareAtPrice : null;
+      const pasPrijs =
+        v.kluspasPrice > 0 && v.kluspasPrice < feedPrice ? v.kluspasPrice : null;
       const id = multi ? `${p.id}-${v.id}` : p.id;
       // Verrijkte titel: merk vooraan + glans/kleur/maat als die er nog niet in
       // staan (beter voor Shopping). Zonder dubbeling.
@@ -308,9 +280,9 @@ function buildItems(locale: Locale, country: string): string {
         `<g:image_link>${xml(image)}</g:image_link>`,
         extraImages,
         `<g:availability>${inStock ? "in_stock" : "out_of_stock"}</g:availability>`,
-        // Actie? Dan is de adviesprijs de van-prijs en feedPrice de actieprijs.
-        vanPrijs
-          ? `<g:price>${vanPrijs.toFixed(2)} EUR</g:price><g:sale_price>${feedPrice.toFixed(2)} EUR</g:sale_price>`
+        // Pasprijs als actieprijs; zonder pasvoordeel alleen de normale prijs.
+        pasPrijs
+          ? `<g:price>${feedPrice.toFixed(2)} EUR</g:price><g:sale_price>${pasPrijs.toFixed(2)} EUR</g:sale_price>`
           : `<g:price>${feedPrice.toFixed(2)} EUR</g:price>`,
         brand ? `<g:brand>${xml(brand)}</g:brand>` : "",
         gtin ? `<g:gtin>${xml(gtin)}</g:gtin>` : "",
@@ -322,7 +294,6 @@ function buildItems(locale: Locale, country: string): string {
         multi && v.label && v.label !== "Standaard" ? `<g:size>${xml(v.label)}</g:size>` : "",
         highlights,
         `<g:shipping><g:country>${xml(country)}</g:country><g:service>Standaard</g:service><g:price>${shipCost.toFixed(2)} EUR</g:price></g:shipping>`,
-        loyaltyBlok(feedPrice, v.kluspasPrice),
       ];
       out.push(`<item>${fields.filter(Boolean).join("")}</item>`);
     }
