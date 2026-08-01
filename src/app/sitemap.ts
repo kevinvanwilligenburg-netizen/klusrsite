@@ -88,6 +88,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticPages,
+    entry("/winkels", { priority: 0.7 }),
     ...gidsPages,
     ...ALTERNATIEVEN.map((a) => entry("/vergelijk/" + a.slug, { priority: 0.5 })),
     ...categoryPages,
