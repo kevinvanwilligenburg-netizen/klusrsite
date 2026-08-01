@@ -117,6 +117,43 @@ function googleCategoryFor(slug: string): string | undefined {
   return undefined;
 }
 
+/**
+ * KLUSRPAS-prijs voor Google, als **loyaliteitsprijs**.
+ *
+ * De pasprijs is een ingelogd voordeel: een gast ziet 'm wel staan, maar
+ * betaalt bij het afrekenen de normale prijs. Daarom mag hij niet als
+ * `sale_price` de feed in — dan adverteert Google een bedrag dat een gast op de
+ * landingspagina niet krijgt, en dat levert "niet-overeenkomende productprijs"
+ * op. Precies die fout is eerder vandaag verholpen.
+ *
+ * `loyalty_program` is het veld dat Google hiervoor heeft: `price` blijft de
+ * gewone prijs (dus de paginacontrole blijft groen), en de pasprijs verschijnt
+ * ernaast mét een ledenlabel. Merchant Center suggereert het zelf onder
+ * "Show your loyalty program benefits".
+ *
+ * ⚠️ Werkt alleen als het programma in Merchant Center is aangemaakt en
+ * `program_label` + `tier_label` exact overeenkomen met wat daar staat
+ * (Instellingen → Loyaliteitsprogramma). Wijken ze af, dan negeert Google het
+ * blok stilzwijgend — dezelfde stille faalwijze als bij de categorieën. Beide
+ * labels zijn daarom instelbaar via env, zodat ze aan te passen zijn zonder
+ * deploy.
+ */
+const LOYALTY_PROGRAM = (process.env.GOOGLE_LOYALTY_PROGRAM || "KLUSRPAS").trim();
+const LOYALTY_TIER = (process.env.GOOGLE_LOYALTY_TIER || "KLUSRPAS").trim();
+
+function loyaltyBlok(normaal: number, pasPrijs: number | undefined): string {
+  if (!LOYALTY_PROGRAM || !pasPrijs || !(pasPrijs > 0)) return "";
+  // Geen voordeel = geen ledenprijs tonen; een "korting" van € 0 is misleidend.
+  if (pasPrijs >= normaal) return "";
+  return (
+    `<g:loyalty_program>` +
+    `<g:program_label>${xml(LOYALTY_PROGRAM)}</g:program_label>` +
+    `<g:tier_label>${xml(LOYALTY_TIER)}</g:tier_label>` +
+    `<g:price>${pasPrijs.toFixed(2)} EUR</g:price>` +
+    `</g:loyalty_program>`
+  );
+}
+
 // slug → titel, voor het product_type-pad (bv. "Verf > Binnenlak").
 const catTitle = new Map<string, string>();
 const subTitle = new Map<string, string>();
@@ -285,6 +322,7 @@ function buildItems(locale: Locale, country: string): string {
         multi && v.label && v.label !== "Standaard" ? `<g:size>${xml(v.label)}</g:size>` : "",
         highlights,
         `<g:shipping><g:country>${xml(country)}</g:country><g:service>Standaard</g:service><g:price>${shipCost.toFixed(2)} EUR</g:price></g:shipping>`,
+        loyaltyBlok(feedPrice, v.kluspasPrice),
       ];
       out.push(`<item>${fields.filter(Boolean).join("")}</item>`);
     }
