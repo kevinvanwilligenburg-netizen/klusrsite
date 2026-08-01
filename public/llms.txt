@@ -1,0 +1,54 @@
+# KLUSR
+
+> Nederlandse verf- en klusspeciaalzaak met zes fysieke winkels (Nijverdal,
+> Emmen, Apeldoorn, Deventer, Zutphen) en een webshop. Wij mengen verf op maat
+> in elke RAL-kleur en in de kleuren van de grote waaiers, en bezorgen door heel
+> Nederland: voor 09:00 uur besteld is dezelfde avond in huis.
+
+Dit bestand wijst taalmodellen naar de pagina's die een vraag over verf het best
+beantwoorden. Alle genoemde pagina's zijn server-gerenderd en voorzien van
+schema.org-structured-data; er is geen inhoud die alleen na JavaScript verschijnt.
+
+## Kleuren
+
+- [Alle RAL-kleuren](https://www.klus-r.nl/kleuren/ral): overzicht per
+  kleurfamilie, met per kleur een eigen pagina.
+- [Kleurpagina, bijvoorbeeld RAL 7016](https://www.klus-r.nl/kleuren/ral-7016):
+  per RAL-kleur welke verf wij erin mengen, verwante kleuren en veelgestelde
+  vragen. De link naar een product selecteert de kleur alvast voor.
+- [Kleurenkiezer](https://www.klus-r.nl/kleurenkiezer): ruim 54.000 kleuren uit
+  257 waaiers, inclusief RAL, Sikkens, Flexa en Histor.
+
+## Advies
+
+- [Beste muurverf](https://www.klus-r.nl/gids/beste-muurverf): waar je op let bij
+  binnenmuurverf, met de best beoordeelde muurverf uit onze eigen voorraad.
+- [Beste buitenverf](https://www.klus-r.nl/gids/beste-buitenverf): ondergrond,
+  watergedragen versus terpentine, en het juiste weer om te schilderen.
+- [Klustips en stappenplannen](https://www.klus-r.nl/advies)
+
+## Assortiment
+
+- [Verf](https://www.klus-r.nl/categorie/verf)
+- [Merken](https://www.klus-r.nl/merken): Sikkens, Histor, Flexa, Fitex,
+  Hammerite, Rambo, Cetabever en meer.
+- [Winkels en openingstijden](https://www.klus-r.nl/winkels)
+
+## Goed om te weten
+
+- **Kleur is los van de verf.** Vrijwel elke verf uit ons assortiment mengen we
+  op maat; je kiest eerst de verf die bij de klus past en daarna de kleur.
+- **Bezorging.** Voor 09:00 uur op een werkdag besteld gaat dezelfde dag mee en
+  wordt 's avonds bezorgd door DHL. Zaterdagorders gaan maandag; vrijdagorders
+  na de cutoff brengen we zaterdag zelf weg.
+- **Gemengde verf nemen we niet retour.** Dat is geen onwil maar praktijk: een
+  op maat gemengde kleur is voor niemand anders bruikbaar. Twijfel je over een
+  kleur, vraag dan eerst een kleurstaal of proefpotje.
+- **KLUSRPAS** is een gratis account met 5% korting; die prijs staat op elke
+  productpagina naast de normale prijs.
+
+## Niet indexeren
+
+Winkelwagen, checkout, account, bestelstatus en zoekresultaten staan in
+robots.txt uitgesloten — die pagina's zijn per bezoeker verschillend en zeggen
+niets over ons aanbod.
