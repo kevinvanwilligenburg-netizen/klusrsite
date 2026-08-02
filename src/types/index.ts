@@ -301,6 +301,12 @@ export interface Order {
   confirmationSentAt?: string;
   /** Tijdstip waarop het reviewverzoek is verstuurd (~3 dagen na verzending). */
   reviewRequestedAt?: string;
+  /**
+   * Wanneer de "je pakket is onderweg"-mail is verstuurd. Stempel voor de
+   * verzendwebhook van het dashboard: die mag opnieuw aanroepen als wij even
+   * plat lagen, maar dezelfde klant mag dat niet twee keer horen.
+   */
+  shippedMailSentAt?: string;
   /** Verzending (PostNL-label). */
   shipment?: {
     /**
