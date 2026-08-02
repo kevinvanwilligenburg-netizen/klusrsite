@@ -1307,3 +1307,56 @@ export function newsletterEmail({
     text: textLines.filter((l) => l !== undefined).join("\n"),
   };
 }
+
+/**
+ * Bevestiging dat een bestelling is geannuleerd en het geld terugkomt.
+ *
+ * Het bedrag komt mee uit het dashboard, dat de terugbetaling bij Mollie doet.
+ * We noemen het expliciet: "je krijgt geld terug" zonder bedrag roept precies de
+ * telefoontjes op die je met één zin voorkomt.
+ */
+export function annuleringEmail(input: {
+  order: Order;
+  reden?: string;
+  terugbetaald?: number;
+}): { subject: string; html: string; text: string } {
+  const o = input.order;
+  const hi = o.customer.firstName ? `Hoi ${esc(o.customer.firstName)},` : "Hoi,";
+  const regels = o.items
+    .slice(0, 10)
+    .map(
+      (it) =>
+        `<tr><td style="padding:8px 0;border-bottom:1px solid ${C.border};font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${C.text};">${esc(it.title)}${it.quantity > 1 ? ` <span style="color:${C.muted};">× ${it.quantity}</span>` : ""}</td></tr>`,
+    )
+    .join("");
+  const bedrag =
+    typeof input.terugbetaald === "number" && input.terugbetaald > 0
+      ? `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">We hebben <strong>${euro(input.terugbetaald)}</strong> teruggestort op de rekening waarmee je betaalde. Afhankelijk van je bank staat dat er binnen enkele werkdagen op.</p>`
+      : "";
+  const waarom = input.reden
+    ? `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">Reden: ${esc(input.reden)}.</p>`
+    : "";
+  const content =
+    `<h1 style="margin:0 0 12px;font-size:22px;font-weight:900;color:${C.text};">Je bestelling is geannuleerd</h1>` +
+    `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">${hi} we hebben bestelling <strong>${esc(o.reference)}</strong> geannuleerd.</p>` +
+    waarom +
+    bedrag +
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">${regels}</table>` +
+    `<p style="margin:0;font-size:13px;color:${C.muted};">Klopt er iets niet, of wil je alsnog iets bestellen? Mail of bel ons gerust — we helpen je graag verder.</p>`;
+  return {
+    subject: `Bestelling ${o.reference} is geannuleerd`,
+    html: layout({
+      title: "Je bestelling is geannuleerd",
+      preheader: `Bestelling ${o.reference} is geannuleerd.`,
+      content,
+      footerNote: "Je ontvangt dit bericht omdat je een bestelling bij KLUSR had staan.",
+    }),
+    text:
+      `${hi} we hebben bestelling ${o.reference} geannuleerd.\n` +
+      (input.reden ? `Reden: ${input.reden}\n` : "") +
+      (typeof input.terugbetaald === "number" && input.terugbetaald > 0
+        ? `Teruggestort: ${euro(input.terugbetaald)}\n`
+        : "") +
+      o.items.map((it) => `- ${it.title}${it.quantity > 1 ? ` x${it.quantity}` : ""}`).join("\n"),
+  };
+}
