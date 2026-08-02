@@ -307,6 +307,8 @@ export interface Order {
    * plat lagen, maar dezelfde klant mag dat niet twee keer horen.
    */
   shippedMailSentAt?: string;
+  /** Wanneer de annuleringsmail is verstuurd; stempel voor de annuleerwebhook. */
+  canceledMailSentAt?: string;
   /** Verzending (PostNL-label). */
   shipment?: {
     /**

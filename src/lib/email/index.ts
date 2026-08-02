@@ -12,6 +12,7 @@ import {
   supportConfirmationEmail,
   supportTeamNotificationEmail,
   supportReplyEmail,
+  annuleringEmail,
 } from "./templates";
 
 /** Inbox van de klantenservice (waar contactformulier-meldingen heen gaan). */
@@ -140,4 +141,14 @@ export async function sendSupportReply(input: {
 }): Promise<SendEmailResult> {
   const { subject, html, text } = supportReplyEmail(input.name ?? "", input.reference, input.body);
   return sendEmail({ to: input.email, subject, html, text });
+}
+
+/** Meld de klant dat zijn bestelling is geannuleerd en wat er terugkomt. */
+export async function sendAnnulering(input: {
+  order: Order;
+  reden?: string;
+  terugbetaald?: number;
+}): Promise<SendEmailResult> {
+  const { subject, html, text } = annuleringEmail(input);
+  return sendEmail({ to: input.order.customer.email, subject, html, text });
 }

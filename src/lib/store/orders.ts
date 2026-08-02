@@ -357,6 +357,14 @@ export async function markShippedMailSent(orderId: string): Promise<void> {
   await persist(order);
 }
 
+/** Leg vast dat de annuleringsmail eruit is. Alleen na een geslaagde verzending. */
+export async function markCanceledMailSent(orderId: string): Promise<void> {
+  const order = (await loadById(orderId)) ?? seededOrders.find((o) => o.id === orderId);
+  if (!order) return;
+  order.canceledMailSentAt = new Date().toISOString();
+  await persist(order);
+}
+
 /** Seeded example orders for the bestelstatus lookup page. */
 export const seededOrders: Order[] = [
   {

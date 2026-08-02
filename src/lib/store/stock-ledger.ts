@@ -54,6 +54,7 @@ const SOLD_KEY = `stock:sold:${BASELINE}`; // hash: variantId → verkocht sinds
 const ADJUST_KEY = `stock:adjust:${BASELINE}`; // hash: variantId → netto correctie sinds dit ijkpunt
 const MOVES_KEY = "stock:moves"; // lijst met recente voorraadmutaties (gecapt, ijkpunt-overstijgend)
 const claimKey = (orderId: string) => `stock:claimed:${orderId}`;
+const reverseKey = (orderId: string) => `stock:reversed:${orderId}`;
 const MAX_MOVES = 200;
 
 // In-memory fallback (demo / geen KV).
@@ -61,9 +62,10 @@ const memSold = new Map<string, number>();
 const memAdjust = new Map<string, number>();
 const memMoves: StockMovement[] = [];
 const memClaimed = new Set<string>();
+const memReversed = new Set<string>();
 
 /** Soort voorraadmutatie. */
-export type StockMoveKind = "sale" | "receive" | "adjust" | "count";
+export type StockMoveKind = "sale" | "receive" | "adjust" | "count" | "cancel";
 
 export interface StockMovement {
   orderId: string;
@@ -119,6 +121,81 @@ export async function recordOrderSale(order: Order): Promise<void> {
         await kvLPush(MOVES_KEY, move);
       } else {
         memSold.set(it.variantId, (memSold.get(it.variantId) ?? 0) + qty);
+        memMoves.unshift(move);
+        if (memMoves.length > MAX_MOVES) memMoves.length = MAX_MOVES;
+      }
+    }
+    if (isKvEnabled()) await kvLTrim(MOVES_KEY, 0, MAX_MOVES - 1);
+  } catch {
+    /* voorraad-grootboek mag nooit een flow breken */
+  }
+}
+
+/**
+ * Draai een eerdere afboeking terug — bij een annulering of retour.
+ *
+ * Werkt **per regel** en niet per order, ook al roept de annuleerwebhook 'm nu
+ * altijd met alle regels aan. Zo is een deelannulering later een kwestie van
+ * andere invoer in plaats van een herbouw; de dashboard-sessie vroeg er expliciet
+ * om de deur zo open te houden.
+ *
+ * ⚠️ Alleen óns eigen grootboek. De voorraad in Tilroy wordt door het dashboard
+ * teruggedraaid (`POST /orders/{orderId}/cancel`). Zouden wij daar óók aankomen,
+ * dan boeken we dubbel terug en staat er straks meer op voorraad dan er ligt.
+ *
+ * Idempotent per order: de claim van `recordOrderSale` wordt vrijgegeven en
+ * mag maar één keer worden teruggedraaid, want het dashboard kan opnieuw
+ * aanroepen.
+ */
+export async function reverseOrderSale(
+  order: Order,
+  regels?: { variantId: string; quantity: number }[],
+): Promise<void> {
+  try {
+    const teDraaien = (regels ?? order.items).filter((r) => r.variantId && r.quantity > 0);
+    if (!teDraaien.length) return;
+
+    // Alleen terugdraaien wat ook écht is afgeboekt. `recordOrderSale` draait
+    // pas bij een betaalde order, dus een nooit-betaalde bestelling heeft geen
+    // voorraad gekost — die terugdraaien zou stuks uit het niets bijschrijven.
+    const isAfgeboekt =
+      order.paymentStatus === "paid" ||
+      order.paymentStatus === "authorized" ||
+      order.paymentStatus === "shipped" ||
+      order.paymentStatus === "delivered";
+    if (!isAfgeboekt) return;
+
+    // Precies één keer terugdraaien: het dashboard mag opnieuw aanroepen.
+    if (isKvEnabled()) {
+      const nieuw = await kvSetNX(reverseKey(order.id), new Date().toISOString());
+      if (!nieuw) return;
+    } else {
+      if (memReversed.has(order.id)) return;
+      memReversed.add(order.id);
+    }
+
+    const channel = order.channel === "pos" ? "pos" : "web";
+    for (const r of teDraaien) {
+      const qty = Math.max(0, Math.round(r.quantity));
+      if (!qty) continue;
+      const bron = order.items.find((it) => it.variantId === r.variantId);
+      const move: StockMovement = {
+        orderId: order.id,
+        reference: order.reference,
+        variantId: r.variantId,
+        productId: bron?.productId ?? r.variantId,
+        title: bron?.title ?? r.variantId,
+        qty,
+        delta: qty, // positief: komt terug op voorraad
+        kind: "cancel",
+        channel,
+        ts: Date.now(),
+      };
+      if (isKvEnabled()) {
+        await kvHIncrBy(SOLD_KEY, r.variantId, -qty);
+        await kvLPush(MOVES_KEY, move);
+      } else {
+        memSold.set(r.variantId, (memSold.get(r.variantId) ?? 0) - qty);
         memMoves.unshift(move);
         if (memMoves.length > MAX_MOVES) memMoves.length = MAX_MOVES;
       }
