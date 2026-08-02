@@ -345,6 +345,18 @@ export async function setShipped(
   return order;
 }
 
+/**
+ * Leg vast dat de verzendmail eruit is. Alleen aanroepen ná een geslaagde
+ * verzending — anders eet een mailstoring de melding stilzwijgend op en denkt
+ * de verzendwebhook bij een herhaling dat de klant al bericht heeft gehad.
+ */
+export async function markShippedMailSent(orderId: string): Promise<void> {
+  const order = (await loadById(orderId)) ?? seededOrders.find((o) => o.id === orderId);
+  if (!order) return;
+  order.shippedMailSentAt = new Date().toISOString();
+  await persist(order);
+}
+
 /** Seeded example orders for the bestelstatus lookup page. */
 export const seededOrders: Order[] = [
   {
