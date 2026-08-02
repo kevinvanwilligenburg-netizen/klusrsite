@@ -22,6 +22,12 @@ export const dynamic = "force-dynamic";
  *    sleutel en de `molliePaymentId`. Geld op één plek houden betekent één
  *    systeem dat kan terugbetalen en één plek waar de idempotentie zit. Het
  *    bedrag komt hier alleen mee zodat we het in de mail kunnen noemen.
+ *
+ *    ⚠️ `terugbetaald` is wat teruggestort *gaat worden*, niet wat al terug is.
+ *    Het dashboard annuleert eerst in Tilroy, licht dan ons in, en betaalt pás
+ *    daarna terug — Mollie kent geen idempotency-key op refunds, dus twee keer
+ *    posten is twee keer geld terug, en daarom staat de onomkeerbare stap
+ *    achteraan. De klantmail spreekt dus in de toekomende tijd.
  *  - *de voorraad in Tilroy corrigeren.* Dat doet het dashboard met
  *    `POST /orders/{orderId}/cancel`. Zouden wij daar óók aankomen, dan boeken
  *    we dubbel terug en staat er meer op voorraad dan er ligt.

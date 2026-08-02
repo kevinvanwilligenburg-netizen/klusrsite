@@ -1314,6 +1314,15 @@ export function newsletterEmail({
  * Het bedrag komt mee uit het dashboard, dat de terugbetaling bij Mollie doet.
  * We noemen het expliciet: "je krijgt geld terug" zonder bedrag roept precies de
  * telefoontjes op die je met één zin voorkomt.
+ *
+ * ⚠️ Bewust in de toekomende tijd: "je krijgt terug", niet "we hebben
+ * teruggestort". Op het moment dat deze mail de deur uit gaat is het geld nog
+ * niet terug. Het dashboard annuleert eerst in Tilroy, licht dan ons in, en
+ * betaalt pás daarna terug — die volgorde is er omdat Mollie geen
+ * idempotency-key op refunds kent, dus twee keer posten is twee keer geld
+ * terug. Alles wat herstelbaar is gaat dus vóór de onomkeerbare stap. Zou de
+ * refund alsnog stranden, dan hebben wij met "teruggestort" een onwaarheid
+ * gemaild; met "je krijgt terug" klopt de zin in beide gevallen.
  */
 export function annuleringEmail(input: {
   order: Order;
@@ -1331,7 +1340,7 @@ export function annuleringEmail(input: {
     .join("");
   const bedrag =
     typeof input.terugbetaald === "number" && input.terugbetaald > 0
-      ? `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">We hebben <strong>${euro(input.terugbetaald)}</strong> teruggestort op de rekening waarmee je betaalde. Afhankelijk van je bank staat dat er binnen enkele werkdagen op.</p>`
+      ? `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">Je krijgt <strong>${euro(input.terugbetaald)}</strong> terug op de rekening waarmee je betaalde. Afhankelijk van je bank staat dat er binnen enkele werkdagen op.</p>`
       : "";
   const waarom = input.reden
     ? `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:${C.text};">Reden: ${esc(input.reden)}.</p>`
@@ -1355,7 +1364,7 @@ export function annuleringEmail(input: {
       `${hi} we hebben bestelling ${o.reference} geannuleerd.\n` +
       (input.reden ? `Reden: ${input.reden}\n` : "") +
       (typeof input.terugbetaald === "number" && input.terugbetaald > 0
-        ? `Teruggestort: ${euro(input.terugbetaald)}\n`
+        ? `Je krijgt terug: ${euro(input.terugbetaald)}\n`
         : "") +
       o.items.map((it) => `- ${it.title}${it.quantity > 1 ? ` x${it.quantity}` : ""}`).join("\n"),
   };
