@@ -17,6 +17,7 @@ import { onlineStock, bestVariantStock } from "@/lib/stock";
 import { brandSlugFor } from "@/lib/data/brands";
 import { productFaq } from "@/lib/product-faq";
 import { productNaam } from "@/lib/product-naam";
+import { kleurvlakVoor } from "@/lib/kleurvlak";
 import { getSafetyStock } from "@/lib/store/settings";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
@@ -105,6 +106,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
   ];
 
   const safetyStock = await getSafetyStock();
+  // Kleurvlak bij voorgemengde verf; undefined zodra de kleur niet zeker is.
+  const kleurvlak = kleurvlakVoor(product);
   // Beschikbaarheid voor schema.org: leverbaar zolang één variant voorraad heeft.
   const totalStock = onlineStock(bestVariantStock(product), safetyStock);
 
@@ -245,7 +248,31 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
       {/* Main: gallery + buybox */}
       <div className="grid gap-6 lg:grid-cols-2 lg:gap-10">
-        <ProductGallery images={product.images} title={product.title} badges={product.badges} />
+        <div>
+          <ProductGallery images={product.images} title={product.title} badges={product.badges} />
+          {/* Voorgemengd blik: op de foto zie je alleen het blik, niet de kleur
+              waarvoor de klant komt. Alleen als we de kleur zéker weten. */}
+          {kleurvlak && (
+            <figure className="mt-4 flex items-center gap-4 rounded-lg border border-neutral-200 p-3">
+              <span
+                aria-hidden="true"
+                className="h-16 w-16 shrink-0 rounded border border-neutral-300"
+                style={{ backgroundColor: kleurvlak.hex }}
+              />
+              <figcaption className="text-sm">
+                <span className="font-medium text-neutral-900">{kleurvlak.naam}</span>
+                {kleurvlak.code && kleurvlak.code !== kleurvlak.naam && (
+                  <span className="text-neutral-500"> · {kleurvlak.code}</span>
+                )}
+                <span className="mt-0.5 block text-xs text-neutral-500">
+                  {kleurvlak.transparant
+                    ? "Transparant: de houtkleur schijnt erdoorheen. Kleur op je scherm is een indicatie."
+                    : "Kleur op je scherm is een indicatie."}
+                </span>
+              </figcaption>
+            </figure>
+          )}
+        </div>
         <ProductBuybox
           product={product}
           glansVariants={glansVariants}

@@ -1,4 +1,5 @@
 import { products, categories } from "@/lib/data";
+import { kleurvlakVoor, kleurvlakUrl } from "@/lib/kleurvlak";
 import GEDEELDE_TAXONOMIE from "@/lib/data/google-categories.generated.json";
 import type { Product, ProductVariant } from "@/types";
 import { localePrefix, type Locale } from "@/lib/i18n/config";
@@ -218,8 +219,15 @@ function buildItems(locale: Locale, country: string): string {
     const colorAttr = specVal(p, "Kleur");
     const multi = p.variants.length > 1;
 
-    const extraImages = images
-      .slice(1, 11)
+    // Bij voorgemengde verf een kleurvlak als extra afbeelding, vóór de overige
+    // foto's. In Shopping staan tientallen kleurvarianten met exact dezelfde
+    // blikfoto naast elkaar; dit is het enige waaraan je ze uit elkaar houdt.
+    // Alleen als de kleur ondubbelzinnig is — zie lib/kleurvlak.ts.
+    const vlak = kleurvlakVoor(p);
+    const extraImages = [
+      ...(vlak ? [kleurvlakUrl(BASE, vlak)] : []),
+      ...images.slice(1, vlak ? 10 : 11),
+    ]
       .map((u) => `<g:additional_image_link>${xml(u)}</g:additional_image_link>`)
       .join("");
     const highlights = (p.highlights ?? [])

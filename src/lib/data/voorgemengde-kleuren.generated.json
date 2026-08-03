@@ -1,0 +1,40 @@
+{
+  "opgehaald": "2026-08-03T08:55:26.846Z",
+  "kleuren": {
+    "Ivoorbruin": {
+      "hex": "#d9dad8",
+      "naam": "Ivoorbruin",
+      "code": "FE 103"
+    },
+    "Koper": {
+      "hex": "#bc8e72",
+      "naam": "Koper",
+      "code": ""
+    },
+    "licht eiken": {
+      "hex": "#a76220",
+      "naam": "Licht eiken",
+      "code": "006"
+    },
+    "Ral 9010": {
+      "hex": "#f1ece1",
+      "naam": "Zuiver Wit",
+      "code": "RAL 9010"
+    },
+    "Zonlicht": {
+      "hex": "#eeebe1",
+      "naam": "Zonlicht",
+      "code": ""
+    },
+    "Zuiver Wit": {
+      "hex": "#eeebe1",
+      "naam": "Zuiver wit",
+      "code": "9010"
+    },
+    "Zuiverwit": {
+      "hex": "#eeebe1",
+      "naam": "Zuiver wit",
+      "code": "9010"
+    }
+  }
+}
