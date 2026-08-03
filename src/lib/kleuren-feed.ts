@@ -81,8 +81,26 @@ function productNaam(p: Product): string {
   return `${merk} ${titel.replace(new RegExp(`^${esc}\\s+`, "i"), "")}`.trim();
 }
 
-export function buildKleurenFeed(): string {
-  const kleuren = SIKKENS.kleuren as Kleur[];
+/**
+ * In hoeveel bestanden de feed wordt opgeknipt.
+ *
+ * Moet: Vercel weigert een voorgerenderde pagina boven **19,07 MB**, en dat is
+ * precies waar de eerste versie op klapte — 47,6 MB, waardoor niet alleen deze
+ * feed maar de hele productie-deploy faalde (inclusief de wekelijkse
+ * catalogus-import die er toevallig achteraan kwam).
+ *
+ * Alleen de beschrijving inkorten was niet genoeg: die kost 730 van de 1.573
+ * bytes per regel, maar de XML-opmaak zelf kost de rest, dus zelfs met een
+ * korte tekst bleef het rond de 30 MB. Vandaar drie delen van ~11 MB, met
+ * ruimte voor groei. Merchant Center neemt gerust meerdere bronnen.
+ */
+export const AANTAL_DELEN = 3;
+
+export function buildKleurenFeed(deel = 1): string {
+  const alle = SIKKENS.kleuren as Kleur[];
+  // Om de N: dan blijft elk deel een dwarsdoorsnede van het alfabet, zodat een
+  // deel dat wegvalt niet toevallig alle groentinten meeneemt.
+  const kleuren = alle.filter((_, i) => i % AANTAL_DELEN === (deel - 1) % AANTAL_DELEN);
   const mengbaar = products.filter(
     (p) => p.colorMatchable && /sikkens/i.test(p.brand) && (p.images ?? []).length > 0,
   );
@@ -99,7 +117,10 @@ export function buildKleurenFeed(): string {
     // "leverbaar" betekent hier dat er íets van deze lijn te krijgen is.
     const voorraad = p.variants.some((x) => onlineStock(x.stockByStore, SAFETY_STOCK) > 0);
     const naam = productNaam(p);
-    const beschrijving = clean(p.description || naam).slice(0, 4900);
+    // Kort: de volledige productomschrijving is 730 bytes en zou 907 keer per
+    // product herhaald worden. Voor een kleurvariant is de kleur zelf het
+    // nieuws; de rest staat op de landingspagina.
+    const kern = clean(p.description || naam).slice(0, 160);
     const verzend = shippingForCountry(v.price, "NL", {});
     const pasPrijs = v.kluspasPrice > 0 && v.kluspasPrice < v.price ? v.kluspasPrice : null;
 
@@ -111,7 +132,7 @@ export function buildKleurenFeed(): string {
         // varianten in plaats van als losse producten.
         `<g:item_group_id>${xml(p.id)}</g:item_group_id>`,
         `<title>${xml(titel)}</title>`,
-        `<description>${xml(`${beschrijving} Kleur: ${k.naam}${k.code ? ` (${k.code})` : ""} uit ${k.collectie}. Wij mengen deze kleur op maat.`)}</description>`,
+        `<description>${xml(`${naam} in de kleur ${k.naam}${k.code ? ` (${k.code})` : ""} uit ${k.collectie}. Wij mengen deze kleur op maat. ${kern}`)}</description>`,
         // Bewust zonder ?v=: zie de toelichting bovenaan.
         `<link>${xml(`${BASE}/product/${p.slug}?kleur=${encodeURIComponent(k.code || k.naam)}`)}</link>`,
         `<g:image_link>${xml(image)}</g:image_link>`,
@@ -134,14 +155,14 @@ export function buildKleurenFeed(): string {
   return out.join("\n");
 }
 
-export function kleurenFeedResponse(): Response {
+export function kleurenFeedResponse(deel = 1): Response {
   const body =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n<channel>\n` +
-    `<title>KLUSR kleurenfeed (Sikkens)</title>\n` +
+    `<title>KLUSR kleurenfeed (Sikkens) deel ${deel} van ${AANTAL_DELEN}</title>\n` +
     `<link>${BASE}</link>\n` +
     `<description>Mengbare Sikkens-verf, per kleur.</description>\n` +
-    buildKleurenFeed() +
+    buildKleurenFeed(deel) +
     `\n</channel>\n</rss>\n`;
   return new Response(body, {
     headers: {
