@@ -16,6 +16,7 @@ import { ProductBuybox } from "@/components/product/product-buybox";
 import { onlineStock, bestVariantStock } from "@/lib/stock";
 import { brandSlugFor } from "@/lib/data/brands";
 import { productFaq } from "@/lib/product-faq";
+import { productNaam } from "@/lib/product-naam";
 import { getSafetyStock } from "@/lib/store/settings";
 import { ProductTabs } from "@/components/product/product-tabs";
 import { FrequentlyBoughtTogether } from "@/components/product/frequently-bought-together";
@@ -47,7 +48,7 @@ export async function generateMetadata({
   const product = getLocalizedProduct(params.slug);
   if (!product) return { title: "Product niet gevonden" };
 
-  const title = `${product.brand} ${product.title}`;
+  const title = productNaam(product);
   const description =
     product.description.length > 160
       ? `${product.description.slice(0, 157).trimEnd()}…`
@@ -125,7 +126,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: `${product.brand} ${product.title}`,
+    name: productNaam(product),
     image: product.images,
     description: product.description,
     brand: { "@type": "Brand", name: product.brand },

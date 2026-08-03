@@ -3,7 +3,7 @@ import { products } from "@/lib/data";
 import { onlineStock, DEFAULT_SAFETY_STOCK } from "@/lib/stock";
 import { shippingForCountry } from "@/lib/shipping";
 import SIKKENS from "@/lib/data/sikkens-kleuren.generated.json";
-import type { Product } from "@/types";
+import { productNaam } from "@/lib/product-naam";
 
 /**
  * Shopping-feed met kleurvarianten — één regel per mengbaar product per kleur.
@@ -21,12 +21,17 @@ import type { Product } from "@/types";
  * Drie keuzes die het verschil maken tussen bruikbaar en onwerkbaar:
  *
  * 1. **Alleen kleuren met een échte naam.** De Sikkens-waaiers bevatten 6.917
- *    kleuren, waarvan er 4.287 alleen een code hebben (F8.41.80, 4051). Daar
+ *    kleuren, maar de meeste hebben alleen een code (F8.41.80, 4051). Daar
  *    wordt niet op gezocht, en ze zouden het budget opeten vóór de benoemde
- *    kleuren aan de beurt zijn. Blijft over: 907 unieke namen.
+ *    kleuren aan de beurt zijn. Blijft over: 168 unieke namen.
  *
- * 2. **Eén regel per product, niet per maat.** 91 maten × 907 kleuren is 82.537
- *    regels; per product is het 31.745. De maat kiest de klant op de pagina.
+ *    Het onderscheid: een kleur met een échte naam heeft óók een aparte code
+ *    ("Monumentengroen" / "N0.15.10"); heeft hij die niet, dan ís de naam de
+ *    code. Raden op basis van letters ging mis — dat liet 604 collectielabels
+ *    door als "kleurnaam", zoals "(4041 Color Concept)".
+ *
+ * 2. **Eén regel per product, niet per maat.** De maat kiest de klant op de
+ *    pagina; per maat adverteren vermenigvuldigt de feed met 91.
  *
  * 3. **De prijs van `variants[0]`, en géén `?v=` in de link.** Dat is precies
  *    de prijs die een crawler op de landingspagina ziet. De hoofdfeed linkt met
@@ -72,29 +77,20 @@ function feedId(productId: string, kleur: Kleur): string {
   return `kl-${h}`;
 }
 
-/** Merk vooraan zonder het te verdubbelen; de titels bevatten het merk al. */
-function productNaam(p: Product): string {
-  const merk = (p.brand ?? "").trim();
-  const titel = (p.title ?? "").trim();
-  if (!merk) return titel;
-  const esc = merk.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return `${merk} ${titel.replace(new RegExp(`^${esc}\\s+`, "i"), "")}`.trim();
-}
-
 /**
  * In hoeveel bestanden de feed wordt opgeknipt.
  *
- * Moet: Vercel weigert een voorgerenderde pagina boven **19,07 MB**, en dat is
- * precies waar de eerste versie op klapte — 47,6 MB, waardoor niet alleen deze
- * feed maar de hele productie-deploy faalde (inclusief de wekelijkse
- * catalogus-import die er toevallig achteraan kwam).
+ * Staat op 1 en dat is genoeg: 5.880 regels, 6,3 MB. Maar de knop blijft
+ * bestaan, want **Vercel weigert een voorgerenderde pagina boven 19,07 MB** —
+ * daar klapte de eerste versie op met 47,6 MB, waardoor niet alleen deze feed
+ * maar de héle productie-deploy faalde, inclusief de wekelijkse
+ * catalogus-import die er toevallig achteraan kwam.
  *
- * Alleen de beschrijving inkorten was niet genoeg: die kost 730 van de 1.573
- * bytes per regel, maar de XML-opmaak zelf kost de rest, dus zelfs met een
- * korte tekst bleef het rond de 30 MB. Vandaar drie delen van ~11 MB, met
- * ruimte voor groei. Merchant Center neemt gerust meerdere bronnen.
+ * Groeit het aantal kleuren of mengbare producten flink, zet dit dan op 2 of 3,
+ * voeg per extra deel een route toe (`google-merchant-kleuren-2.xml`) en zet
+ * die als losse bron in Merchant Center; die neemt er gerust meerdere.
  */
-export const AANTAL_DELEN = 3;
+export const AANTAL_DELEN = 1;
 
 export function buildKleurenFeed(deel = 1): string {
   const alle = SIKKENS.kleuren as Kleur[];

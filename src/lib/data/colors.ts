@@ -1,4 +1,5 @@
 import type { SelectedColor } from "@/types";
+import SIKKENS from "@/lib/data/sikkens-kleuren.generated.json";
 
 export interface ColorCollection {
   id: string;
@@ -236,12 +237,33 @@ function normCode(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/**
+ * De benoemde Sikkens-kleuren uit de kleurenfeed, zodat de deeplinks daaruit
+ * óók een kleur voorselecteren.
+ *
+ * Zonder deze set kent `findColor` alleen de 159 gecureerde kleuren, en dan
+ * vindt `?kleur=N0.15.10` (Monumentengroen) niets — 170 van de 176 kleuren uit
+ * de feed landden zo op een productpagina zónder kleur. Precies de val waar de
+ * VDM-webshop op vastliep, en zonder melding, dus alleen zichtbaar als je 'm
+ * probeert.
+ *
+ * Het bestand is klein (176 kleuren) en wordt bij de import gegenereerd; het
+ * groeit dus mee met de feed.
+ */
+const sikkensKleuren: SelectedColor[] = (
+  SIKKENS.kleuren as { naam: string; code: string; hex: string; collectie: string }[]
+).map((k) => ({ name: k.naam, code: k.code, hex: k.hex, collection: k.collectie }));
+
 export function findColor(code: string): SelectedColor | undefined {
   const q = normCode(code ?? "");
   if (!q) return undefined;
+  // Eigen gecureerde set eerst: die heeft Nederlandse namen en is met de hand
+  // samengesteld.
   return (
     allColors.find((c) => normCode(c.code) === q) ??
-    allColors.find((c) => normCode(c.name) === q)
+    allColors.find((c) => normCode(c.name) === q) ??
+    sikkensKleuren.find((c) => normCode(c.code) === q) ??
+    sikkensKleuren.find((c) => normCode(c.name) === q)
   );
 }
 
