@@ -1,5 +1,6 @@
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/utils";
+import { productNaam } from "@/lib/product-naam";
 
 /**
  * Veelgestelde vragen die uit de catalogus komen.
@@ -30,22 +31,6 @@ function spec(p: Product, label: string): string {
     }
   }
   return "";
-}
-
-/**
- * Productnaam voor in een zin, zonder dubbel merk.
- *
- * De catalogustitels beginnen vaak al met het merk ("Histor Perfect Finish"),
- * dus `${brand} ${title}` levert "Histor Histor Perfect Finish" op. Dat leest
- * niet alleen slordig — het komt ook in het FAQ-schema terecht en dus in de
- * zoekresultaten.
- */
-function productNaam(p: Product): string {
-  const merk = (p.brand ?? "").trim();
-  const titel = (p.title ?? "").trim();
-  if (!merk) return titel;
-  const zonderMerk = titel.replace(new RegExp(`^${merk.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+`, "i"), "");
-  return `${merk} ${zonderMerk}`.trim();
 }
 
 export function productFaq(p: Product): FaqItem[] {
