@@ -54,17 +54,24 @@ export function CartView() {
   // Upsell + "vaak vergeten" come from the API so the catalogus isn't bundled.
   const [upsell, setUpsell] = useState<Product[]>([]);
   const [forgotten, setForgotten] = useState<Product[]>([]);
+  // "Hier heb je ook nog dit voor nodig" — afgestemd op wat er in de mand ligt,
+  // met per artikel de reden. Zie lib/data/klus-aanvulling.ts.
+  const [aanvulling, setAanvulling] = useState<Product[]>([]);
+  const [redenen, setRedenen] = useState<Record<string, string>>({});
   useEffect(() => {
     const exclude = items.map((i) => i.productId).join(",");
     let active = true;
     Promise.all([
       fetch(`/api/products?list=bestsellers&limit=8&exclude=${exclude}`).then((r) => r.json()),
       fetch(`/api/products?list=accessory&limit=3&exclude=${exclude}`).then((r) => r.json()),
+      fetch(`/api/products?list=aanvulling&limit=3&voor=${exclude}`).then((r) => r.json()),
     ])
-      .then(([up, fg]) => {
+      .then(([up, fg, av]) => {
         if (!active) return;
         setUpsell(up.products ?? []);
         setForgotten(fg.products ?? []);
+        setAanvulling(av.products ?? []);
+        setRedenen(av.redenen ?? {});
       })
       .catch(() => {});
     return () => {
@@ -219,6 +226,23 @@ export function CartView() {
             ))}
           </ul>
 
+          {/* "Hier heb je ook nog dit voor nodig" — afgestemd op de mand.
+              Staat bewust vóór "vaak vergeten": dit is het blok met een reden
+              erbij, en dat is wat overtuigt. */}
+          {aanvulling.length > 0 && (
+            <div className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <p className="mb-1 text-sm font-bold">Hier heb je ook nog dit voor nodig</p>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Gekozen bij de verf in je winkelwagen — scheelt een tweede bestelling.
+              </p>
+              <ul className="grid gap-2 sm:grid-cols-3">
+                {aanvulling.map((p) => (
+                  <AanvullingItem key={p.id} product={p} reden={redenen[p.id]} />
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Vaak vergeten */}
           {forgotten.length > 0 && (
             <div className="mt-5 rounded-xl border border-border bg-card p-4">
@@ -370,6 +394,53 @@ export function CartView() {
   );
 }
 
+/**
+ * Eén regel uit "hier heb je ook nog dit voor nodig".
+ *
+ * De reden staat er bewust bij ("Voor randen, hoeken en kozijnen"). Een rijtje
+ * producten zonder uitleg is een advertentie; met de reden erbij is het advies,
+ * en dat is waarom iemand 'm meeneemt.
+ */
+function AanvullingItem({ product, reden }: { product: Product; reden?: string }) {
+  const addItem = useCart((s) => s.addItem);
+  return (
+    <li className="flex items-center gap-2 rounded-lg border border-border bg-card p-2">
+      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-white">
+        <Image src={product.images[0]} alt={product.title} fill sizes="48px" className="object-cover" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-semibold">{product.title}</p>
+        {reden && <p className="truncate text-[11px] text-muted-foreground">{reden}</p>}
+        <p className="text-xs font-bold text-primary">{formatPrice(product.kluspasPrice)}</p>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        aria-label={`${product.title} toevoegen`}
+        onClick={() => {
+          addItem({ product, variant: product.variants[0], quantity: 1 });
+          // Met `source` erbij, zodat straks te zien is of dit blok werkt.
+          trackEvent("add_to_cart", {
+            value: product.kluspasPrice,
+            source: "aanvulling",
+            items: [
+              toAnalyticsItem({
+                id: product.id,
+                title: product.title,
+                brand: product.brand,
+                price: product.kluspasPrice,
+                quantity: 1,
+              }),
+            ],
+          });
+        }}
+      >
+        +
+      </Button>
+    </li>
+  );
+}
+
 function ForgottenItem({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   return (
@@ -384,7 +455,24 @@ function ForgottenItem({ product }: { product: Product }) {
       <Button
         size="sm"
         variant="outline"
-        onClick={() => addItem({ product, variant: product.variants[0], quantity: 1 })}
+        onClick={() => {
+          addItem({ product, variant: product.variants[0], quantity: 1 });
+          // Vuurde eerder niets: elke toevoeging vanuit dit blok was onzichtbaar
+          // in GA4, dus je kon niet zien of het iets opleverde.
+          trackEvent("add_to_cart", {
+            value: product.kluspasPrice,
+            source: "vaak_vergeten",
+            items: [
+              toAnalyticsItem({
+                id: product.id,
+                title: product.title,
+                brand: product.brand,
+                price: product.kluspasPrice,
+                quantity: 1,
+              }),
+            ],
+          });
+        }}
       >
         +
       </Button>
