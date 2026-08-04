@@ -90,13 +90,24 @@ export function CartDrawer() {
   // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
   // drawer opens, so the catalogus stays out of the global bundle.
   const [forgotten, setForgotten] = useState<Product[]>([]);
+  // "Hier heb je ook nog dit voor nodig" — afgestemd op de mand, mét reden.
+  // Deze lade zien meer mensen dan /winkelwagen: hij opent bij elke toevoeging.
+  const [aanvulling, setAanvulling] = useState<Product[]>([]);
+  const [redenen, setRedenen] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!open) return;
     const exclude = items.map((i) => i.productId).join(",");
     let active = true;
-    fetch(`/api/products?list=accessory&limit=2&exclude=${exclude}`)
-      .then((r) => r.json())
-      .then((d) => active && setForgotten(d.products ?? []))
+    Promise.all([
+      fetch(`/api/products?list=accessory&limit=2&exclude=${exclude}`).then((r) => r.json()),
+      fetch(`/api/products?list=aanvulling&limit=2&voor=${exclude}`).then((r) => r.json()),
+    ])
+      .then(([fg, av]) => {
+        if (!active) return;
+        setForgotten(fg.products ?? []);
+        setAanvulling(av.products ?? []);
+        setRedenen(av.redenen ?? {});
+      })
       .catch(() => {});
     return () => {
       active = false;
@@ -181,6 +192,60 @@ export function CartDrawer() {
                 ))}
               </ul>
 
+              {/* Aanvulling op basis van de mand — staat vóór "vaak vergeten",
+                  want dit blok heeft een reden per artikel en dat overtuigt. */}
+              {aanvulling.length > 0 && (
+                <div className="mt-5 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="mb-2 text-sm font-bold">Hier heb je ook nog dit voor nodig</p>
+                  <div className="space-y-2">
+                    {aanvulling.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center gap-3 rounded-md border border-border bg-card p-2"
+                      >
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-white">
+                          <Image src={p.images[0]} alt={p.title} fill sizes="48px" className="object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-semibold">{p.title}</p>
+                          {redenen[p.id] && (
+                            <p className="truncate text-[11px] text-muted-foreground">
+                              {redenen[p.id]}
+                            </p>
+                          )}
+                          <p className="text-xs font-bold text-primary">
+                            {formatPrice(p.kluspasPrice)}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label={`${p.title} toevoegen`}
+                          onClick={() => {
+                            addItem({ product: p, variant: p.variants[0], quantity: 1 });
+                            trackEvent("add_to_cart", {
+                              value: p.kluspasPrice,
+                              source: "aanvulling_lade",
+                              items: [
+                                toAnalyticsItem({
+                                  id: p.id,
+                                  title: p.title,
+                                  brand: p.brand,
+                                  price: p.kluspasPrice,
+                                  quantity: 1,
+                                }),
+                              ],
+                            });
+                          }}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {forgotten.length > 0 && (
                 <div className="mt-5">
                   <p className="mb-2 text-sm font-bold">{t("cart.forgotten")}</p>
@@ -202,9 +267,24 @@ export function CartDrawer() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() =>
-                            addItem({ product: p!, variant: p!.variants[0], quantity: 1 })
-                          }
+                          onClick={() => {
+                            addItem({ product: p!, variant: p!.variants[0], quantity: 1 });
+                            // Vuurde eerder niets — toevoegingen uit dit blok
+                            // waren onzichtbaar in GA4.
+                            trackEvent("add_to_cart", {
+                              value: p!.kluspasPrice,
+                              source: "vaak_vergeten_lade",
+                              items: [
+                                toAnalyticsItem({
+                                  id: p!.id,
+                                  title: p!.title,
+                                  brand: p!.brand,
+                                  price: p!.kluspasPrice,
+                                  quantity: 1,
+                                }),
+                              ],
+                            });
+                          }}
                         >
                           {t("cart.item.add")}
                         </Button>
