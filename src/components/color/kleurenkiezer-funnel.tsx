@@ -391,7 +391,11 @@ export function KleurenkiezerFunnel({ colorProducts, accessories = [] }: Props) 
 
   function pickColor(c: SelectedColor) {
     setColor(withBase(c));
-    trackEvent("color_selected", { color: c.name, code: c.code, source: "kleurenkiezer" });
+    trackEvent("color_selected", {
+      color_name: c.name,
+      color_code: c.code,
+      source: "kleurenkiezer",
+    });
     setStep(2);
   }
 

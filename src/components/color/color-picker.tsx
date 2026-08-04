@@ -117,10 +117,14 @@ export function ColorPicker({
     const enriched = withBase(color);
     setSelected(enriched);
     onSelect(enriched);
+    // Zelfde veldnamen als de kleurenkiezer-funnel: één event hoort één vorm te
+    // hebben, anders moet GTM twee varianten kennen en verlies je de helft
+    // zodra iemand er maar één mapt.
     trackEvent("color_selected", {
-      color_code: enriched.code,
       color_name: enriched.name,
+      color_code: enriched.code,
       paint_base: enriched.base?.id,
+      source: "productpagina",
     });
   }
 
