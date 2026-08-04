@@ -4,6 +4,7 @@ import {
   getAccessorySuggestions,
   getBestsellers,
 } from "@/lib/data/products";
+import { klusAanvulling } from "@/lib/data/klus-aanvulling";
 import type { Product } from "@/types";
 
 export const runtime = "nodejs";
@@ -33,6 +34,15 @@ export async function GET(req: Request) {
     products = getAccessorySuggestions(limit, exclude);
   } else if (list === "bestsellers") {
     products = getBestsellers(limit).filter((p) => !exclude.includes(p.id));
+  } else if (list === "aanvulling") {
+    // "Hier heb je ook nog dit voor nodig": hangt af van wát er in de mand
+    // ligt, dus de winkelwagen stuurt zijn product-ids mee via ?voor=.
+    const voor = (searchParams.get("voor") ?? "").split(",").filter(Boolean);
+    const aanvulling = klusAanvulling(voor, limit);
+    return NextResponse.json({
+      products: aanvulling.map((a) => a.product),
+      redenen: Object.fromEntries(aanvulling.map((a) => [a.product.id, a.reden])),
+    });
   }
 
   return NextResponse.json({ products });
