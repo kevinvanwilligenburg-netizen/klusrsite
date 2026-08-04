@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2, ArrowRight, Sparkles } from "lucide-react";
@@ -22,6 +22,7 @@ import {
   useCart,
   cartSummary,
   displayLine,
+  linePrice,
   kluspasSavings,
 } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
@@ -29,7 +30,8 @@ import { useReorderActive } from "@/lib/store/reorder";
 import { useUI } from "@/lib/store/ui";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import type { Product } from "@/types";
-import { trackEvent } from "@/lib/tracking";
+import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
+import { trackRemoveFromCart } from "@/lib/cart-tracking";
 import { formatPrice } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 
@@ -55,6 +57,35 @@ export function CartDrawer() {
   const potentialSavings = mounted ? kluspasSavings(items) : 0;
   const showKluspasNudge =
     mounted && summary.vatIncluded && !kluspasActive && potentialSavings > 0;
+
+  /**
+   * GA4 `view_cart` bij het openen van de lade.
+   *
+   * Hing eerder aan de knop "naar de winkelwagen", en dat is doorklikken, niet
+   * bekijken — de lade zelf ís de winkelwagen. Die knop stuurt nu niets meer;
+   * /winkelwagen meldt zijn eigen weergave, anders telde één klik twee keer.
+   */
+  const viewCartGemeld = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      viewCartGemeld.current = false;
+      return;
+    }
+    if (viewCartGemeld.current || !mounted || items.length === 0) return;
+    viewCartGemeld.current = true;
+    trackEvent("view_cart", {
+      value: total,
+      items: items.map((i) =>
+        toAnalyticsItem({
+          id: i.productId,
+          title: i.title,
+          brand: i.brand,
+          price: linePrice(i, kluspasActive),
+          quantity: i.quantity,
+        }),
+      ),
+    });
+  }, [open, mounted, items, total, kluspasActive]);
 
   // "Vaak vergeten" — fetch cheap add-ons (not in cart) from the API when the
   // drawer opens, so the catalogus stays out of the global bundle.
@@ -122,7 +153,10 @@ export function CartDrawer() {
                           <p className="text-xs text-muted-foreground">{item.variantLabel}</p>
                         </div>
                         <button
-                          onClick={() => removeItem(item.key)}
+                          onClick={() => {
+                            trackRemoveFromCart(item, kluspasActive);
+                            removeItem(item.key);
+                          }}
                           aria-label={t("cart.item.removeLabel")}
                           className="text-muted-foreground hover:text-primary"
                         >
@@ -233,10 +267,7 @@ export function CartDrawer() {
                 asChild
                 size="lg"
                 className="w-full"
-                onClick={() => {
-                  trackEvent("view_cart", { value: subtotal });
-                  setCartOpen(false);
-                }}
+                onClick={() => setCartOpen(false)}
               >
                 <Link href="/winkelwagen">
                   {t("cart.toCart")}
