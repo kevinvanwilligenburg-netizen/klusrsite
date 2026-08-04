@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -32,6 +32,7 @@ import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import type { Product } from "@/types";
 import { trackEvent, toAnalyticsItem } from "@/lib/tracking";
+import { trackRemoveFromCart } from "@/lib/cart-tracking";
 import { formatPrice } from "@/lib/utils";
 import { useT } from "@/components/i18n/locale-provider";
 import { PaymentIcons, CarrierBadge } from "@/components/shared/payment-icons";
@@ -70,6 +71,36 @@ export function CartView() {
       active = false;
     };
   }, [items]);
+
+  /**
+   * GA4 `view_cart` — de klant kijkt naar zijn winkelwagen.
+   *
+   * Stond alleen op de knop in de zijlade, en dat is "doorklikken naar de mand",
+   * niet "de mand bekijken". Wie rechtstreeks naar /winkelwagen ging — vanuit
+   * een bladwijzer, de e-mail over een achtergelaten mand, of gewoon het
+   * winkelwagen-icoon — werd nergens geteld. De GA4-tag in GTM stond er al klaar
+   * voor.
+   *
+   * Eén keer per paginabezoek: `items` verandert bij elke aanpassing van een
+   * aantal, en dan zou het event bij elk plusje opnieuw vuren.
+   */
+  const viewCartGemeld = useRef(false);
+  useEffect(() => {
+    if (!mounted || viewCartGemeld.current || items.length === 0) return;
+    viewCartGemeld.current = true;
+    trackEvent("view_cart", {
+      value: cartSummary(items, mode, kluspasActive).total,
+      items: items.map((i) =>
+        toAnalyticsItem({
+          id: i.productId,
+          title: i.title,
+          brand: i.brand,
+          price: linePrice(i, kluspasActive),
+          quantity: i.quantity,
+        }),
+      ),
+    });
+  }, [mounted, items, mode, kluspasActive]);
 
   if (!mounted) {
     return <div className="container-klusr py-16 text-center text-muted-foreground">{t("cart.loading")}</div>;
@@ -174,7 +205,10 @@ export function CartView() {
                       <Heart className="h-3.5 w-3.5" /> {t("cart.item.save")}
                     </button>
                     <button
-                      onClick={() => removeItem(item.key)}
+                      onClick={() => {
+                        trackRemoveFromCart(item, kluspasActive);
+                        removeItem(item.key);
+                      }}
                       className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> {t("cart.item.remove")}

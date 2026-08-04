@@ -823,6 +823,30 @@ export function CheckoutForm({
 
     trackEvent("add_shipping_info", { shipping_tier: shippingMethod, value: summary.total });
 
+    /**
+     * GA4 `add_payment_info` — de klant gaat betalen.
+     *
+     * De GA4-tag stond al in GTM, maar de site verstuurde dit event nergens; die
+     * stap ontbrak dus in de hele trechter.
+     *
+     * Het moment is bewust hier, vlak vóór de overdracht aan Mollie. In de
+     * gewone flow kiest de klant zijn methode pas op de betaalpagina van Mollie,
+     * dus dit is het laatste punt waarop wij nog iets weten. Kiest hij bij ons
+     * (express-modus), dan gaat die keuze mee als `payment_type`.
+     */
+    trackEvent("add_payment_info", {
+      payment_type: method ?? "mollie_hosted",
+      value: summary.total,
+      items: items.map((i) => ({
+        item_id: i.productId,
+        item_name: i.title,
+        item_brand: i.brand,
+        item_variant: i.variantLabel,
+        price: kluspasActive ? i.kluspasPrice : i.price,
+        quantity: i.quantity,
+      })),
+    });
+
     // GA4-/Ads-attributie uit de cookies lezen (best-effort) zodat de webhook
     // server-side een `purchase` kan vuren — los van of de klant terugkeert naar
     // /bedankt of cookies accepteert. Alleen meesturen als er iets gevonden is.
