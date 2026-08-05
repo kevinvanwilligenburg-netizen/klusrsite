@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { rememberCart, type PendingCartItem } from "@/lib/store/pending-cart";
+import { rememberCart, markLeadSent, type PendingCartItem } from "@/lib/store/pending-cart";
+import { stuurCartLead } from "@/lib/vdm-cart-lead";
 
 export const runtime = "nodejs";
 
@@ -30,11 +31,23 @@ export async function POST(req: Request) {
     Number(body.total) || items.reduce((s, i) => s + i.price * i.quantity, 0),
   );
 
-  await rememberCart({
+  const { alDoorgegeven } = await rememberCart({
     email,
     name: body.name ? String(body.name).slice(0, 120) : undefined,
     items,
     total,
   });
+
+  // Eén keer per adres doorgeven aan het VDM-dashboard. Het e-mailveld in de
+  // checkout meldt bij elke wijziging opnieuw; zonder deze rem stuur je één
+  // bezoeker tien keer door.
+  //
+  // Server-side, niet vanuit de browser: de bearer-sleutel hoort nooit in de
+  // client terecht te komen.
+  if (!alDoorgegeven) {
+    const gelukt = await stuurCartLead({ email, items, total });
+    if (gelukt) await markLeadSent(email);
+  }
+
   return NextResponse.json({ ok: true });
 }
