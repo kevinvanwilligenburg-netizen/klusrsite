@@ -464,6 +464,10 @@ export function CheckoutForm({
             price: kluspasActive ? i.kluspasPrice : i.price,
             image: i.image,
             slug: i.slug,
+            // Maat en kleur mee: bij mengverf is de kleur het hele punt van de
+            // bestelling, en dan is "je Sikkens staat klaar" een stuk minder
+            // overtuigend dan "je Monumentengroen staat klaar".
+            variant: [i.variantLabel, i.selectedColor?.name].filter(Boolean).join(" · ") || undefined,
           })),
           total: cartSummary(items, mode, kluspasActive).grossTotal,
         }),

@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     price: Math.max(0, Number(i.price) || 0),
     image: i.image ? String(i.image).slice(0, 400) : undefined,
     slug: i.slug ? String(i.slug).slice(0, 160) : undefined,
+    variant: i.variant ? String(i.variant).slice(0, 120) : undefined,
   }));
   const total = Math.max(
     0,

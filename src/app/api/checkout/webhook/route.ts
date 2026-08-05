@@ -5,6 +5,7 @@ import { fulfillPaidOrder, sendOrderConfirmationEmail } from "@/lib/order-fulfil
 import { sendPushToAdmins } from "@/lib/push";
 import { sendGa4Purchase } from "@/lib/ga4-mp";
 import { formatPrice } from "@/lib/utils";
+import { meldCartLeadCompleet } from "@/lib/vdm-cart-lead";
 
 export const runtime = "nodejs";
 
@@ -81,6 +82,11 @@ export async function POST(req: Request) {
           // gooit nooit en heeft een eigen 3s-timeout, dus awaiten is veilig en
           // garandeert dat de purchase écht wordt verstuurd.
           await sendGa4Purchase(paidOrder);
+          // Verlaten-wagen-melding afmelden bij het VDM-dashboard. Zonder dit
+          // krijgt iemand die net betaald heeft alsnog "je winkelwagen staat
+          // klaar". Bewust hier en niet op de bedankpagina: de webhook is onze
+          // bron van waarheid, en niet elke klant komt terug.
+          await meldCartLeadCompleet(paidOrder.customer.email ?? "");
         }
         // Beheerders een push sturen over de nieuwe bestelling. Awaiten (parallel +
         // in tijd gebonden, gooit nooit) zodat de melding écht verstuurd wordt vóór
