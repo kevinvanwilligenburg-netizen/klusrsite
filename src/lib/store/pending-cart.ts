@@ -33,6 +33,15 @@ export interface PendingCart {
   total: number;
   updatedAt: string;
   reminded: boolean;
+  /**
+   * Wanneer dit adres naar het VDM-dashboard is doorgegeven.
+   *
+   * Sticky, net als `reminded`: het e-mailveld in de checkout meldt bij elke
+   * wijziging opnieuw (met 1,2 s debounce), en zonder deze rem stuur je één
+   * bezoeker tien keer door. De vdmsite-sessie meldde dezelfde valkuil aan hun
+   * kant.
+   */
+  leadSentAt?: string;
 }
 
 const mem = new Map<string, PendingCart>();
@@ -47,14 +56,15 @@ const CART_TTL_SECONDS = 30 * 24 * 60 * 60;
 /** Maximaal aantal bewaarde winkelwagens — voorkomt onbegrensde KV-groei. */
 const MAX_PENDING_CARTS = 1000;
 
+/** Geeft terug of dit adres al eerder is doorgegeven aan het dashboard. */
 export async function rememberCart(input: {
   email: string;
   name?: string;
   items: PendingCartItem[];
   total: number;
-}): Promise<void> {
+}): Promise<{ alDoorgegeven: boolean }> {
   const email = norm(input.email);
-  if (!email || input.items.length === 0) return;
+  if (!email || input.items.length === 0) return { alDoorgegeven: true };
   const existing = (await loadCart(email)) ?? null;
   const cart: PendingCart = {
     email,
@@ -65,6 +75,7 @@ export async function rememberCart(input: {
     // Reminder-vlag sticky houden: zo sturen we hooguit één herinnering, ook al
     // werkt de klant de winkelwagen daarna nog bij.
     reminded: existing?.reminded ?? false,
+    leadSentAt: existing?.leadSentAt,
   };
   mem.set(email, cart);
   if (isKvEnabled()) {
@@ -74,6 +85,20 @@ export async function rememberCart(input: {
     await kvSAdd(KEY.index, email);
     // Best-effort: houd het totaal aantal begrensd. Gooit nooit.
     await pruneIfNeeded();
+  }
+  return { alDoorgegeven: Boolean(existing?.leadSentAt) };
+}
+
+/** Stempelt dat dit adres naar het dashboard is doorgegeven. */
+export async function markLeadSent(email: string): Promise<void> {
+  const key = norm(email);
+  const cart = await loadCart(key);
+  if (!cart) return;
+  const bijgewerkt: PendingCart = { ...cart, leadSentAt: new Date().toISOString() };
+  mem.set(key, bijgewerkt);
+  if (isKvEnabled()) {
+    await kvSetJSON(KEY.cart(key), bijgewerkt);
+    await kvExpire(KEY.cart(key), CART_TTL_SECONDS);
   }
 }
 
