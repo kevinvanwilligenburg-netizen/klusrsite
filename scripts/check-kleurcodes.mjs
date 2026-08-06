@@ -27,12 +27,18 @@ import { dirname, join } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BESTAND = join(__dirname, "..", "src", "lib", "data", "colors.ts");
 
-/** Waaier → hoe een geldige code eruitziet. */
+/**
+ * Waaier → hoe een geldige code eruitziet.
+ *
+ * Exact de drie namen die de kleurenfeed van het dashboard voert. "RAL Classic"
+ * stond hier eerst ook bij, maar zo heet die waaier bij de winkel niet: daar is
+ * het "RAL kleuren". Een naam die nergens bestaat is precies wat we hier
+ * proberen te vangen, dus die is eruit.
+ */
 const WAAIERS = {
   "NCS Kleuren": /^S \d{4}-([A-Z]|[A-Z]\d{2}[A-Z])$/,
   "RAL Design": /^\d{3} \d{2} \d{2}$/,
   "RAL kleuren": /^RAL \d{4}$/,
-  "RAL Classic": /^RAL \d{4}$/,
 };
 
 const src = readFileSync(BESTAND, "utf8");
@@ -44,15 +50,20 @@ const regels = [
 
 const fouten = [];
 for (const r of regels) {
-  // Zonder eigen waaier moet het een RAL-code zijn; die komt uit de
-  // RAL Classic-collectie en die kent de machine.
-  const patroon = r.waaier ? WAAIERS[r.waaier] : WAAIERS["RAL Classic"];
+  // Geen terugval: elke kleur benoemt zélf zijn waaier. Zonder die eis erft een
+  // kleur de groepsnaam uit de kiezer ("Grijstinten") en belandt díe op de
+  // pakbon — een waaier die de winkel nergens kan opzoeken.
+  if (!r.waaier) {
+    fouten.push(`${r.naam} (${r.code}) noemt geen waaier`);
+    continue;
+  }
+  const patroon = WAAIERS[r.waaier];
   if (!patroon) {
     fouten.push(`onbekende waaier "${r.waaier}" bij ${r.naam}`);
     continue;
   }
   if (!patroon.test(r.code)) {
-    fouten.push(`code "${r.code}" (${r.naam}) past niet bij waaier "${r.waaier ?? "RAL Classic"}"`);
+    fouten.push(`code "${r.code}" (${r.naam}) past niet bij waaier "${r.waaier}"`);
   }
   if (!/^#[0-9A-Fa-f]{6}$/.test(r.hex)) {
     fouten.push(`hex "${r.hex}" (${r.naam}) is geen geldige kleurwaarde`);
