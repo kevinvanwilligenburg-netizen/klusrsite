@@ -8,6 +8,7 @@
     "feed:tilroy": "node scripts/build-tilroy-catalog.mjs",
     "translate:catalog": "node scripts/translate-catalog.mjs",
     "barcodes:backfill": "node scripts/backfill-barcodes.mjs",
+    "prebuild": "node scripts/check-kleurcodes.mjs",
     "build": "node scripts/feed-prebuild.mjs && node scripts/build-catalog-overrides.mjs && node scripts/seed-review-distribution.mjs && node scripts/generate-images.mjs && next build && node scripts/post-feed-links.mjs --soft",
     "images:generate": "node scripts/generate-images.mjs",
     "start": "next start",
