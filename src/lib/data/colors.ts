@@ -177,7 +177,12 @@ export const colorCollections: ColorCollection[] = [
     { name: "Oesterwit", code: "RAL 1013", hex: "#E3D9C6", collection: "RAL kleuren" },
     { name: "Ivoor", code: "RAL 1014", hex: "#DDC49A", collection: "RAL kleuren" },
     { name: "Licht Ivoor", code: "RAL 1015", hex: "#E6D2B5", collection: "RAL kleuren" },
-    { name: "Zinkgeel", code: "RAL 1018", hex: "#F3DA0B", collection: "RAL kleuren" },
+    // #F3DA0B stond hier: citroengeel, en dat is te koud. Twee bronnen die niets
+    // met elkaar te maken hebben — verf-plaza (#F8C932) en de Sikkens-omzetting
+    // (#F8CA3A) — zitten binnen ΔE 2,3 van elkaar en allebei op ΔE ~16 van ons.
+    // Op de andere negen RAL-kleuren die alle drie de bronnen kennen zaten wij
+    // wél in lijn, dus dit was een losse fout, geen ander ijkpunt.
+    { name: "Zinkgeel", code: "RAL 1018", hex: "#F8C932", collection: "RAL kleuren" },
     { name: "Zuiver Oranje", code: "RAL 2004", hex: "#E25303", collection: "RAL kleuren" },
     { name: "Signaalrood", code: "RAL 3001", hex: "#9B2423", collection: "RAL kleuren" },
     { name: "Wijnrood", code: "RAL 3005", hex: "#5E2129", collection: "RAL kleuren" },
