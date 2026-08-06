@@ -7,7 +7,10 @@ import { verifyOrderTotal } from "@/lib/checkout-pricing";
 import { resolveCartColors } from "@/lib/paint-color-resolve";
 import { resolveBaseSkus } from "@/lib/mengverf";
 import { cartItemSchema } from "@/lib/checkout-schema";
+import { shippingForCountry } from "@/lib/shipping";
 import type { CartItem, OrderCustomer } from "@/types";
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export const runtime = "nodejs";
 
@@ -62,27 +65,11 @@ export async function POST(req: Request) {
     // variant waarop de klant klikte. Zie lib/mengverf.ts.
     const items = (await resolveBaseSkus(kleuren.items)).items;
 
-    // Prijscontrole: het client-totaal is manipuleerbaar en veroudert met de
-    // winkelwagen; zie lib/checkout-pricing.ts.
-    const prijs = verifyOrderTotal({
-      items,
-      total: data.total,
-      freeShipping: data.shipping === 0,
-    });
-    if (!prijs.ok) {
-      return NextResponse.json({ ok: false, error: prijs.message }, { status: 409 });
-    }
-
-    // 0. Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
-    const shortages = await checkStockForItems(items);
-    if (shortages.length) {
-      return NextResponse.json(
-        { ok: false, error: shortageMessage(shortages), shortages },
-        { status: 409 },
-      );
-    }
-
     // 1. Klantgegevens uit het Apple Pay-contact (naam, e-mail, bezorgadres).
+    //
+    // Bewust vóór de prijscontrole: het bezorgland bepaalt de verzendkosten, en
+    // zonder dat land toetste die controle een Belgische order tegen het
+    // Nederlandse tarief.
     const contact = (data.contact ?? {}) as {
       givenName?: string;
       familyName?: string;
@@ -104,14 +91,48 @@ export async function POST(req: Request) {
       country: (contact.countryCode || "NL").toUpperCase(),
     };
 
-    // 2. Order vastleggen uit de meegestuurde winkelwagen (status "open").
+    // 2. Verzendkosten herrekenen op het land uit het wallet-adres.
+    //
+    // De browser stuurt `data.shipping` mee, maar die kwam uit de winkelwagen en
+    // die rekent met het Nederlandse tarief — het bezorgadres is daar nog niet
+    // bekend. Een Belgische wallet-klant belandde zo op € 4,95 in plaats van
+    // € 7,95: te weinig geïnd, en een orderbedrag dat niet strookt met wat
+    // Tilroy uitrekent. De sheet toont dit bedrag inmiddels ook (zie
+    // onshippingcontactselected in express-checkout.tsx), dus de klant keurt
+    // hetzelfde goed als wat hier wordt vastgelegd.
+    const verzend = shippingForCountry(data.subtotal, customer.country, {});
+    const totaal = r2(data.subtotal + verzend);
+
+    // Prijscontrole: het client-totaal is manipuleerbaar en veroudert met de
+    // winkelwagen; zie lib/checkout-pricing.ts. Toetst op ons eigen herberekende
+    // totaal, met het land erbij zodat het Belgische tarief geldig is.
+    const prijs = verifyOrderTotal({
+      items,
+      total: totaal,
+      country: customer.country,
+      freeShipping: verzend === 0,
+    });
+    if (!prijs.ok) {
+      return NextResponse.json({ ok: false, error: prijs.message }, { status: 409 });
+    }
+
+    // Voorraad-guard (Nijverdal): zie lib/live-stock.ts. Fail-open bij storing.
+    const shortages = await checkStockForItems(items);
+    if (shortages.length) {
+      return NextResponse.json(
+        { ok: false, error: shortageMessage(shortages), shortages },
+        { status: 409 },
+      );
+    }
+
+    // 3. Order vastleggen uit de meegestuurde winkelwagen (status "open").
     const order = await createOrder({
       customer,
       // De opgezochte regels: de kleur op de order is onze eigen versie.
       items,
       subtotal: data.subtotal,
-      shipping: data.shipping,
-      total: data.total,
+      shipping: verzend,
+      total: totaal,
       kluspasSavings: data.kluspasSavings,
       paymentMethod: "applepay",
       ga: data.ga,
@@ -141,7 +162,9 @@ export async function POST(req: Request) {
     const payment = await createPayment({
       orderId: order.id,
       reference: order.reference,
-      amount: data.total,
+      // Ons eigen totaal, niet dat van de browser — anders legt de order een
+      // ander bedrag vast dan Mollie int.
+      amount: totaal,
       method: "applepay",
       applePayToken: JSON.stringify(data.token),
       baseUrl: origin,

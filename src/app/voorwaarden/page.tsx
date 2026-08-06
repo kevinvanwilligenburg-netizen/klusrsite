@@ -83,10 +83,10 @@ export default function VoorwaardenPage() {
           body: (
             <p>
               Voor 09:00 uur op werkdagen besteld, is je bestelling vanavond in huis
-              (tenzij anders vermeld). Verzending is gratis vanaf € 59; daaronder rekenen we
-              € 4,95 verzendkosten. We bezorgen door heel Nederland en België. Het risico van
-              beschadiging en/of vermissing van producten gaat over op de klant op het moment van
-              bezorging.
+              (tenzij anders vermeld). We bezorgen door heel Nederland en België. Verzending is
+              gratis vanaf € 59; daaronder rekenen we € 4,95 binnen Nederland en € 7,95 binnen
+              België. Het risico van beschadiging en/of vermissing van producten gaat over op de
+              klant op het moment van bezorging.
             </p>
           ),
         },

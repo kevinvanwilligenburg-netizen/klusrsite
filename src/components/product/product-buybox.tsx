@@ -30,7 +30,12 @@ import { useCart } from "@/lib/store/cart";
 import { useFavorites } from "@/lib/store/favorites";
 import { useMounted } from "@/lib/hooks/use-mounted";
 import { useLiveStock } from "@/lib/hooks/use-live-stock";
-import { shippingForCountry, SHIPPING_COUNTRY_MAP } from "@/lib/shipping";
+import {
+  shippingForCountry,
+  SHIPPING_COUNTRY_MAP,
+  bezorglandUitCookie,
+  DEFAULT_COUNTRY,
+} from "@/lib/shipping";
 import { baseStockByStore, paintBases, withBase } from "@/lib/paint-bases";
 
 /** Snelkeuze: 100% wit — veruit de meest gekozen "kleur" voor mengverf. */
@@ -188,10 +193,18 @@ interface ApplePayPaymentAuthorizedEvent {
 interface ApplePaySessionInstance {
   onvalidatemerchant: (event: ApplePayValidateMerchantEvent) => void;
   onpaymentauthorized: (event: ApplePayPaymentAuthorizedEvent) => void;
+  /** Klant kiest een bezorgadres in de sheet — hier herrekenen we de verzendkosten. */
+  onshippingcontactselected: (event: {
+    shippingContact?: { countryCode?: string };
+  }) => void;
   oncancel: () => void;
   begin(): void;
   abort(): void;
   completeMerchantValidation(merchantSession: unknown): void;
+  completeShippingContactSelection(update: {
+    newTotal: { label: string; amount: string };
+    newLineItems: { label: string; amount: string }[];
+  }): void;
   completePayment(status: number): void;
 }
 interface ApplePaySessionConstructor {
@@ -263,6 +276,12 @@ export function ProductBuybox({
   const toggleFavorite = useFavorites((s) => s.toggle);
   const favoriteIds = useFavorites((s) => s.ids);
   const mounted = useMounted();
+
+  // Bezorgland van de bezoeker, voor de getoonde verzendkosten en de Apple
+  // Pay-sheet. Pas ná mount: de server kent de cookie niet en zou anders een
+  // ander bedrag renderen dan de browser.
+  const [bezorgland, setBezorgland] = useState(DEFAULT_COUNTRY);
+  useEffect(() => setBezorgland(bezorglandUitCookie()), []);
   const isFavorite = mounted && favoriteIds.includes(product.id);
 
   // Tinting base (from the chosen colour) adds a surcharge and has its own stock.
@@ -359,7 +378,7 @@ export function ProductBuybox({
     }
 
     const subtotal = variant.price * quantity;
-    const shipping = shippingForCountry(subtotal, "NL", {});
+    const shipping = shippingForCountry(subtotal, bezorgland, {});
     const total = subtotal + shipping;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -396,6 +415,22 @@ export function ProductBuybox({
         session.abort();
         toast.error("Apple Pay is even niet beschikbaar. Probeer het opnieuw.");
       }
+    };
+
+    // Stap 1b — bezorgadres gekozen: verzendkosten herrekenen vóór de klant
+    // akkoord geeft. Zonder dit toont de sheet het Nederlandse tarief terwijl de
+    // server op het wallet-adres rekent; dan keurt de klant een ander bedrag goed
+    // dan we innen. België is € 7,95 tegen € 4,95, dus dat scheelt echt iets.
+    session.onshippingcontactselected = (event) => {
+      const land = (event.shippingContact?.countryCode || bezorgland).toUpperCase();
+      const nieuwVerzend = shippingForCountry(subtotal, land, {});
+      session.completeShippingContactSelection({
+        newLineItems: [
+          { label: t("cart.subtotal"), amount: subtotal.toFixed(2) },
+          { label: t("cart.shipping"), amount: nieuwVerzend.toFixed(2) },
+        ],
+        newTotal: { label: "KLUSR", amount: (subtotal + nieuwVerzend).toFixed(2) },
+      });
     };
 
     // Stap 2 — betaling geautoriseerd: order + Mollie-betaling server-side aanmaken.
@@ -468,12 +503,14 @@ export function ProductBuybox({
   }
 
   // Verzendkosten transparant tonen vóór de klik — express (Apple Pay / direct
-  // afrekenen) slaat de winkelwagen over, dus de €4,95 mag geen verrassing zijn.
-  // Net als de express-flow rekenen we met het NL-tarief en de kale variantprijs.
+  // afrekenen) slaat de winkelwagen over, dus het bedrag mag geen verrassing
+  // zijn. Met het tarief van het bezorgland van de bezoeker: stond hier vast op
+  // NL, waardoor een Belg € 4,95 zag staan en € 7,95 betaalde.
   const buyboxSubtotal = variant.price * quantity;
-  const buyboxShipping = shippingForCountry(buyboxSubtotal, "NL", {});
+  const buyboxShipping = shippingForCountry(buyboxSubtotal, bezorgland, {});
   const buyboxShipFree = buyboxSubtotal > 0 && buyboxShipping === 0;
-  const freeShipThreshold = SHIPPING_COUNTRY_MAP.NL?.freeOver ?? 50;
+  const freeShipThreshold =
+    SHIPPING_COUNTRY_MAP[bezorgland]?.freeOver ?? SHIPPING_COUNTRY_MAP.NL?.freeOver ?? 50;
 
   return (
     <div className="flex flex-col gap-4">
