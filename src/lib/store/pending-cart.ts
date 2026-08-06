@@ -24,6 +24,8 @@ export interface PendingCartItem {
   price: number;
   image?: string;
   slug?: string;
+  /** Maat en kleur, bv. "2,5 L · Monumentengroen" — voor de herinneringsmail. */
+  variant?: string;
 }
 
 export interface PendingCart {
