@@ -95,3 +95,27 @@ export const COUNTRY_SUGGEST_COOKIE = "country-suggest";
 export function isShippingCountry(code: string | null | undefined): boolean {
   return !!code && code.toUpperCase() in SHIPPING_COUNTRY_MAP;
 }
+
+/**
+ * Het bezorgland zoals we het aan de clientkant kennen, uit de cookies.
+ *
+ * Zelfde volgorde als de checkout: eerst de bevestigde keuze, dan het
+ * geo-voorstel, anders NL. Op de server bestaat `document` niet en krijg je de
+ * standaard — roep dit dus pas ná mount aan, anders wijkt de hydratie af.
+ *
+ * Bestaat omdat de PDP en de express-wallets hun verzendkosten met een vaste
+ * "NL" berekenden. Een Belgische bezoeker zag daar € 4,95 en betaalde bij Apple
+ * Pay ook € 4,95, terwijl het tarief € 7,95 is: € 3 te weinig, én een
+ * orderbedrag dat niet strookt met wat Tilroy uitrekent.
+ */
+export function bezorglandUitCookie(): string {
+  if (typeof document === "undefined") return DEFAULT_COUNTRY;
+  const lees = (naam: string) =>
+    document.cookie
+      .split(";")
+      .map((p) => p.trim())
+      .find((p) => p.startsWith(`${naam}=`))
+      ?.slice(naam.length + 1) ?? "";
+  const keuze = (lees(COUNTRY_COOKIE) || lees(COUNTRY_SUGGEST_COOKIE)).toUpperCase();
+  return isShippingCountry(keuze) ? keuze : DEFAULT_COUNTRY;
+}

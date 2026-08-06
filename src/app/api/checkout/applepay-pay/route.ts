@@ -129,9 +129,15 @@ export async function POST(req: Request) {
       country: (contact.countryCode || "NL").toUpperCase(),
     };
 
-    // 5. Bedragen: verzendkosten ALTIJD voor NL (matcht de client-sheet).
+    // 5. Bedragen: verzendkosten voor het land uit het wallet-adres.
+    //
+    // Stond hier eerst hard op "NL". Het adres hierboven komt wél uit de wallet,
+    // dus een Belgische klant kreeg een Belgisch bezorgadres met het Nederlandse
+    // tarief: € 4,95 in plaats van € 7,95. Drie euro te weinig, en een
+    // orderbedrag dat niet strookt met wat Tilroy uitrekent — waardoor elke
+    // Belgische order onder € 59 daar als onbruikbare draft blijft staan.
     const subtotal = variant.price * data.quantity;
-    const shipping = shippingForCountry(subtotal, "NL", {});
+    const shipping = shippingForCountry(subtotal, customer.country, {});
     const total = subtotal + shipping;
 
     // 6. Order vastleggen (status "open").

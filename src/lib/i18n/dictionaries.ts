@@ -1229,7 +1229,7 @@ const nl: Messages = {
 
   "faq.delivery.when.q": "Wanneer is mijn bestelling in huis?",
   "faq.delivery.when.a":
-    "Voor 09:00 uur op werkdagen besteld, vanavond in huis. Verzending is gratis vanaf € 59, daaronder rekenen we € 4,95.",
+    "Voor 09:00 uur op werkdagen besteld, vanavond in huis. Verzending is gratis vanaf € 59, daaronder rekenen we € 4,95 binnen Nederland en € 7,95 binnen België.",
   "faq.delivery.pickup.q": "Kan ik mijn bestelling afhalen?",
   "faq.delivery.pickup.aPre": "KLUSR is volledig online — we bezorgen door heel Nederland en België. Vragen over je bezorging? Onze ",
   "faq.delivery.pickup.aLink": "klantenservice",
@@ -1959,7 +1959,7 @@ const en: Messages = {
 
   "faq.delivery.when.q": "When will my order arrive?",
   "faq.delivery.when.a":
-    "Ordered before 09:00 on working days, delivered this evening. Shipping is free from € 59, below that we charge € 4,95.",
+    "Ordered before 09:00 on working days, delivered this evening. Shipping is free from € 59, below that we charge € 4,95 within the Netherlands and € 7,95 within Belgium.",
   "faq.delivery.pickup.q": "Can I collect my order?",
   "faq.delivery.pickup.aPre": "KLUSR is fully online — we deliver throughout the Netherlands and Belgium. Questions about your delivery? Our ",
   "faq.delivery.pickup.aLink": "customer service",
@@ -2689,7 +2689,7 @@ const fr: Messages = {
 
   "faq.delivery.when.q": "Quand ma commande sera-t-elle chez moi ?",
   "faq.delivery.when.a":
-    "Commandé avant 19h les jours ouvrés, livré demain. La livraison est gratuite à partir de € 59, en dessous nous facturons € 4,95.",
+    "Commandé avant 19h les jours ouvrés, livré demain. La livraison est gratuite à partir de € 59, en dessous nous facturons € 4,95 aux Pays-Bas et € 7,95 en Belgique.",
   "faq.delivery.pickup.q": "Puis-je retirer ma commande ?",
   "faq.delivery.pickup.aPre": "KLUSR est entièrement en ligne — nous livrons partout aux Pays-Bas et en Belgique. Des questions sur votre livraison ? Notre ",
   "faq.delivery.pickup.aLink": "service client",
@@ -3419,7 +3419,7 @@ const de: Messages = {
 
   "faq.delivery.when.q": "Wann ist meine Bestellung bei mir?",
   "faq.delivery.when.a":
-    "An Werktagen vor 09:00 Uhr bestellt, heute Abend geliefert. Der Versand ist ab € 59 kostenlos, darunter berechnen wir € 4,95.",
+    "An Werktagen vor 09:00 Uhr bestellt, heute Abend geliefert. Der Versand ist ab € 59 kostenlos, darunter berechnen wir € 4,95 innerhalb der Niederlande und € 7,95 innerhalb Belgiens.",
   "faq.delivery.pickup.q": "Kann ich meine Bestellung abholen?",
   "faq.delivery.pickup.aPre": "KLUSR ist vollständig online — wir liefern in die ganzen Niederlande und nach Belgien. Fragen zu Ihrer Lieferung? Unser ",
   "faq.delivery.pickup.aLink": "Kundenservice",

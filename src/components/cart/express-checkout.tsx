@@ -5,6 +5,7 @@ import { useCart, cartSummary } from "@/lib/store/cart";
 import { usePricingMode } from "@/lib/store/pricing-mode";
 import { useReorderActive } from "@/lib/store/reorder";
 import { useMounted } from "@/lib/hooks/use-mounted";
+import { shippingForCountry } from "@/lib/shipping";
 import { cn } from "@/lib/utils";
 import type { PaymentMethodInfo } from "@/types";
 
@@ -32,9 +33,17 @@ interface ApplePaySessionConstructor {
     onpaymentauthorized: (event: {
       payment: { token: unknown; shippingContact?: unknown };
     }) => void;
+    /** Klant kiest een bezorgadres — hier herrekenen we de verzendkosten. */
+    onshippingcontactselected: (event: {
+      shippingContact?: { countryCode?: string };
+    }) => void;
     oncancel: () => void;
     begin(): void;
     completeMerchantValidation(session: unknown): void;
+    completeShippingContactSelection(update: {
+      newTotal: { label: string; amount: string };
+      newLineItems: { label: string; amount: string }[];
+    }): void;
     completePayment(status: unknown): void;
     abort(): void;
   };
@@ -194,6 +203,24 @@ export function ExpressCheckout({ className }: { className?: string }) {
         setBusy(false);
         setError("Apple Pay is even niet beschikbaar. Probeer het opnieuw.");
       }
+    };
+    // Bezorgadres gekozen: verzendkosten herrekenen vóór de klant akkoord geeft.
+    // De winkelwagen rekent met het Nederlandse tarief — daar is het bezorgadres
+    // nog niet bekend. Zonder deze stap toont de sheet € 4,95 terwijl de server
+    // op het wallet-adres € 7,95 vastlegt, en keurt de klant dus een ander bedrag
+    // goed dan we innen. Bij afhalen of een gratis-verzending-actie staat het
+    // bedrag op 0 en laten we dat zo.
+    session.onshippingcontactselected = (event) => {
+      const gratis = reorderFree || summary.grossShipping === 0;
+      const land = (event.shippingContact?.countryCode || "NL").toUpperCase();
+      const verzend = gratis ? 0 : shippingForCountry(summary.grossSubtotal, land, {});
+      session.completeShippingContactSelection({
+        newLineItems: [
+          { label: "Subtotaal", amount: summary.grossSubtotal.toFixed(2) },
+          { label: "Verzendkosten", amount: verzend.toFixed(2) },
+        ],
+        newTotal: { label: "KLUSR", amount: (summary.grossSubtotal + verzend).toFixed(2) },
+      });
     };
     session.onpaymentauthorized = async (event) => {
       try {
