@@ -7,21 +7,29 @@ import type { PendingCartItem } from "@/lib/store/pending-cart";
  *
  * Het dashboard toont "achtergelaten winkelwagens" voor beide webshops, maar
  * die teller stond voor KLUSR op nul: wij vingen het e-mailadres in de checkout
- * wél op, maar bewaarden het alleen lokaal voor onze eigen herinneringsmail.
+ * wél op, maar bewaarden het alleen lokaal voor onze eigen herinneringsmail. Er
+ * kwam dus niets binnen — geen meetfout, gewoon niets verstuurd.
  *
  * **De vorm is uitgevraagd, niet geraden.** Ik heb 'm twee keer verkeerd gehad
- * voordat ik om de letterlijke body vroeg — beide keren 400 zonder enige
+ * voordat ik om de letterlijke body vroeg — beide keren 400, zonder enige
  * aanwijzing wát er mis was, want dat endpoint antwoordt op álles hetzelfde.
- * Drie dingen die niet vanzelfsprekend zijn:
+ * Wat niet vanzelfsprekend is:
  *
  *  - **`id` staat op het hoogste niveau en is het kenmerk van de héle lead**,
  *    niet van een artikel. Het is de sleutel waarop het dashboard ontdubbelt en
  *    waarmee je 'm later afmeldt. Ontbreekt hij, dan volgt 400.
  *  - **`aantal`, `prijs` en `totaal` zijn strings**, in Nederlandse notatie:
  *    `"1"`, `"€ 22,00"`, `"€ 26,95"`. Getallen worden geweigerd.
+ *  - **`shop` én `site`.** Het dashboard splitst de rapportage op `site`,
+ *    terwijl de VDM-site aanvankelijk alleen `shop` stuurde; toen belandden de
+ *    verlaten wagens van beide winkels op één hoop.
  *  - **`action: "complete"`** hoort verstuurd zodra de bestelling rond is.
  *    Zonder die melding krijgt iemand die net betaald heeft alsnog een mail dat
  *    zijn winkelwagen klaarstaat.
+ *
+ * Het dashboard eist de bearer-sleutel nu nog niet af (accepteert zonder
+ * sleutel ook met 200) maar zegt dat te gaan doen; zonder sleutel geldt daar
+ * bovendien een limiet per IP. Dus altijd meesturen.
  *
  * Best effort: gooit nooit. Een melding over een verlaten mandje mag een
  * checkout niet ophouden en een betaling al helemaal niet.
@@ -65,7 +73,9 @@ async function post(body: unknown): Promise<boolean> {
       // bleef bij de VDM-site: hun try/catch ving netwerkfouten, maar een nette
       // weigering liep er dwars doorheen.
       // eslint-disable-next-line no-console
-      console.warn(`[cart-lead] dashboard weigerde: ${res.status} ${await res.text().catch(() => "")}`);
+      console.warn(
+        `[cart-lead] dashboard weigerde: ${res.status} ${await res.text().catch(() => "")}`,
+      );
       return false;
     }
     return true;
